@@ -8,7 +8,7 @@
 * Totally free of charge
 * Every error message points you to unique place in source code, no generic errors
 * It is pure Python implementation without Python libraries
-* Playground TBD very soon
+* Playground: https://littlepy.gitlab.io/littlepy-example (source code: https://gitlab.com/littlepy/littlepy-example)
 * Supports external JavaScript code integration
 
 > You can view tests to see which features are covered. It is mostly all Python 3 features except async, comprehensions and lambda functions.
