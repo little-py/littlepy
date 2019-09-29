@@ -1,14 +1,15 @@
 {
   "scripts": {
-    "clean": "rm -rf dist && rm -rf build",
-    "build": "yarn clean && tsc && DEBUG=true rollup -c rollup.config.js && DEBUG=false rollup -c rollup.config.js && rm -rf build",
+    "clean": "rm -rf lib && rm -rf build",
+    "build": "yarn clean && tsc && DEBUG=true rollup -c rollup.config.js && DEBUG=false rollup -c rollup.config.js && cp -R build/types/api/* lib && rm -rf build",
     "test": "jest",
-    "lint": "eslint . --ext .ts --ignore-pattern node_modules/ --max-warnings 0 --fix",
-    "test:watch": "jest --watch"
+    "lint": "eslint . --ext .ts --ignore-pattern node_modules/ --ignore-pattern /lib --max-warnings 0 --fix",
+    "test:watch": "jest --watch",
+    "pre-publish": "yarn clean && yarn lint && yarn test && yarn build"
   },
   "name": "littlepy",
   "version": "1.0.0",
-  "main": "dist/littlepy.js",
+  "main": "lib/littlepy.js",
   "license": "MIT",
   "private": false,
   "engines": {

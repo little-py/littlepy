@@ -25,11 +25,11 @@ import { CompilerContext } from './CompilerContext';
 import { LexicalContext } from './LexicalContext';
 import { GeneratedCode } from '../common/Instructions';
 import { KeywordType } from './Keyword';
-import { PythonErrorType } from '../common/PythonErrorType';
 import { CodeGenerator } from './CodeGenerator';
 import { CompiledModule } from './CompiledModule';
 import { LiteralType } from './Literal';
 import { InstructionType } from '../common/InstructionType';
+import { PyErrorType } from '../api/ErrorType';
 
 export function fillIdentifiers(tokens: Token[], from: number, end: number, compiledCode: CompiledModule, identifiers: string[]): number {
   let token = tokens[from];
@@ -117,7 +117,7 @@ export class ExpressionCompiler {
             break;
           }
           if (!isBinaryOperator(token)) {
-            this._compilerContext.addError(PythonErrorType.ExpectedBinaryOperator, token);
+            this._compilerContext.addError(PyErrorType.ExpectedBinaryOperator, token);
             return failedResult;
           }
           operators.push(token);
@@ -129,7 +129,7 @@ export class ExpressionCompiler {
           unaryOperators.push(token);
           this._from++;
           if (this._from >= this._end) {
-            this._compilerContext.addError(PythonErrorType.ExpectedUnaryOperatorOrArgument, token);
+            this._compilerContext.addError(PyErrorType.ExpectedUnaryOperatorOrArgument, token);
             return failedResult;
           }
           token = this._tokens[this._from];
@@ -204,12 +204,12 @@ export class ExpressionCompiler {
       }
 
       if (!values.length) {
-        this._compilerContext.addError(PythonErrorType.ExpectedExpressionValue, this.getClosestToken(this._from));
+        this._compilerContext.addError(PyErrorType.ExpectedExpressionValue, this.getClosestToken(this._from));
         return failedResult;
       }
 
       if (values.length === operators.length) {
-        this._compilerContext.addError(PythonErrorType.ExpectedRightOperand, operators[operators.length - 1]);
+        this._compilerContext.addError(PyErrorType.ExpectedRightOperand, operators[operators.length - 1]);
         return failedResult;
       }
       let compiledPart = this.compileOperators(values, operators);
@@ -264,7 +264,7 @@ export class ExpressionCompiler {
       /* istanbul ignore next */
       if (maxValue < 0) {
         // this should never happen, just additional check; there are no error examples that can cause this error
-        this._compilerContext.addError(PythonErrorType.ErrorUnexpectedScenario_01, operators[0]);
+        this._compilerContext.addError(PyErrorType.ErrorUnexpectedScenario_01, operators[0]);
         return result;
       }
       for (let i = 1; i < operators.length; i++) {
@@ -272,7 +272,7 @@ export class ExpressionCompiler {
         /* istanbul ignore next */
         if (value < 0) {
           // this should never happen, just additional check; there are no error examples that can cause this error
-          this._compilerContext.addError(PythonErrorType.ErrorUnexpectedScenario_02, operators[i]);
+          this._compilerContext.addError(PyErrorType.ErrorUnexpectedScenario_02, operators[i]);
           return result;
         }
         if (value > maxValue) {
@@ -347,7 +347,7 @@ export class ExpressionCompiler {
         namedStarted = true;
       }
       if (!token) {
-        this._compilerContext.addError(PythonErrorType.UnexpectedEndOfCall, prevToken);
+        this._compilerContext.addError(PyErrorType.UnexpectedEndOfCall, prevToken);
         return false;
       }
       if (isRightBracket(token)) {
@@ -356,7 +356,7 @@ export class ExpressionCompiler {
         return true;
       }
       if (namedStarted && !argName) {
-        this._compilerContext.addError(PythonErrorType.OrderedArgumentAfterNamed, token || prevToken);
+        this._compilerContext.addError(PyErrorType.OrderedArgumentAfterNamed, token || prevToken);
         return null;
       }
       const arg = this.compileInternal(this._from, false);
@@ -375,7 +375,7 @@ export class ExpressionCompiler {
         continue;
       }
       if (!isRightBracket(token)) {
-        this._compilerContext.addError(PythonErrorType.ExpectedEndOfFunctionCall, token || prevToken);
+        this._compilerContext.addError(PyErrorType.ExpectedEndOfFunctionCall, token || prevToken);
         return null;
       }
     }
@@ -417,7 +417,7 @@ export class ExpressionCompiler {
         }
         this._from = indexArg.finish;
         if (!isRightSquareBracket(this._tokens[this._from])) {
-          this._compilerContext.addError(PythonErrorType.ExpectedEndOfIndexer, current);
+          this._compilerContext.addError(PyErrorType.ExpectedEndOfIndexer, current);
           const ret = new GeneratedCode();
           ret.success = false;
           return ret;
@@ -452,7 +452,7 @@ export class ExpressionCompiler {
       let prevToken = token || startToken;
       token = this._tokens[this._from];
       if (!token) {
-        this._compilerContext.addError(PythonErrorType.ExpectedListDefinition, prevToken);
+        this._compilerContext.addError(PyErrorType.ExpectedListDefinition, prevToken);
         return false;
       }
       if (isRightSquareBracket(token)) {
@@ -481,7 +481,7 @@ export class ExpressionCompiler {
       //   token = this._tokens[this._from];
       //   if (!isRightSquareBracket(token)) {
       //     const source = token || prevToken;
-      //     this._compilerContext.addError(PythonErrorType.ExpectedEndOfListDefinition, source);
+      //     this._compilerContext.addError(PyErrorType.ExpectedEndOfListDefinition, source);
       //     return false;
       //   }
       //   this._from++;
@@ -490,7 +490,7 @@ export class ExpressionCompiler {
       // }
       if (!isComma(token) && !isRightSquareBracket(token)) {
         const source = token || prevToken;
-        this._compilerContext.addError(PythonErrorType.ListExpectedCommaOrRightSquareBracket, source);
+        this._compilerContext.addError(PyErrorType.ListExpectedCommaOrRightSquareBracket, source);
         return false;
       }
       records.push(arg);
@@ -530,7 +530,7 @@ export class ExpressionCompiler {
   //       token = this._tokens[from];
   //       if (!!isIdentifier(token)) {
   //         const source = token || prevToken;
-  //         this._compilerContext.addError(PythonErrorType.ComprehensionExpectedIdentifier, source);
+  //         this._compilerContext.addError(PyErrorType.ComprehensionExpectedIdentifier, source);
   //         return result;
   //       }
   //       const idToken = token;
@@ -539,7 +539,7 @@ export class ExpressionCompiler {
   //       token = this._tokens[from];
   //       if (!isKeywordIn(token)) {
   //         const source = token || prevToken;
-  //         this._compilerContext.addError(PythonErrorType.ComprehensionExpectedInKeyword, source);
+  //         this._compilerContext.addError(PyErrorType.ComprehensionExpectedInKeyword, source);
   //         return result;
   //       }
   //       from++;
@@ -567,7 +567,7 @@ export class ExpressionCompiler {
   //     }
   //   }
   //   if (!comprehensions.length) {
-  //     this._compilerContext.addError(PythonErrorType.ComprehensionNoArguments, startToken);
+  //     this._compilerContext.addError(PyErrorType.ComprehensionNoArguments, startToken);
   //     return result;
   //   }
   //   result = CodeGenerator.comprehension(expression, comprehensions, startToken.getPosition());
@@ -584,7 +584,7 @@ export class ExpressionCompiler {
       let prevToken = token;
       token = this._tokens[this._from];
       if (!token) {
-        this._compilerContext.addError(PythonErrorType.ExpectedTupleBody, prevToken);
+        this._compilerContext.addError(PyErrorType.ExpectedTupleBody, prevToken);
         return false;
       }
       if (isRightBracket(token)) {
@@ -606,7 +606,7 @@ export class ExpressionCompiler {
       token = this._tokens[this._from];
       if (!isRightBracket(token) && !isComma(token)) {
         const source = token || prevToken;
-        this._compilerContext.addError(PythonErrorType.ExpectedTupleEnd, source);
+        this._compilerContext.addError(PyErrorType.ExpectedTupleEnd, source);
         return false;
       }
       if (isRightBracket(token)) {
@@ -638,7 +638,7 @@ export class ExpressionCompiler {
       let prevToken = token;
       token = this._tokens[this._from];
       if (!token) {
-        this._compilerContext.addError(PythonErrorType.ExpectedSetBody, prevToken);
+        this._compilerContext.addError(PyErrorType.ExpectedSetBody, prevToken);
         return false;
       }
       if (isRightFigureBracket(token)) {
@@ -653,7 +653,7 @@ export class ExpressionCompiler {
       let literalIndex = -1;
       if (isLiteral(token) && isColon(this._tokens[this._from + 1])) {
         if (!isDictionary && records.length) {
-          this._compilerContext.addError(PythonErrorType.SetMixedWithAndWithoutColon, this._tokens[this._from + 1]);
+          this._compilerContext.addError(PyErrorType.SetMixedWithAndWithoutColon, this._tokens[this._from + 1]);
           return false;
         }
         isDictionary = true;
@@ -661,7 +661,7 @@ export class ExpressionCompiler {
         this._from += 2;
       }
       if (literalIndex === -1 && isDictionary) {
-        this._compilerContext.addError(PythonErrorType.SetMixedWithAndWithoutColon, token);
+        this._compilerContext.addError(PyErrorType.SetMixedWithAndWithoutColon, token);
         return false;
       }
       const record = this.compileInternal(this._from, false);
@@ -673,7 +673,7 @@ export class ExpressionCompiler {
       if (isDictionary) {
         const literal = this._compiledCode.literals[literalIndex];
         if ((literal.type & LiteralType.LiteralMask) !== LiteralType.String) {
-          this._compilerContext.addError(PythonErrorType.ExpectedStringLiteralInSet, token);
+          this._compilerContext.addError(PyErrorType.ExpectedStringLiteralInSet, token);
           return false;
         }
         literals.push(literal.string);
@@ -685,7 +685,7 @@ export class ExpressionCompiler {
         break;
       }
       if (!isComma(token)) {
-        this._compilerContext.addError(PythonErrorType.ExpectedSetEnd, prevToken);
+        this._compilerContext.addError(PyErrorType.ExpectedSetEnd, prevToken);
         return false;
       }
       // means it is comma
@@ -709,7 +709,7 @@ export class ExpressionCompiler {
     const token = this._tokens[this._from];
     if (this._from >= this._end || !isKeywordElse(token)) {
       const source = token || this._tokens[this._tokens.length - 1];
-      this._compilerContext.addError(PythonErrorType.Error_Compiler_IfExpressionExpectedElse, source);
+      this._compilerContext.addError(PyErrorType.Error_Compiler_IfExpressionExpectedElse, source);
       const ret = new GeneratedCode();
       ret.success = false;
       return ret;
@@ -755,7 +755,7 @@ export class ExpressionCompiler {
       }
     }
     if (token.type !== TokenType.Literal) {
-      this._compilerContext.addError(PythonErrorType.ExpectedLiteral, token);
+      this._compilerContext.addError(PyErrorType.ExpectedLiteral, token);
       ret = new GeneratedCode();
       ret.success = false;
       return ret;

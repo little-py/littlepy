@@ -3,10 +3,11 @@ import { RealObject } from './RealObject';
 import { FunctionObject } from './FunctionObject';
 import { RunContext } from '../RunContext';
 import { CallableContext } from '../CallableContext';
-import { BaseObject, ObjectType } from './BaseObject';
+import { BaseObject } from './BaseObject';
 import { NoneObject } from './NoneObject';
 import { ObjectWrapperObject } from './ObjectWrapperObject';
 import { StringObject } from './StringObject';
+import { ObjectType } from '../../api/ObjectType';
 
 export const fromBaseObject = (val: BaseObject, useObjectWrapper = true) => {
   switch (val.type) {

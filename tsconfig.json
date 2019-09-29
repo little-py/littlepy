@@ -2,9 +2,9 @@
   "compilerOptions": {
     "baseUrl": "src",
     "lib": ["es2017", "dom"],
-    "target": "es2015",
+    "target": "es6",
     "declaration": true,
-    "declarationDir": "dist/types",
+    "declarationDir": "build/types",
     "outDir": "build",
     "types": ["jest"],
     "esModuleInterop": true

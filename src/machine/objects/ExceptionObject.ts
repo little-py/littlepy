@@ -1,9 +1,10 @@
-import {BaseObject, ObjectType} from './BaseObject';
 import { ClassInstanceObject } from './ClassInstanceObject';
 import { ClassInheritance } from './ClassObject';
 import { ExceptionClassObject } from './ExceptionClassObject';
-import {StringObject} from "./StringObject";
-import {IntegerObject} from "./IntegerObject";
+import { StringObject } from './StringObject';
+import { IntegerObject } from './IntegerObject';
+import { ObjectType } from '../../api/ObjectType';
+import { BaseObject } from './BaseObject';
 
 export enum ExceptionType {
   Base,

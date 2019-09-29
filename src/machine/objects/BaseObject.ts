@@ -1,34 +1,7 @@
-export enum ObjectType {
-  Object,
-  None,
-  Integer,
-  Boolean,
-  Real,
-  Complex,
-  String,
-  Tuple,
-  List,
-  Bytes,
-  ByteArray,
-  Set,
-  FrozenSet,
-  Dictionary,
-  Function,
-  Class,
-  ClassInstance,
-  InstanceMethod,
-  Module,
-  ObjectWrapper,
-  GameWrapper,
-  Reference,
-  SuperProxy,
-  Iterator,
-  Generator,
-  ExceptionClass,
-  ExceptionInstance,
-}
+import { PyObject } from '../../api/Object';
+import { ObjectType } from '../../api/ObjectType';
 
-export class BaseObject {
+export class BaseObject implements PyObject {
   private static idCounter = 1;
 
   public constructor(t: ObjectType) {

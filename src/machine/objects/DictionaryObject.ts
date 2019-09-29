@@ -1,5 +1,6 @@
-import { BaseObject, ObjectType } from './BaseObject';
+import { BaseObject } from './BaseObject';
 import { setIteratorFunction } from './IteratorObject';
+import { ObjectType } from '../../api/ObjectType';
 
 export class DictionaryObject extends BaseObject {
   public constructor() {

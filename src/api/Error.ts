@@ -1,10 +1,11 @@
-import { ErrorCodeToTitle, PythonErrorType } from './PythonErrorType';
+import { PyErrorType } from './ErrorType';
+import { ErrorCodeToTitle } from '../common/PythonErrorType';
 
 // eslint-disable-next-line @typescript-eslint/prefer-interface
-export type PythonErrorContext = { [key: string]: string };
+export type PyErrorContext = { [key: string]: string };
 
-export class PythonError {
-  public constructor(type: PythonErrorType, row: number, col: number, length: number, position: number, context?: PythonErrorContext) {
+export class PyError {
+  public constructor(type: PyErrorType, row: number, col: number, length: number, position: number, context?: PyErrorContext) {
     this.type = type;
     this.row = row;
     this.col = col;
@@ -19,6 +20,6 @@ export class PythonError {
   public col: number;
   public length: number;
   public position: number;
-  public type: PythonErrorType;
+  public type: PyErrorType;
   public context: { [key: string]: string };
 }

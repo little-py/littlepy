@@ -1,7 +1,8 @@
 import { compileAndStartModule, compileModule, runModules } from './Utils';
-import { RunContext } from '../../../src/machine/RunContext';
-import { BaseObject, ObjectType } from '../../../src/machine/objects/BaseObject';
-import { ExceptionObject } from '../../../src/machine/objects/ExceptionObject';
+import { RunContext } from '../../src/machine/RunContext';
+import { BaseObject } from '../../src/machine/objects/BaseObject';
+import { ExceptionObject } from '../../src/machine/objects/ExceptionObject';
+import { ObjectType } from '../../src/api/ObjectType';
 
 describe('Customize runContext', () => {
   it('should write to callback instead of internal buffer', () => {

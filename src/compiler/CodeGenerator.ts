@@ -1,12 +1,12 @@
-import {GeneratedCode, Instruction} from '../common/Instructions';
-import {CompilerContext} from './CompilerContext';
-import {OperatorDelimiterType, Token, TokenPosition, TokenType} from './Token';
-import {PythonErrorType} from '../common/PythonErrorType';
-import {KeywordType} from './Keyword';
-import {Literal} from './Literal';
-import {CompilerBlockContext, CompilerBlockType} from './CompilerBlockContext';
-import {InstructionType} from '../common/InstructionType';
-import {ReferenceScope} from '../machine/objects/ReferenceObject';
+import { GeneratedCode, Instruction } from '../common/Instructions';
+import { CompilerContext } from './CompilerContext';
+import { OperatorDelimiterType, Token, TokenPosition, TokenType } from './Token';
+import { KeywordType } from './Keyword';
+import { Literal } from './Literal';
+import { CompilerBlockContext, CompilerBlockType } from './CompilerBlockContext';
+import { InstructionType } from '../common/InstructionType';
+import { ReferenceScope } from '../machine/objects/ReferenceObject';
+import { PyErrorType } from '../api/ErrorType';
 
 export class Comprehension {
   public code: GeneratedCode;
@@ -93,7 +93,7 @@ export class CodeGenerator {
     return ret;
   }
 
-  public static tryExcept(parts: CompilerBlockContext[], context: CompilerContext, token: Token): GeneratedCode {
+  public static tryExcept(parts: CompilerBlockContext[], context: CompilerContext): GeneratedCode {
     const ret = new GeneratedCode();
     const finishTry = context.getNewLabel();
 
@@ -277,7 +277,7 @@ export class CodeGenerator {
         ret.add(InstructionType.IInvert, token.getPosition(), 0, 0);
       } else {
         ret.success = false;
-        compilerContext.addError(PythonErrorType.ErrorUnexpectedScenario_CodeGenerator_UnknownUnaryOperator, token);
+        compilerContext.addError(PyErrorType.ErrorUnexpectedScenario_CodeGenerator_UnknownUnaryOperator, token);
         return ret;
       }
     }
@@ -384,7 +384,7 @@ export class CodeGenerator {
     }
     if (opType === InstructionType.IPass) {
       ret.success = false;
-      compilerContext.addError(PythonErrorType.ErrorUnexpectedScenario_CodeGenerator_UnknownBinaryOperator, op);
+      compilerContext.addError(PyErrorType.ErrorUnexpectedScenario_CodeGenerator_UnknownBinaryOperator, op);
       return ret;
     }
     ret.add(opType, op.getPosition(), 0, 1, 0);

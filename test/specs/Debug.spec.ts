@@ -1,6 +1,6 @@
 import { compileAndStartModule, compileModule } from './Utils';
-import { RunContext } from '../../../src/machine/RunContext';
-import { IntegerObject } from '../../../src/machine/objects/IntegerObject';
+import { RunContext } from '../../src/machine/RunContext';
+import { IntegerObject } from '../../src/machine/objects/IntegerObject';
 
 describe('Debug flow', () => {
   it('should step from first to second line and initialize two variables', () => {

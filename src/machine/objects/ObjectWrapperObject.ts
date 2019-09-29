@@ -1,5 +1,6 @@
-import { BaseObject, ObjectType } from './BaseObject';
+import { BaseObject } from './BaseObject';
 import { fromBaseObject, toBaseObject } from './ToBaseObject';
+import { ObjectType } from '../../api/ObjectType';
 
 export class ObjectWrapperObject extends BaseObject {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

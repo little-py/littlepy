@@ -1,8 +1,9 @@
 import { RunContext } from '../RunContext';
 import { CallableContext } from '../CallableContext';
-import { BaseObject, ObjectType } from '../objects/BaseObject';
+import { BaseObject } from '../objects/BaseObject';
 import { ReferenceObject } from '../objects/ReferenceObject';
 import { FunctionObject } from '../objects/FunctionObject';
+import { ObjectType } from '../../api/ObjectType';
 
 function printFunction(runContext: RunContext, callContext: CallableContext): BaseObject {
   let output = '';

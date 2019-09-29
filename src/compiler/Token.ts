@@ -69,7 +69,7 @@ export interface TokenPosition {
 }
 
 export class Token {
-  public constructor(src?: Token) {
+  public constructor(/*src?: Token*/) {
     // if (src) {
     //   this.type = src.type;
     //   this.offset = src.offset;
@@ -292,7 +292,7 @@ export function getTokenOperatorPriority(token: Token): number {
 }
 
 export function isIfOperator(token: Token): boolean {
-  return token && token.type === TokenType.Keyword && token.arg1 == KeywordType.KeywordIf;
+  return token && token.type === TokenType.Keyword && token.arg1 === KeywordType.KeywordIf;
 }
 
 export function isBinaryOperator(token: Token): boolean {

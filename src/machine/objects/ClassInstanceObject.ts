@@ -1,6 +1,7 @@
-import { BaseObject, ObjectType } from './BaseObject';
+import { BaseObject } from './BaseObject';
 import { CallableObject } from './CallableObject';
 import { ClassInheritance } from './ClassObject';
+import { ObjectType } from '../../api/ObjectType';
 
 export class ClassInstanceObject extends CallableObject {
   public readonly classInheritance: ClassInheritance[];

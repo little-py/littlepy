@@ -1,5 +1,5 @@
-import { ClassInheritance, ClassObject } from '../../../src/machine/objects/ClassObject';
-import { calculateResolutionOrder } from '../../../src/machine/CalculateResolutionOrder';
+import { ClassInheritance, ClassObject } from '../../src/machine/objects/ClassObject';
+import { calculateResolutionOrder } from '../../src/machine/CalculateResolutionOrder';
 
 describe('resolution order', () => {
   it('basic', () => {

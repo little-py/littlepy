@@ -1,35 +1,11 @@
-import {Token, TokenPosition} from './Token';
-import {CompiledModule} from './CompiledModule';
-import {Literal, LiteralType} from './Literal';
-import {CompilerBlockContext} from './CompilerBlockContext';
-import {PythonErrorType} from '../common/PythonErrorType';
-import {PythonError, PythonErrorContext} from '../common/PythonError';
-
-export enum RowType {
-  AssignmentOperator,
-  FunctionCall,
-  ForCycle,
-  WhileCycle,
-  TryBlock,
-  ExceptBlock,
-  FinallyBlock,
-  Raise,
-  FunctionDefinition,
-  Comment,
-  Unknown,
-  IfBlock,
-  ElseBlock,
-  ElifBlock,
-  Import,
-  ImportFrom,
-  ImportAs,
-  Pass,
-  Return,
-  Expression,
-  Continue,
-  Break,
-  Yield,
-}
+import { Token, TokenPosition } from './Token';
+import { CompiledModule } from './CompiledModule';
+import { Literal, LiteralType } from './Literal';
+import { CompilerBlockContext } from './CompilerBlockContext';
+import { RowType } from '../api/RowType';
+import { RowDescriptor } from '../api/RowDescriptor';
+import { PyErrorType } from '../api/ErrorType';
+import { PyError, PyErrorContext } from '../api/Error';
 
 // it is for external usage
 /* istanbul ignore next */
@@ -82,17 +58,6 @@ export function getRowTypeDescription(rowType: RowType): string {
     case RowType.Unknown:
       return '-';
   }
-}
-
-export interface RowDescriptor {
-  type: RowType;
-  usesVariables?: boolean;
-  isInline?: boolean;
-  isArrayAssignment?: boolean;
-  hasOperators?: boolean;
-  introducesVariable?: boolean;
-  functionName?: string;
-  literals?: string[];
 }
 
 export class CompilerContext {
@@ -154,8 +119,8 @@ export class CompilerContext {
     }
   }
 
-  public addError(type: PythonErrorType, token: Token, context?: PythonErrorContext) {
-    this.compiledCode.errors.push(new PythonError(type, token.row, token.col, token.length, token.offset, context));
+  public addError(type: PyErrorType, token: Token, context?: PyErrorContext) {
+    this.compiledCode.errors.push(new PyError(type, token.row, token.col, token.length, token.offset, context));
   }
 
   public getLiteral(literal: Literal): number {

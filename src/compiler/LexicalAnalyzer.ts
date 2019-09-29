@@ -4,8 +4,8 @@ import { Keyword, KeywordType } from './Keyword';
 import { isDigit, isFirstIdentifierChar, isIdentifierChar, isStringMarkerChar } from './Characters';
 import { Literal, LiteralType } from './Literal';
 import { CompiledModule } from './CompiledModule';
-import { PythonErrorType } from '../common/PythonErrorType';
-import { PythonError, PythonErrorContext } from '../common/PythonError';
+import { PyErrorType } from '../api/ErrorType';
+import { PyError, PyErrorContext } from '../api/Error';
 
 const TAB_LENGTH = 4;
 
@@ -23,8 +23,8 @@ export class LexicalAnalyzer {
     this._compiledCode = compiledCode;
   }
 
-  private addError(type: PythonErrorType, row: number, col: number, position: number, length: number, context?: PythonErrorContext) {
-    this._compiledCode.errors.push(new PythonError(type, row, col, length, position, context));
+  private addError(type: PyErrorType, row: number, col: number, position: number, length: number, context?: PyErrorContext) {
+    this._compiledCode.errors.push(new PyError(type, row, col, length, position, context));
   }
 
   public parse(source: string, context: LexicalContext) {
@@ -177,7 +177,7 @@ export class LexicalAnalyzer {
       return;
     }
 
-    this.addError(PythonErrorType.UnknownChar, this._row, this._col, this._sourcePos, 1);
+    this.addError(PyErrorType.UnknownChar, this._row, this._col, this._sourcePos, 1);
     this.skipToNextLine();
   }
 
@@ -196,7 +196,7 @@ export class LexicalAnalyzer {
       } else {
         const it = this._indentStack.findIndex(c => c === this._col);
         if (it < 0) {
-          this.addError(PythonErrorType.MismatchedIndent, this._row, 0, this._sourcePos - this._col, this._col);
+          this.addError(PyErrorType.MismatchedIndent, this._row, 0, this._sourcePos - this._col, this._col);
           this.skipToNextLine();
           return false;
         }
@@ -333,7 +333,7 @@ export class LexicalAnalyzer {
             this._col++;
             break;
           default:
-            this.addError(PythonErrorType.UnknownEscapeChar, this._row, this._col, this._sourcePos, 1);
+            this.addError(PyErrorType.UnknownEscapeChar, this._row, this._col, this._sourcePos, 1);
             break;
         }
         if (escapedChar) {

@@ -1,10 +1,11 @@
-import { BaseObject, ObjectType } from './BaseObject';
+import { BaseObject } from './BaseObject';
 import { RunContext } from '../RunContext';
 import { ListObject } from './ListObject';
 import { IntegerObject } from './IntegerObject';
 import { StringObject } from './StringObject';
 import { ObjectScope } from '../ObjectScope';
 import { DictionaryObject } from './DictionaryObject';
+import { ObjectType } from '../../api/ObjectType';
 
 export enum ReferenceType {
   Index,

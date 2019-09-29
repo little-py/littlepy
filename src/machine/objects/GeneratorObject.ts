@@ -1,8 +1,9 @@
-import { BaseObject, ObjectType } from './BaseObject';
+import { BaseObject } from './BaseObject';
 import { RunContext } from '../RunContext';
 import { StackEntry } from './StackEntry';
 import { FunctionObject } from './FunctionObject';
 import { CallableContext } from '../CallableContext';
+import { ObjectType } from '../../api/ObjectType';
 
 export class GeneratorObject extends BaseObject {
   public constructor() {

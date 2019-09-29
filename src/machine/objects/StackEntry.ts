@@ -1,5 +1,5 @@
 import { ObjectScope } from '../ObjectScope';
-import { BaseObject, ObjectType } from './BaseObject';
+import { BaseObject } from './BaseObject';
 import { FunctionRunContext } from '../FunctionRunContext';
 import { CallableContext } from '../CallableContext';
 import { Instruction } from '../../common/Instructions';
@@ -7,6 +7,7 @@ import { InstructionType } from '../../common/InstructionType';
 import { RunContext } from '../RunContext';
 import { ReferenceObject } from './ReferenceObject';
 import { GeneratorObject } from './GeneratorObject';
+import { ObjectType } from '../../api/ObjectType';
 
 export enum StackEntryType {
   StackEntryWhileCycle,

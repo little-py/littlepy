@@ -1,5 +1,6 @@
 import { Instruction } from './Instructions';
 import { CompiledModule } from '../compiler/CompiledModule';
+import { PyFunction } from '../api/Function';
 
 export enum ArgumentType {
   Normal,
@@ -20,7 +21,7 @@ export enum FunctionType {
   FunctionTypeModule,
 }
 
-export class FunctionBody {
+export class FunctionBody implements PyFunction {
   public name: string;
   public code: Instruction[];
   public arguments: FunctionArgument[] = [];

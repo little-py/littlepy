@@ -1,12 +1,12 @@
-import {ExceptionType} from '../../../src/machine/objects/ExceptionObject';
-import {PythonErrorType} from '../../../src/common/PythonErrorType';
+import { ExceptionType } from '../../src/machine/objects/ExceptionObject';
+import { PyErrorType } from '../../src/api/ErrorType';
 
 export interface TestScenario {
   input: string;
   output?: string[];
   onlyThis?: boolean;
   expectedException?: ExceptionType;
-  expectedCompilerError?: PythonErrorType;
+  expectedCompilerError?: PyErrorType;
   exceptionArgs?: string[];
 }
 
@@ -967,7 +967,7 @@ const scenarios: TestScenario[] = [
       else:
         print('a')
     `,
-    expectedCompilerError: PythonErrorType.Error_Compiler_CannotFindIfOrElifForElse,
+    expectedCompilerError: PyErrorType.Error_Compiler_CannotFindIfOrElifForElse,
   },
   {
     input: `
@@ -987,97 +987,97 @@ const scenarios: TestScenario[] = [
       a = 10
       a += 20; if a < 40: print(a)
     `,
-    expectedCompilerError: PythonErrorType.BlockInCombinedLine,
+    expectedCompilerError: PyErrorType.BlockInCombinedLine,
   },
   {
     input: `
       a = 10
       if a + 20 = 10 print(a)
     `,
-    expectedCompilerError: PythonErrorType.BlockExpectedColon,
+    expectedCompilerError: PyErrorType.BlockExpectedColon,
   },
   {
     input: `
       for a:
         print(a)
     `,
-    expectedCompilerError: PythonErrorType.IncompleteForDefinition,
+    expectedCompilerError: PyErrorType.IncompleteForDefinition,
   },
   {
     input: `
       for 10 in [10]:
         print(10)
     `,
-    expectedCompilerError: PythonErrorType.ForExpectedArgument,
+    expectedCompilerError: PyErrorType.ForExpectedArgument,
   },
   {
     input: `
       for x on [50]:
         print(x)
     `,
-    expectedCompilerError: PythonErrorType.ForExpectedIn,
+    expectedCompilerError: PyErrorType.ForExpectedIn,
   },
   {
     input: `
       a = 10 20
     `,
-    expectedCompilerError: PythonErrorType.ExpectedBinaryOperator,
+    expectedCompilerError: PyErrorType.ExpectedBinaryOperator,
   },
   {
     input: `
       while:
         print('a')
     `,
-    expectedCompilerError: PythonErrorType.IncompleteWhileDefinition,
+    expectedCompilerError: PyErrorType.IncompleteWhileDefinition,
   },
   {
     input: `
       def:
         print('a')
     `,
-    expectedCompilerError: PythonErrorType.IncompleteFunctionDeclaration,
+    expectedCompilerError: PyErrorType.IncompleteFunctionDeclaration,
   },
   {
     input: `
       def 10():
         print('a')
     `,
-    expectedCompilerError: PythonErrorType.ExpectedFunctionName,
+    expectedCompilerError: PyErrorType.ExpectedFunctionName,
   },
   {
     input: `
       def func[]:
         print('a')
     `,
-    expectedCompilerError: PythonErrorType.ExpectedFunctionArgumentList,
+    expectedCompilerError: PyErrorType.ExpectedFunctionArgumentList,
   },
   {
     input: `
       def func(10):
         print('a')
     `,
-    expectedCompilerError: PythonErrorType.ExpectedArgumentName,
+    expectedCompilerError: PyErrorType.ExpectedArgumentName,
   },
   {
     input: `
       def func(a + 5):
         print('a')
     `,
-    expectedCompilerError: PythonErrorType.ExpectedArgumentName,
+    expectedCompilerError: PyErrorType.ExpectedArgumentName,
   },
   {
     input: `
       def func(a = 5 * 2
         print('a')
     `,
-    expectedCompilerError: PythonErrorType.IncompleteFunctionArgumentList,
+    expectedCompilerError: PyErrorType.IncompleteFunctionArgumentList,
   },
   {
     input: `
       def func(a = ):
         print('a')
     `,
-    expectedCompilerError: PythonErrorType.ExpectedExpressionValue,
+    expectedCompilerError: PyErrorType.ExpectedExpressionValue,
   },
   {
     input: `
@@ -1093,44 +1093,44 @@ const scenarios: TestScenario[] = [
       def func(a = 20 = 30):
         print('a')
     `,
-    expectedCompilerError: PythonErrorType.ExpectedEndOfFunctionDef,
+    expectedCompilerError: PyErrorType.ExpectedEndOfFunctionDef,
   },
   {
     input: `
       class:
     `,
-    expectedCompilerError: PythonErrorType.IncompleteClassDeclaration,
+    expectedCompilerError: PyErrorType.IncompleteClassDeclaration,
   },
   {
     input: `
       class 10: pass
     `,
-    expectedCompilerError: PythonErrorType.ExpectedClassName,
+    expectedCompilerError: PyErrorType.ExpectedClassName,
   },
   {
     input: `
       class Test(10): pass
     `,
-    expectedCompilerError: PythonErrorType.IncorrectInheritanceList,
+    expectedCompilerError: PyErrorType.IncorrectInheritanceList,
   },
   {
     input: `
       class Test(A + B): pass
     `,
-    expectedCompilerError: PythonErrorType.IncorrectInheritanceList,
+    expectedCompilerError: PyErrorType.IncorrectInheritanceList,
   },
   {
     input: `
       class Test(A,
     `,
-    expectedCompilerError: PythonErrorType.IncorrectInheritanceList,
+    expectedCompilerError: PyErrorType.IncorrectInheritanceList,
   },
   {
     input: `
       elif x > 3:
         print('x')
     `,
-    expectedCompilerError: PythonErrorType.Error_Compiler_CannotFindIfOrElifForElif,
+    expectedCompilerError: PyErrorType.Error_Compiler_CannotFindIfOrElifForElif,
   },
   {
     input: `
@@ -1139,7 +1139,7 @@ const scenarios: TestScenario[] = [
       elif x > 3:
         print('x')
     `,
-    expectedCompilerError: PythonErrorType.Error_Compiler_CannotFindIfOrElifForElif,
+    expectedCompilerError: PyErrorType.Error_Compiler_CannotFindIfOrElifForElif,
   },
   {
     input: `
@@ -1149,43 +1149,43 @@ const scenarios: TestScenario[] = [
       elif x 10:
         print('b')
     `,
-    expectedCompilerError: PythonErrorType.ExpectedBinaryOperator,
+    expectedCompilerError: PyErrorType.ExpectedBinaryOperator,
   },
   {
     input: 'import',
-    expectedCompilerError: PythonErrorType.Error_Compiler_IncompleteImportDefinition,
+    expectedCompilerError: PyErrorType.Error_Compiler_IncompleteImportDefinition,
   },
   {
     input: 'import a b',
-    expectedCompilerError: PythonErrorType.Error_Compiler_ImportDefinitionIsTooLong,
+    expectedCompilerError: PyErrorType.Error_Compiler_ImportDefinitionIsTooLong,
   },
   {
     input: 'import 10',
-    expectedCompilerError: PythonErrorType.Error_Compiler_ImportExpectedIdentifier,
+    expectedCompilerError: PyErrorType.Error_Compiler_ImportExpectedIdentifier,
   },
   {
     input: 'import a as 10',
-    expectedCompilerError: PythonErrorType.Error_Compiler_ImportExpectedAsIdentifier,
+    expectedCompilerError: PyErrorType.Error_Compiler_ImportExpectedAsIdentifier,
   },
   {
     input: 'from x',
-    expectedCompilerError: PythonErrorType.Error_Compiler_IncompleteImportFromDefinition,
+    expectedCompilerError: PyErrorType.Error_Compiler_IncompleteImportFromDefinition,
   },
   {
     input: 'from x import a b',
-    expectedCompilerError: PythonErrorType.Error_Compiler_ImportFromDefinitionIsTooLong,
+    expectedCompilerError: PyErrorType.Error_Compiler_ImportFromDefinitionIsTooLong,
   },
   {
     input: 'from x a b',
-    expectedCompilerError: PythonErrorType.Error_Compiler_ImportFromExpectedImport,
+    expectedCompilerError: PyErrorType.Error_Compiler_ImportFromExpectedImport,
   },
   {
     input: 'from 10 import a',
-    expectedCompilerError: PythonErrorType.Error_Compiler_ImportFromExpectedIdentifier,
+    expectedCompilerError: PyErrorType.Error_Compiler_ImportFromExpectedIdentifier,
   },
   {
     input: 'from a import 10',
-    expectedCompilerError: PythonErrorType.Error_Compiler_ImportFromExpectedIdentifier,
+    expectedCompilerError: PyErrorType.Error_Compiler_ImportFromExpectedIdentifier,
   },
   {
     input: `
@@ -1193,7 +1193,7 @@ const scenarios: TestScenario[] = [
         print(a)
         break a
     `,
-    expectedCompilerError: PythonErrorType.Error_Compiler_BreakHasNoArguments,
+    expectedCompilerError: PyErrorType.Error_Compiler_BreakHasNoArguments,
   },
   {
     input: `
@@ -1201,19 +1201,19 @@ const scenarios: TestScenario[] = [
         print(a)
         continue a
     `,
-    expectedCompilerError: PythonErrorType.Error_Compiler_ContinueHasNoArguments,
+    expectedCompilerError: PyErrorType.Error_Compiler_ContinueHasNoArguments,
   },
   {
     input: 'pass 100',
-    expectedCompilerError: PythonErrorType.Error_Compiler_PassHasNoArguments,
+    expectedCompilerError: PyErrorType.Error_Compiler_PassHasNoArguments,
   },
   {
     input: 'raise 10 20',
-    expectedCompilerError: PythonErrorType.ExpectedBinaryOperator,
+    expectedCompilerError: PyErrorType.ExpectedBinaryOperator,
   },
   {
     input: 'raise 10]',
-    expectedCompilerError: PythonErrorType.Error_Compiler_RaiseExpectedEndOfLine,
+    expectedCompilerError: PyErrorType.Error_Compiler_RaiseExpectedEndOfLine,
   },
   {
     input: `
@@ -1229,7 +1229,7 @@ const scenarios: TestScenario[] = [
         yield
       func()
     `,
-    expectedCompilerError: PythonErrorType.Error_Compiler_ExpectedYieldExpression,
+    expectedCompilerError: PyErrorType.Error_Compiler_ExpectedYieldExpression,
   },
   {
     input: `
@@ -1237,7 +1237,7 @@ const scenarios: TestScenario[] = [
         yield 10 20
       func()
     `,
-    expectedCompilerError: PythonErrorType.ExpectedBinaryOperator,
+    expectedCompilerError: PyErrorType.ExpectedBinaryOperator,
   },
   {
     input: `
@@ -1245,11 +1245,11 @@ const scenarios: TestScenario[] = [
         yield 10]
       func()
     `,
-    expectedCompilerError: PythonErrorType.Error_Compiler_ReturnOrYieldExpectedEndOfLine,
+    expectedCompilerError: PyErrorType.Error_Compiler_ReturnOrYieldExpectedEndOfLine,
   },
   {
     input: 'except:',
-    expectedCompilerError: PythonErrorType.Error_Compiler_ExceptExpectedTryOrExcept,
+    expectedCompilerError: PyErrorType.Error_Compiler_ExceptExpectedTryOrExcept,
   },
   {
     input: `
@@ -1278,7 +1278,7 @@ const scenarios: TestScenario[] = [
       except 10:
         print('ok')
     `,
-    expectedCompilerError: PythonErrorType.Error_Compiler_ExceptExpectedIdentifier,
+    expectedCompilerError: PyErrorType.Error_Compiler_ExceptExpectedIdentifier,
   },
   {
     input: `
@@ -1287,7 +1287,7 @@ const scenarios: TestScenario[] = [
       except E
         print('ok')
     `,
-    expectedCompilerError: PythonErrorType.BlockExpectedColon,
+    expectedCompilerError: PyErrorType.BlockExpectedColon,
   },
   {
     input: `
@@ -1296,7 +1296,7 @@ const scenarios: TestScenario[] = [
       except (E
         print('ok')
     `,
-    expectedCompilerError: PythonErrorType.Error_Compiler_ExceptExpectedRightBracket,
+    expectedCompilerError: PyErrorType.Error_Compiler_ExceptExpectedRightBracket,
   },
   {
     input: `
@@ -1305,7 +1305,7 @@ const scenarios: TestScenario[] = [
       except (E]
         print('ok')
     `,
-    expectedCompilerError: PythonErrorType.Error_Compiler_ExceptExpectedRightBracket,
+    expectedCompilerError: PyErrorType.Error_Compiler_ExceptExpectedRightBracket,
   },
   {
     input: `
@@ -1323,57 +1323,57 @@ const scenarios: TestScenario[] = [
       except E as 10:
         print('ok')
     `,
-    expectedCompilerError: PythonErrorType.Error_Compiler_ExceptExpectedIdentifierAfterAs,
+    expectedCompilerError: PyErrorType.Error_Compiler_ExceptExpectedIdentifierAfterAs,
   },
   {
     input: `
       finally:
         print(10)
     `,
-    expectedCompilerError: PythonErrorType.Error_Compiler_FinallyCannotFindExceptOrTry,
+    expectedCompilerError: PyErrorType.Error_Compiler_FinallyCannotFindExceptOrTry,
   },
   {
     input: `
       a = 10
       a += 10 += 20
     `,
-    expectedCompilerError: PythonErrorType.Error_Compiler_MixingAugmentedOperators,
+    expectedCompilerError: PyErrorType.Error_Compiler_MixingAugmentedOperators,
   },
   {
     input: `
       del 10
     `,
-    expectedCompilerError: PythonErrorType.Error_Compiler_ExpectedIdentifierForDel,
+    expectedCompilerError: PyErrorType.Error_Compiler_ExpectedIdentifierForDel,
   },
   {
     input: `
       del x.10
     `,
-    expectedCompilerError: PythonErrorType.Error_Compiler_ExpectedEndOfIdentifierForDel,
+    expectedCompilerError: PyErrorType.Error_Compiler_ExpectedEndOfIdentifierForDel,
   },
   {
     input: `
       x = .
     `,
-    expectedCompilerError: PythonErrorType.ExpectedExpressionValue,
+    expectedCompilerError: PyErrorType.ExpectedExpressionValue,
   },
   {
     input: `
       x = ;
     `,
-    expectedCompilerError: PythonErrorType.ExpectedExpressionValue,
+    expectedCompilerError: PyErrorType.ExpectedExpressionValue,
   },
   {
     input: `
       x = def
     `,
-    expectedCompilerError: PythonErrorType.ExpectedLiteral,
+    expectedCompilerError: PyErrorType.ExpectedLiteral,
   },
   {
     input: `
       x = +
     `,
-    expectedCompilerError: PythonErrorType.ExpectedUnaryOperatorOrArgument,
+    expectedCompilerError: PyErrorType.ExpectedUnaryOperatorOrArgument,
   },
   {
     input: `
@@ -1387,7 +1387,7 @@ const scenarios: TestScenario[] = [
       a = 10
       print(a < 20 if 5)
     `,
-    expectedCompilerError: PythonErrorType.Error_Compiler_IfExpressionExpectedElse,
+    expectedCompilerError: PyErrorType.Error_Compiler_IfExpressionExpectedElse,
   },
   {
     input: `
@@ -1408,7 +1408,7 @@ const scenarios: TestScenario[] = [
       
       func(10
     `,
-    expectedCompilerError: PythonErrorType.ExpectedEndOfFunctionCall,
+    expectedCompilerError: PyErrorType.ExpectedEndOfFunctionCall,
   },
   {
     input: `
@@ -1417,7 +1417,7 @@ const scenarios: TestScenario[] = [
       
       func(a=
     `,
-    expectedCompilerError: PythonErrorType.UnexpectedEndOfCall,
+    expectedCompilerError: PyErrorType.UnexpectedEndOfCall,
   },
   {
     input: `
@@ -1426,14 +1426,14 @@ const scenarios: TestScenario[] = [
       
       func(a=10, b)
     `,
-    expectedCompilerError: PythonErrorType.OrderedArgumentAfterNamed,
+    expectedCompilerError: PyErrorType.OrderedArgumentAfterNamed,
   },
   {
     input: `
       a = [1, 2]
       print(a[1)
     `,
-    expectedCompilerError: PythonErrorType.ExpectedEndOfIndexer,
+    expectedCompilerError: PyErrorType.ExpectedEndOfIndexer,
   },
   {
     input: `
@@ -1454,13 +1454,13 @@ const scenarios: TestScenario[] = [
     input: `
       a = [
     `,
-    expectedCompilerError: PythonErrorType.ExpectedListDefinition,
+    expectedCompilerError: PyErrorType.ExpectedListDefinition,
   },
   {
     input: `
       a = (
     `,
-    expectedCompilerError: PythonErrorType.ExpectedTupleBody,
+    expectedCompilerError: PyErrorType.ExpectedTupleBody,
   },
   {
     input: `
@@ -1473,7 +1473,7 @@ const scenarios: TestScenario[] = [
     input: `
       a = (5,3,10=
     `,
-    expectedCompilerError: PythonErrorType.ExpectedTupleEnd,
+    expectedCompilerError: PyErrorType.ExpectedTupleEnd,
   },
   {
     input: `
@@ -1493,7 +1493,7 @@ const scenarios: TestScenario[] = [
     input: `
       a = {
     `,
-    expectedCompilerError: PythonErrorType.ExpectedSetBody,
+    expectedCompilerError: PyErrorType.ExpectedSetBody,
   },
   {
     input: `
@@ -1513,19 +1513,19 @@ const scenarios: TestScenario[] = [
     input: `
       a = {'x': 10, 20}
     `,
-    expectedCompilerError: PythonErrorType.SetMixedWithAndWithoutColon,
+    expectedCompilerError: PyErrorType.SetMixedWithAndWithoutColon,
   },
   {
     input: `
       a = {20, 'x': 10}
     `,
-    expectedCompilerError: PythonErrorType.SetMixedWithAndWithoutColon,
+    expectedCompilerError: PyErrorType.SetMixedWithAndWithoutColon,
   },
   {
     input: `
       a = {10
     `,
-    expectedCompilerError: PythonErrorType.ExpectedSetEnd,
+    expectedCompilerError: PyErrorType.ExpectedSetEnd,
   },
   {
     input: `
@@ -1541,13 +1541,13 @@ const scenarios: TestScenario[] = [
           b = 20
         c = 30
     `,
-    expectedCompilerError: PythonErrorType.MismatchedIndent,
+    expectedCompilerError: PyErrorType.MismatchedIndent,
   },
   {
     input: `
       a = x ? y
     `,
-    expectedCompilerError: PythonErrorType.UnknownChar,
+    expectedCompilerError: PyErrorType.UnknownChar,
   },
   {
     input: `

@@ -1,6 +1,6 @@
 import { ClassInheritance, ClassObject } from './ClassObject';
 import { ExceptionType } from './ExceptionObject';
-import { ObjectType } from './BaseObject';
+import { ObjectType } from '../../api/ObjectType';
 
 export class ExceptionClassObject extends ClassObject {
   public constructor(exceptionType: ExceptionType, inheritsFrom?: ClassInheritance[]) {

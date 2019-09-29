@@ -1,46 +1,41 @@
-import {BaseObject, ObjectType} from './objects/BaseObject';
-import {Instruction} from '../common/Instructions';
-import {GlobalScope, ObjectScope} from './ObjectScope';
-import {StackEntry, StackEntryType} from './objects/StackEntry';
-import {IntegerObject} from './objects/IntegerObject';
-import {RealObject} from './objects/RealObject';
-import {FunctionRunContext} from './FunctionRunContext';
-import {NoneObject} from './objects/NoneObject';
-import {FunctionObject} from './objects/FunctionObject';
-import {ListObject} from './objects/ListObject';
-import {CallableObject} from './objects/CallableObject';
-import {ExceptionObject, ExceptionType} from './objects/ExceptionObject';
-import {StringObject} from './objects/StringObject';
-import {BytesObject} from './objects/BytesObject';
-import {CompiledModule} from '../compiler/CompiledModule';
-import {ArgumentType, FunctionArgument, FunctionBody, FunctionType} from '../common/FunctionBody';
-import {LiteralType} from '../compiler/Literal';
-import {InstructionType} from '../common/InstructionType';
-import {ContinueContext, ContinueContextType} from './ContinueContext';
-import {Breakpoint} from './Breakpoint';
-import {ModuleObject} from './objects/ModuleObject';
-import {ReferenceObject, ReferenceScope, ReferenceType} from './objects/ReferenceObject';
-import {TupleObject} from './objects/TupleObject';
-import {SetObject} from './objects/SetObject';
-import {DictionaryObject} from './objects/DictionaryObject';
-import {BooleanObject} from './objects/BooleanObject';
-import {InstanceMethodObject} from './objects/InstanceMethodObject';
-import {ClassInheritance, ClassObject} from './objects/ClassObject';
-import {ClassInstanceObject} from './objects/ClassInstanceObject';
-import {SuperProxyObject} from './objects/SuperProxyObject';
-import {GeneratorObject} from './objects/GeneratorObject';
-import {calculateResolutionOrder} from './CalculateResolutionOrder';
-import {ExceptionClassObject} from './objects/ExceptionClassObject';
+import { BaseObject } from './objects/BaseObject';
+import { Instruction } from '../common/Instructions';
+import { GlobalScope, ObjectScope } from './ObjectScope';
+import { StackEntry, StackEntryType } from './objects/StackEntry';
+import { IntegerObject } from './objects/IntegerObject';
+import { RealObject } from './objects/RealObject';
+import { FunctionRunContext } from './FunctionRunContext';
+import { NoneObject } from './objects/NoneObject';
+import { FunctionObject } from './objects/FunctionObject';
+import { ListObject } from './objects/ListObject';
+import { CallableObject } from './objects/CallableObject';
+import { ExceptionObject, ExceptionType } from './objects/ExceptionObject';
+import { StringObject } from './objects/StringObject';
+import { BytesObject } from './objects/BytesObject';
+import { CompiledModule } from '../compiler/CompiledModule';
+import { ArgumentType, FunctionArgument, FunctionBody, FunctionType } from '../common/FunctionBody';
+import { LiteralType } from '../compiler/Literal';
+import { InstructionType } from '../common/InstructionType';
+import { ContinueContext, ContinueContextType } from './ContinueContext';
+import { ModuleObject } from './objects/ModuleObject';
+import { ReferenceObject, ReferenceScope, ReferenceType } from './objects/ReferenceObject';
+import { TupleObject } from './objects/TupleObject';
+import { SetObject } from './objects/SetObject';
+import { DictionaryObject } from './objects/DictionaryObject';
+import { BooleanObject } from './objects/BooleanObject';
+import { InstanceMethodObject } from './objects/InstanceMethodObject';
+import { ClassInheritance, ClassObject } from './objects/ClassObject';
+import { ClassInstanceObject } from './objects/ClassInstanceObject';
+import { SuperProxyObject } from './objects/SuperProxyObject';
+import { GeneratorObject } from './objects/GeneratorObject';
+import { calculateResolutionOrder } from './CalculateResolutionOrder';
+import { ExceptionClassObject } from './objects/ExceptionClassObject';
+import { PyMachine } from '../api/Machine';
+import { PyMachinePosition } from '../api/MachinePosition';
+import { PyBreakpoint } from '../api/Breakpoint';
+import { ObjectType } from '../api/ObjectType';
 
-export interface DebugPosition {
-  module: CompiledModule;
-  func: FunctionBody;
-  column: number;
-  row: number;
-  position: number;
-}
-
-export class RunContext {
+export class RunContext implements PyMachine {
   private readonly _compiledModules: { [key: string]: CompiledModule };
   private _breakpoints: { [key: string]: boolean } = {};
   private _functions: { [id: string]: FunctionRunContext } = {};
@@ -56,7 +51,7 @@ export class RunContext {
   private _output: string[] = [];
   private _finished = true;
   private _locationId: string;
-  private _position: DebugPosition;
+  private _position: PyMachinePosition;
   public onWriteLine: (line: string) => void = null;
   public onLeaveFunction: (stack: StackEntry) => void = () => {};
   private _finishedCallback: (returnValue: BaseObject, error: ExceptionObject) => void = null;
@@ -82,14 +77,18 @@ export class RunContext {
     return this._unhandledException;
   }
 
-  public constructor(modules: { [key: string]: CompiledModule } = {}, breakpoints: Breakpoint[] = []) {
+  public getCurrentScope() {
+    return this.getCurrentFunctionStack().scope;
+  }
+
+  public constructor(modules: { [key: string]: CompiledModule } = {}, breakpoints: PyBreakpoint[] = []) {
     this._compiledModules = modules;
     this.updateBreakpoints(breakpoints);
     this.initializeFunctions();
     this.createGlobalScope();
   }
 
-  public updateBreakpoints(breakpoints: Breakpoint[]) {
+  public updateBreakpoints(breakpoints: PyBreakpoint[]) {
     this._breakpoints = {};
     for (const breakpoint of breakpoints) {
       const key = `${breakpoint.moduleId}_${breakpoint.row}`;
@@ -97,7 +96,7 @@ export class RunContext {
     }
   }
 
-  public getPosition(): DebugPosition {
+  public getPosition(): PyMachinePosition {
     if (this._position) {
       return this._position;
     }
@@ -166,8 +165,8 @@ export class RunContext {
     });
   }
 
-  public isFinished() {
-    return this._finished || this._unhandledException || !this._currentStack;
+  public isFinished(): boolean {
+    return !!(this._finished || this._unhandledException || !this._currentStack);
   }
 
   private getModuleFunction(module: CompiledModule) {
@@ -234,7 +233,7 @@ export class RunContext {
     }
   }
 
-  public getOutput() {
+  public getOutput(): string[] {
     return this._output;
   }
 

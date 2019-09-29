@@ -1,7 +1,8 @@
 import { BaseObject } from './objects/BaseObject';
 import { getEmbeddedType } from './embedded/index';
+import { PyScope } from '../api/Scope';
 
-export class ObjectScope {
+export class ObjectScope implements PyScope {
   private static idGen = 1;
   public constructor(name: string, parent: ObjectScope = null) {
     this.parent = parent;
@@ -10,9 +11,10 @@ export class ObjectScope {
   }
 
   public readonly parent: ObjectScope;
-  public objects: { [key: string]: BaseObject } = {};
+  public readonly objects: { [key: string]: BaseObject } = {};
   public readonly id: number;
   public readonly name: string;
+
   public getObjectHook: (name: string) => BaseObject;
 
   public getObject(name: string): BaseObject {

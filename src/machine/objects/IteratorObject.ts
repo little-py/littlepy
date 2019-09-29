@@ -1,6 +1,7 @@
-import { BaseObject, ObjectType } from './BaseObject';
+import { BaseObject } from './BaseObject';
 import { FunctionObject } from './FunctionObject';
 import { RunContext } from '../RunContext';
+import { ObjectType } from '../../api/ObjectType';
 
 export class IteratorObject extends BaseObject {
   private index = 0;

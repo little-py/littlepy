@@ -1,7 +1,7 @@
-import { CompiledModule } from '../../../src/compiler/CompiledModule';
-import { Compiler } from '../../../src/compiler/Compiler';
-import { RunContext } from '../../../src/machine/RunContext';
-import { Breakpoint } from '../../../src/machine/Breakpoint';
+import { CompiledModule } from '../../src/compiler/CompiledModule';
+import { Compiler } from '../../src/compiler/Compiler';
+import { RunContext } from '../../src/machine/RunContext';
+import { PyBreakpoint } from '../../src/api/Breakpoint';
 
 export function compileModule(source: string, name: string, wrapWithPrint?: boolean) {
   const pos = source.indexOf('\n');
@@ -19,7 +19,7 @@ export function runModules(modules: { [key: string]: CompiledModule }, main: str
   return runContext;
 }
 
-export function compileAndStartModule(source: string, breakpoints: Breakpoint[] = []): RunContext {
+export function compileAndStartModule(source: string, breakpoints: PyBreakpoint[] = []): RunContext {
   const code = compileModule(source, 'main');
   breakpoints = breakpoints.map(({ row, condition }) => ({ row, condition, moduleId: 'main' }));
   const runContext = new RunContext({ main: code }, breakpoints);
