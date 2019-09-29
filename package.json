@@ -8,7 +8,7 @@
     "pre-publish": "yarn clean && yarn lint && yarn test && yarn build"
   },
   "name": "littlepy",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "lib/littlepy.js",
   "license": "MIT",
   "private": false,
