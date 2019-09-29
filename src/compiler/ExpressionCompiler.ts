@@ -1,0 +1,770 @@
+import {
+  getTokenOperatorPriority,
+  isBinaryOperator,
+  isColon,
+  isComma,
+  isDelimiterEqual,
+  isExpressionEnd,
+  isIdentifier,
+  isIfOperator,
+  isKeywordElse,
+  isLeftBracket,
+  isLeftSquareBracket,
+  isLiteral,
+  isPoint,
+  isRightBracket,
+  isRightFigureBracket,
+  isRightSquareBracket,
+  isUnaryOperator,
+  OperatorDelimiterType,
+  Token,
+  TokenPosition,
+  TokenType,
+} from './Token';
+import { CompilerContext } from './CompilerContext';
+import { LexicalContext } from './LexicalContext';
+import { GeneratedCode } from '../common/Instructions';
+import { KeywordType } from './Keyword';
+import { PythonErrorType } from '../common/PythonErrorType';
+import { CodeGenerator } from './CodeGenerator';
+import { CompiledModule } from './CompiledModule';
+import { LiteralType } from './Literal';
+import { InstructionType } from '../common/InstructionType';
+
+export function fillIdentifiers(tokens: Token[], from: number, end: number, compiledCode: CompiledModule, identifiers: string[]): number {
+  let token = tokens[from];
+  identifiers.push(compiledCode.identifiers[token.arg1]);
+  from++;
+  token = tokens[from];
+  while (end - from >= 2 && isPoint(token) && isIdentifier(tokens[from + 1])) {
+    identifiers.push(compiledCode.identifiers[tokens[from + 1].arg1]);
+    from += 2;
+    token = tokens[from];
+  }
+  return from;
+}
+
+export class ExpressionCompiler {
+  private _from: number;
+  private readonly _tokens: Token[];
+  private readonly _end: number;
+  private readonly _compilerContext: CompilerContext;
+  private readonly _lexicalContext: LexicalContext;
+  private readonly _compiledCode: CompiledModule;
+
+  public static compile({
+    tokens,
+    compiledCode,
+    compilerContext,
+    lexicalContext,
+    start,
+    end,
+    parseTuple,
+  }: {
+    tokens: Token[];
+    compiledCode: CompiledModule;
+    compilerContext: CompilerContext;
+    lexicalContext: LexicalContext;
+    start: number;
+    end?: number;
+    parseTuple?: boolean;
+  }): GeneratedCode {
+    if (end === undefined) {
+      end = tokens.length;
+    }
+    if (parseTuple === undefined) {
+      parseTuple = false;
+    }
+    const compiler = new ExpressionCompiler(tokens, end, compilerContext, lexicalContext, compiledCode);
+    return compiler.compileInternal(start, parseTuple);
+  }
+
+  public constructor(tokens: Token[], end: number, compilerContext: CompilerContext, lexicalContext: LexicalContext, compiledCode: CompiledModule) {
+    this._tokens = tokens;
+    this._end = end;
+    this._compilerContext = compilerContext;
+    this._lexicalContext = lexicalContext;
+    this._compiledCode = compiledCode;
+  }
+
+  private getClosestToken(from: number): Token {
+    if (from >= this._tokens.length) {
+      from--;
+    }
+    return this._tokens[from];
+  }
+
+  private compileInternal(start: number, parseTuple: boolean): GeneratedCode {
+    const savedFrom = this._from;
+    this._from = start;
+    const startToken = this._tokens[start];
+    const failedResult = new GeneratedCode();
+    failedResult.success = false;
+    let createdTuple;
+    const parts: GeneratedCode[] = [];
+
+    for (;;) {
+      const values: GeneratedCode[] = [];
+      const operators: Token[] = [];
+
+      let token: Token = null;
+
+      while (this._from < this._end) {
+        const expectOperator = operators.length < values.length;
+        token = this._tokens[this._from];
+        if (expectOperator) {
+          if (isExpressionEnd(token) || isIfOperator(token)) {
+            break;
+          }
+          if (!isBinaryOperator(token)) {
+            this._compilerContext.addError(PythonErrorType.ExpectedBinaryOperator, token);
+            return failedResult;
+          }
+          operators.push(token);
+          this._from++;
+          continue;
+        }
+        const unaryOperators: Token[] = [];
+        while (isUnaryOperator(token)) {
+          unaryOperators.push(token);
+          this._from++;
+          if (this._from >= this._end) {
+            this._compilerContext.addError(PythonErrorType.ExpectedUnaryOperatorOrArgument, token);
+            return failedResult;
+          }
+          token = this._tokens[this._from];
+        }
+        if (token.type === TokenType.Identifier) {
+          const arg = this.compileIdentifierAndFunctionIndexer();
+          if (!arg.success) {
+            return failedResult;
+          }
+          values.push(arg);
+        } else if (token.type === TokenType.Delimiter) {
+          let stop = false;
+          switch (token.arg1) {
+            case OperatorDelimiterType.LeftSquareBracket:
+              this._from++;
+              if (!this.compileListInstantiation(token, values)) {
+                return failedResult;
+              }
+              break;
+            case OperatorDelimiterType.LeftBracket:
+              this._from++;
+              if (!this.compileTupleInstantiation(token, values)) {
+                return failedResult;
+              }
+              break;
+            case OperatorDelimiterType.LeftFigureBracket:
+              this._from++;
+              if (!this.compileSetOrDictionary(token, values)) {
+                return failedResult;
+              }
+              break;
+            case OperatorDelimiterType.Comma:
+            case OperatorDelimiterType.RightSquareBracket:
+            case OperatorDelimiterType.RightBracket:
+            case OperatorDelimiterType.RightFigureBracket:
+            case OperatorDelimiterType.EqualSign:
+            case OperatorDelimiterType.Colon: // for while/if/for end
+              // end of the expression
+              stop = true;
+              break;
+            default:
+              // if (isAssignmentDelimiter(token)) {
+              // end of the expression
+              stop = true;
+              // }
+              break;
+          }
+          if (stop) {
+            break;
+          }
+          // } else if (token.type === TokenType.Keyword && token.arg1 === KeywordType.KeywordLambda) {
+          //   if (!this.compileLambdaExpression(token, values)) {
+          //     return failedResult;
+          //   }
+        } else if (token.type === TokenType.Keyword && (token.arg1 === KeywordType.KeywordFor || token.arg1 === KeywordType.KeywordAsyncFor)) {
+          break;
+        } else {
+          const valueResult = this.compileValue(this._from);
+          if (!valueResult.success) {
+            return failedResult;
+          }
+          values.push(valueResult);
+          this._from = valueResult.finish;
+        }
+        if (unaryOperators.length) {
+          const unaryResult = CodeGenerator.unaryOperators(unaryOperators, values[values.length - 1], this._compilerContext);
+          if (!unaryResult.success) {
+            return failedResult;
+          }
+          values[values.length - 1] = unaryResult;
+        }
+      }
+
+      if (!values.length) {
+        this._compilerContext.addError(PythonErrorType.ExpectedExpressionValue, this.getClosestToken(this._from));
+        return failedResult;
+      }
+
+      if (values.length === operators.length) {
+        this._compilerContext.addError(PythonErrorType.ExpectedRightOperand, operators[operators.length - 1]);
+        return failedResult;
+      }
+      let compiledPart = this.compileOperators(values, operators);
+      if (!compiledPart.success) {
+        return compiledPart;
+      }
+
+      compiledPart.finish = this._from;
+
+      if (isIfOperator(token)) {
+        const ifOperator = this.compileIfExpression(compiledPart, token);
+        if (!ifOperator.success) {
+          return ifOperator;
+        }
+        compiledPart = ifOperator;
+        token = this._tokens[compiledPart.finish];
+      }
+
+      // if (token && token.type === TokenType.Keyword && (token.arg1 === KeywordType.KeywordFor || token.arg1 === KeywordType.KeywordAsyncFor)) {
+      //   compiledPart = this.compileListComprehension(token, this._from, compiledPart);
+      // }
+
+      parts.push(compiledPart);
+      token = this._tokens[compiledPart.finish];
+      if (!parseTuple || !token || !isComma(token)) {
+        break;
+      }
+      createdTuple = true;
+      this._from = compiledPart.finish + 1;
+      token = this._tokens[this._from];
+      if (!token || isExpressionEnd(token)) {
+        break;
+      }
+    }
+    let result: GeneratedCode;
+    if (createdTuple) {
+      result = CodeGenerator.tuple(parts, startToken.getPosition());
+      result.finish = parts[parts.length - 1].finish;
+    } else {
+      result = parts[0];
+    }
+    this._from = savedFrom;
+    return result;
+  }
+
+  private compileOperators(values: GeneratedCode[], operators: Token[]): GeneratedCode {
+    const result = new GeneratedCode();
+    result.success = false;
+    while (values.length > 1) {
+      let maxOperator = 0;
+      let maxValue = getTokenOperatorPriority(operators[0]);
+      /* istanbul ignore next */
+      if (maxValue < 0) {
+        // this should never happen, just additional check; there are no error examples that can cause this error
+        this._compilerContext.addError(PythonErrorType.ErrorUnexpectedScenario_01, operators[0]);
+        return result;
+      }
+      for (let i = 1; i < operators.length; i++) {
+        const value = getTokenOperatorPriority(operators[i]);
+        /* istanbul ignore next */
+        if (value < 0) {
+          // this should never happen, just additional check; there are no error examples that can cause this error
+          this._compilerContext.addError(PythonErrorType.ErrorUnexpectedScenario_02, operators[i]);
+          return result;
+        }
+        if (value > maxValue) {
+          maxValue = value;
+          maxOperator = i;
+        }
+      }
+      const newValue = CodeGenerator.binaryOperator(values[maxOperator], operators[maxOperator], values[maxOperator + 1], this._compilerContext);
+      if (!newValue.success) {
+        return newValue;
+      }
+      values.splice(maxOperator + 1, 1);
+      operators.splice(maxOperator, 1);
+      values[maxOperator] = newValue;
+    }
+    return values[0];
+  }
+
+  private isExpressionEnd(index: number) {
+    return isExpressionEnd(this._tokens[index]);
+  }
+
+  private isPoint(index: number) {
+    return isPoint(this._tokens[index]);
+  }
+
+  private isLeftBracket(index: number) {
+    return isLeftBracket(this._tokens[index]);
+  }
+
+  private isLeftSquareBracket(index: number) {
+    return isLeftSquareBracket(this._tokens[index]);
+  }
+
+  private isIdentifier(index: number) {
+    return isIdentifier(this._tokens[index]);
+  }
+
+  private isPropertyAccessor(index: number) {
+    return this.isPoint(index) && this.isIdentifier(index + 1);
+  }
+
+  private isAnyAccessor(index: number) {
+    if (!this._tokens[index]) {
+      return false;
+    }
+    if (this.isExpressionEnd(index)) {
+      return false;
+    }
+    if (this.isLeftBracket(index)) {
+      return true;
+    }
+    if (this.isPropertyAccessor(index)) {
+      return true;
+    }
+    return this.isLeftSquareBracket(index);
+  }
+
+  private appendFunctionCall(ret: GeneratedCode, position: TokenPosition, parentAt0: boolean) {
+    let token = this._tokens[this._from];
+    const args: GeneratedCode[] = [];
+    this._from++;
+    let namedStarted = false;
+    for (;;) {
+      let prevToken = token;
+      token = this._tokens[this._from];
+      let argName: string;
+      if (isIdentifier(token) && isDelimiterEqual(this._tokens[this._from + 1])) {
+        argName = this._compiledCode.identifiers[token.arg1];
+        this._from += 2;
+        token = this._tokens[this._from];
+        namedStarted = true;
+      }
+      if (!token) {
+        this._compilerContext.addError(PythonErrorType.UnexpectedEndOfCall, prevToken);
+        return false;
+      }
+      if (isRightBracket(token)) {
+        this._from++;
+        CodeGenerator.appendFunctionCall(ret, args, this._compilerContext, position, parentAt0);
+        return true;
+      }
+      if (namedStarted && !argName) {
+        this._compilerContext.addError(PythonErrorType.OrderedArgumentAfterNamed, token || prevToken);
+        return null;
+      }
+      const arg = this.compileInternal(this._from, false);
+      if (!arg.success) {
+        return false;
+      }
+      if (argName) {
+        arg.nameLiteral = argName;
+      }
+      args.push(arg);
+      this._from = arg.finish;
+      prevToken = token;
+      token = this._tokens[this._from];
+      if (isComma(token)) {
+        this._from++;
+        continue;
+      }
+      if (!isRightBracket(token)) {
+        this._compilerContext.addError(PythonErrorType.ExpectedEndOfFunctionCall, token || prevToken);
+        return null;
+      }
+    }
+  }
+
+  private compileIdentifierAndFunctionIndexer(): GeneratedCode {
+    const first = this._tokens[this._from];
+    if (!this.isAnyAccessor(this._from + 1)) {
+      if (isIdentifier(first)) {
+        const reference = CodeGenerator.createVarReference(first.arg1, first.getPosition());
+        this._from++;
+        return reference;
+      }
+    }
+    this._from++;
+    const ret = new GeneratedCode();
+    ret.add(InstructionType.IReadObject, first.getPosition(), first.arg1, 0);
+    while (this.isAnyAccessor(this._from)) {
+      const current = this._tokens[this._from];
+      if (this.isPropertyAccessor(this._from)) {
+        const identifier = this._tokens[this._from + 1].arg1;
+        this._from += 2;
+        if (!this.isAnyAccessor(this._from)) {
+          CodeGenerator.appendPropertyReference(ret, 0, identifier, current.getPosition());
+          break;
+        }
+        if (this.isLeftBracket(this._from)) {
+          ret.add(InstructionType.IReadProperty, current.getPosition(), identifier, 0, 1);
+          this.appendFunctionCall(ret, current.getPosition(), true);
+        } else {
+          ret.add(InstructionType.IReadProperty, current.getPosition(), identifier, 0, 0);
+          continue;
+        }
+      }
+      if (this.isLeftSquareBracket(this._from)) {
+        const indexArg = this.compileInternal(this._from + 1, false);
+        if (!indexArg.success) {
+          return indexArg;
+        }
+        this._from = indexArg.finish;
+        if (!isRightSquareBracket(this._tokens[this._from])) {
+          this._compilerContext.addError(PythonErrorType.ExpectedEndOfIndexer, current);
+          const ret = new GeneratedCode();
+          ret.success = false;
+          return ret;
+        }
+        this._from++;
+        if (!this.isAnyAccessor(this._from)) {
+          CodeGenerator.appendArrayIndexerReference(ret, 0, indexArg, current.getPosition());
+          break;
+        }
+        CodeGenerator.appendTo(ret, indexArg, 1);
+        ret.add(InstructionType.IReadArrayIndex, current.getPosition(), 0, 1, 0);
+        continue;
+      }
+      if (this.isLeftBracket(this._from)) {
+        if (!this.appendFunctionCall(ret, current.getPosition(), false)) {
+          const ret = new GeneratedCode();
+          ret.success = false;
+          return ret;
+        }
+      }
+    }
+
+    ret.finish = this._from;
+    ret.success = true;
+    return ret;
+  }
+
+  private compileListInstantiation(startToken: Token, values: GeneratedCode[]): boolean {
+    const records: GeneratedCode[] = [];
+    let token = startToken;
+    for (;;) {
+      let prevToken = token || startToken;
+      token = this._tokens[this._from];
+      if (!token) {
+        this._compilerContext.addError(PythonErrorType.ExpectedListDefinition, prevToken);
+        return false;
+      }
+      if (isRightSquareBracket(token)) {
+        this._from++;
+        break;
+      }
+      const arg = this.compileInternal(this._from, false);
+      if (!arg.success) {
+        return false;
+      }
+      this._from = arg.finish;
+      if (this._from >= this._tokens.length) {
+        // to not to duplicate error messages
+        continue;
+      }
+      prevToken = token;
+      token = this._tokens[this._from];
+      // if (token.type === TokenType.Keyword && token.arg1 === KeywordType.KeywordFor) {
+      //   // comprehension
+      //   const comprehension = this.compileListComprehension(token, this._from, arg);
+      //   if (!comprehension.success) {
+      //     return false;
+      //   }
+      //   this._from = comprehension.finish;
+      //   prevToken = token;
+      //   token = this._tokens[this._from];
+      //   if (!isRightSquareBracket(token)) {
+      //     const source = token || prevToken;
+      //     this._compilerContext.addError(PythonErrorType.ExpectedEndOfListDefinition, source);
+      //     return false;
+      //   }
+      //   this._from++;
+      //   values.push(comprehension);
+      //   return true;
+      // }
+      if (!isComma(token) && !isRightSquareBracket(token)) {
+        const source = token || prevToken;
+        this._compilerContext.addError(PythonErrorType.ListExpectedCommaOrRightSquareBracket, source);
+        return false;
+      }
+      records.push(arg);
+      if (token.arg1 === OperatorDelimiterType.Comma) {
+        this._from++;
+        continue;
+      }
+      // should be right square bracket
+      this._from++;
+      break;
+    }
+    const array = CodeGenerator.list(records, startToken.getPosition());
+    if (!array.success) {
+      return false;
+    }
+    values.push(array);
+    return true;
+  }
+
+  // private compileListComprehension(startToken: Token, from: number, expression: GeneratedCode): GeneratedCode {
+  //   let result = new GeneratedCode();
+  //   result.success = false;
+  //   const comprehensions: Comprehension[] = [];
+  //   let prevToken: Token;
+  //   let token: Token;
+  //   for (;;) {
+  //     token = this._tokens[from];
+  //     if (!token) {
+  //       break;
+  //     }
+  //     if (token.type !== TokenType.Keyword) {
+  //       break;
+  //     }
+  //     if (token.arg1 === KeywordType.KeywordFor || token.arg1 === KeywordType.KeywordAsyncFor) {
+  //       from++;
+  //       prevToken = token;
+  //       token = this._tokens[from];
+  //       if (!!isIdentifier(token)) {
+  //         const source = token || prevToken;
+  //         this._compilerContext.addError(PythonErrorType.ComprehensionExpectedIdentifier, source);
+  //         return result;
+  //       }
+  //       const idToken = token;
+  //       from++;
+  //       prevToken = token;
+  //       token = this._tokens[from];
+  //       if (!isKeywordIn(token)) {
+  //         const source = token || prevToken;
+  //         this._compilerContext.addError(PythonErrorType.ComprehensionExpectedInKeyword, source);
+  //         return result;
+  //       }
+  //       from++;
+  //       const arg = this.compileInternal(from, false);
+  //       if (!arg.success) {
+  //         return result;
+  //       }
+  //       from = arg.finish;
+  //       const comprehension = new Comprehension();
+  //       comprehension.code = arg;
+  //       comprehension.forArgument = idToken;
+  //       comprehensions.push(comprehension);
+  //     } else if (token.arg1 === KeywordType.KeywordIf) {
+  //       from++;
+  //       const arg = this.compileInternal(from, false);
+  //       if (!arg.success) {
+  //         return result;
+  //       }
+  //       from = arg.finish;
+  //       const comprehension = new Comprehension();
+  //       comprehension.code = arg;
+  //       comprehensions.push(comprehension);
+  //     } else {
+  //       break;
+  //     }
+  //   }
+  //   if (!comprehensions.length) {
+  //     this._compilerContext.addError(PythonErrorType.ComprehensionNoArguments, startToken);
+  //     return result;
+  //   }
+  //   result = CodeGenerator.comprehension(expression, comprehensions, startToken.getPosition());
+  //   if (result.success) {
+  //     result.finish = from;
+  //   }
+  //   return result;
+  // }
+
+  private compileTupleInstantiation(startToken: Token, values: GeneratedCode[]): boolean {
+    const records: GeneratedCode[] = [];
+    let token = startToken;
+    for (;;) {
+      let prevToken = token;
+      token = this._tokens[this._from];
+      if (!token) {
+        this._compilerContext.addError(PythonErrorType.ExpectedTupleBody, prevToken);
+        return false;
+      }
+      if (isRightBracket(token)) {
+        this._from++;
+        // empty tuple
+        break;
+      }
+      if (isComma(token)) {
+        this._from++;
+        continue;
+      }
+      const record = this.compileInternal(this._from, false);
+      if (!record.success) {
+        return false;
+      }
+      this._from = record.finish;
+      records.push(record);
+      prevToken = token;
+      token = this._tokens[this._from];
+      if (!isRightBracket(token) && !isComma(token)) {
+        const source = token || prevToken;
+        this._compilerContext.addError(PythonErrorType.ExpectedTupleEnd, source);
+        return false;
+      }
+      if (isRightBracket(token)) {
+        this._from++;
+        if (records.length === 1) {
+          // it is not tuple, just parenthesis
+          values.push(records[0]);
+          return true;
+        }
+        break;
+      }
+      // it is comma
+      this._from++;
+    }
+    const tuple = CodeGenerator.tuple(records, startToken.getPosition());
+    if (!tuple.success) {
+      return false;
+    }
+    values.push(tuple);
+    return true;
+  }
+
+  private compileSetOrDictionary(startToken: Token, values: GeneratedCode[]): boolean {
+    const records: GeneratedCode[] = [];
+    const literals: string[] = [];
+    let isDictionary = false;
+    let token = startToken;
+    for (;;) {
+      let prevToken = token;
+      token = this._tokens[this._from];
+      if (!token) {
+        this._compilerContext.addError(PythonErrorType.ExpectedSetBody, prevToken);
+        return false;
+      }
+      if (isRightFigureBracket(token)) {
+        this._from++;
+        // empty set
+        break;
+      }
+      if (isComma(token)) {
+        this._from++;
+        continue;
+      }
+      let literalIndex = -1;
+      if (isLiteral(token) && isColon(this._tokens[this._from + 1])) {
+        if (!isDictionary && records.length) {
+          this._compilerContext.addError(PythonErrorType.SetMixedWithAndWithoutColon, this._tokens[this._from + 1]);
+          return false;
+        }
+        isDictionary = true;
+        literalIndex = token.arg1;
+        this._from += 2;
+      }
+      if (literalIndex === -1 && isDictionary) {
+        this._compilerContext.addError(PythonErrorType.SetMixedWithAndWithoutColon, token);
+        return false;
+      }
+      const record = this.compileInternal(this._from, false);
+      if (!record.success) {
+        return false;
+      }
+      this._from = record.finish;
+      records.push(record);
+      if (isDictionary) {
+        const literal = this._compiledCode.literals[literalIndex];
+        if ((literal.type & LiteralType.LiteralMask) !== LiteralType.String) {
+          this._compilerContext.addError(PythonErrorType.ExpectedStringLiteralInSet, token);
+          return false;
+        }
+        literals.push(literal.string);
+      }
+      prevToken = token;
+      token = this._tokens[this._from];
+      if (isRightFigureBracket(token)) {
+        this._from++;
+        break;
+      }
+      if (!isComma(token)) {
+        this._compilerContext.addError(PythonErrorType.ExpectedSetEnd, prevToken);
+        return false;
+      }
+      // means it is comma
+      this._from++;
+    }
+    const code = isDictionary ? CodeGenerator.dictionary(literals, records, this._compilerContext, startToken.getPosition()) : CodeGenerator.set(records, startToken.getPosition());
+    if (!code.success) {
+      return false;
+    }
+    values.push(code);
+    return true;
+  }
+
+  private compileIfExpression(condition: GeneratedCode, from: Token): GeneratedCode {
+    this._from++;
+    const ifExpression = this.compileInternal(this._from, false);
+    if (!ifExpression.success) {
+      return ifExpression;
+    }
+    this._from = ifExpression.finish;
+    const token = this._tokens[this._from];
+    if (this._from >= this._end || !isKeywordElse(token)) {
+      const source = token || this._tokens[this._tokens.length - 1];
+      this._compilerContext.addError(PythonErrorType.Error_Compiler_IfExpressionExpectedElse, source);
+      const ret = new GeneratedCode();
+      ret.success = false;
+      return ret;
+    }
+
+    this._from++;
+    const elseExpression = this.compileInternal(this._from, false);
+    if (!elseExpression.success) {
+      return elseExpression;
+    }
+
+    this._from = elseExpression.finish;
+
+    const ret = CodeGenerator.conditionalExpression(condition, ifExpression, elseExpression, this._compilerContext, from.getPosition());
+    ret.finish = this._from;
+    return ret;
+  }
+
+  // // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // private compileLambdaExpression(startToken: Token, values: GeneratedCode[]): boolean {
+  //   // TODO: finish lambda
+  //   return false;
+  // }
+
+  private compileValue(from: number): GeneratedCode {
+    const token = this._tokens[from];
+    let ret: GeneratedCode;
+    if (token.type === TokenType.Keyword) {
+      switch (token.arg1) {
+        case KeywordType.KeywordFalse:
+          ret = CodeGenerator.bool(0, token.getPosition());
+          break;
+        case KeywordType.KeywordTrue:
+          ret = CodeGenerator.bool(1, token.getPosition());
+          break;
+        case KeywordType.KeywordNone:
+          ret = CodeGenerator.none(token.getPosition());
+          break;
+      }
+      if (ret && ret.success) {
+        ret.finish = from + 1;
+        return ret;
+      }
+    }
+    if (token.type !== TokenType.Literal) {
+      this._compilerContext.addError(PythonErrorType.ExpectedLiteral, token);
+      ret = new GeneratedCode();
+      ret.success = false;
+      return ret;
+    }
+    const literal = this._compiledCode.literals[token.arg1];
+    ret = CodeGenerator.literal(literal, this._compilerContext, token.getPosition());
+    if (ret.success) {
+      ret.finish = from + 1;
+    }
+    return ret;
+  }
+}

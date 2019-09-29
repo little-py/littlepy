@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "baseUrl": "src",
+    "lib": ["es2017", "dom"],
+    "target": "es2015",
+    "declaration": true,
+    "declarationDir": "dist/types",
+    "outDir": "build",
+    "types": ["jest"],
+    "esModuleInterop": true
+  },
+  "include": ["src/**/*", "types/global.d.ts"]
+}
