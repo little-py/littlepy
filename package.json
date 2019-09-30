@@ -6,7 +6,8 @@
     "test:coverage": "jest --coverage",
     "lint": "eslint . --ext .ts --ignore-pattern node_modules/ --ignore-pattern /lib --max-warnings 0 --fix",
     "test:watch": "jest --watch",
-    "pre-publish": "yarn clean && yarn lint && yarn test && yarn build"
+    "version": "yarn clean && yarn lint && yarn test && yarn build",
+    "postversion": "npm publish"
   },
   "name": "littlepy",
   "version": "1.0.1",

@@ -1,15 +1,33 @@
 image: node:12.6.0
 stages:
   - test
+  - deploy
 
 before_script:
   - yarn install
 
 test:
   stage: test
+  only:
+    - master
   cache:
     paths:
       - node_modules/
-      - .yarn
   script:
     - yarn test:coverage
+
+publish:
+  stage: deploy
+  only:
+    - release
+  except:
+    - tags
+  cache:
+    paths:
+      - node_modules/
+  script:
+    - git config user.name "${PUBLISH_USER_NAME}"
+    - git config user.email "${PUBLISH_USER_EMAIL"
+    - npm version patch -m "Publish version %s"
+    - npm publish
+    - git push https://${PUBLISH_USER_NAME}:${PUBLISH_USER_TOKEN}@gitlab.com/littlepy/littlepy.git --follow-tags
