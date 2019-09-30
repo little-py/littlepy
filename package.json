@@ -10,7 +10,7 @@
     "postversion": "npm publish"
   },
   "name": "littlepy",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "lib/littlepy.js",
   "license": "MIT",
   "private": false,
