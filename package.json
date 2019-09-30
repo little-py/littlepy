@@ -9,6 +9,9 @@
     "version": "yarn clean && yarn lint && yarn test && yarn build",
     "postversion": "npm publish"
   },
+  "repository": {
+    "url": "https://gitlab.com/littlepy/littlepy"
+  },
   "name": "littlepy",
   "version": "1.0.10",
   "main": "lib/littlepy.js",
