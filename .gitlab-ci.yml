@@ -21,7 +21,8 @@ publish:
   only:
     - release
   except:
-    - tags
+    changes:
+      - package.json
   cache:
     paths:
       - node_modules/
