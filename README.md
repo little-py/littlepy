@@ -1,6 +1,8 @@
 # LittlePy: Online Python Compiler+Run Environment
 
-[![pipeline status](https://gitlab.com/littlepy/littlepy/badges/master/pipeline.svg)](https://gitlab.com/littlepy/littlepy/commits/master) [![coverage report](https://gitlab.com/littlepy/littlepy/badges/master/coverage.svg)](https://gitlab.com/littlepy/littlepy/commits/master)
+[![pipeline status](https://gitlab.com/littlepy/littlepy/badges/master/pipeline.svg)](https://gitlab.com/littlepy/littlepy/commits/master)
+[![coverage report](https://gitlab.com/littlepy/littlepy/badges/master/coverage.svg)](https://gitlab.com/littlepy/littlepy/commits/master)
+[![npm](https://img.shields.io/npm/v/littlepy)](https://www.npmjs.com/package/littlepy)
 
 * Python 3 Language Compiler and Engine written in TypeScript (JavaScript)
 * Highly tested: \> 90% test coverage
