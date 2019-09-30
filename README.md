@@ -1,4 +1,4 @@
-# LittlePy 
+# LittlePy: Online Python Compiler+Run Environment
 
 * Python 3 Language Compiler and Engine written in TypeScript (JavaScript)
 * Highly tested: \> 90% test coverage

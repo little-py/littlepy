@@ -1,0 +1,15 @@
+image: node:12.6.0
+stages:
+  - test
+
+before_script:
+  - yarn install
+
+test:
+  stage: test
+  cache:
+    paths:
+      - node_modules/
+      - .yarn
+  script:
+    - yarn test:coverage
