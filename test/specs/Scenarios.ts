@@ -1964,7 +1964,6 @@ const scenarios: TestScenario[] = [
         print('not found')
     `,
     output: ['found', 'not found'],
-    onlyThis: true,
   },
 ];
 
