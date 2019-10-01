@@ -1948,6 +1948,24 @@ const scenarios: TestScenario[] = [
     `,
     output: ['1', '2', '3', '5', '7', '11', '13', '17', '19', '23'],
   },
+  {
+    input: `
+      for x in [1, 5, 6]:
+        if x == 5:
+          print('found')
+          break
+      else:
+        print('not found')
+      for x in [1, 5, 6]:
+        if x == 3:
+          print('found')
+          break
+      else:
+        print('not found')
+    `,
+    output: ['found', 'not found'],
+    onlyThis: true,
+  },
 ];
 
 export default scenarios;

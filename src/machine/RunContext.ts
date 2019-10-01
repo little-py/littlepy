@@ -559,6 +559,7 @@ export class RunContext implements PyMachine {
     const stack = this.enterStack(StackEntryType.StackEntryForCycle, 'for');
     stack.nextPosition = 0;
     stack.startInstruction = this._currentInstruction;
+    stack.noBreakInstruction = current.arg2 === -1 ? -1 : functionStack.findLabel(current.arg2);
     stack.endInstruction = functionStack.findLabel(current.arg1);
   }
 
@@ -1579,7 +1580,11 @@ export class RunContext implements PyMachine {
       }
       if (exception.exceptionType === ExceptionType.StopIteration && entry.type === StackEntryType.StackEntryForCycle) {
         exceptionEntry = entry.parent;
-        exceptionInstruction = entry.endInstruction;
+        if (entry.noBreakInstruction !== -1) {
+          exceptionInstruction = entry.noBreakInstruction;
+        } else {
+          exceptionInstruction = entry.endInstruction;
+        }
         break;
       }
       if (!entry.trySection || entry.exceptHandled) {

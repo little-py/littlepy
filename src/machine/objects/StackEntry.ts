@@ -58,6 +58,7 @@ export class StackEntry {
   public instruction: number;
   public startInstruction: number;
   public endInstruction: number;
+  public noBreakInstruction: number;
   public nextPosition: number;
   public trySection: boolean;
   public code: Instruction[];

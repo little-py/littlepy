@@ -1,12 +1,12 @@
-import { GeneratedCode, Instruction } from '../common/Instructions';
-import { CompilerContext } from './CompilerContext';
-import { OperatorDelimiterType, Token, TokenPosition, TokenType } from './Token';
-import { KeywordType } from './Keyword';
-import { Literal } from './Literal';
-import { CompilerBlockContext, CompilerBlockType } from './CompilerBlockContext';
-import { InstructionType } from '../common/InstructionType';
-import { ReferenceScope } from '../machine/objects/ReferenceObject';
-import { PyErrorType } from '../api/ErrorType';
+import {GeneratedCode, Instruction} from '../common/Instructions';
+import {CompilerContext} from './CompilerContext';
+import {OperatorDelimiterType, Token, TokenPosition, TokenType} from './Token';
+import {KeywordType} from './Keyword';
+import {Literal} from './Literal';
+import {CompilerBlockContext, CompilerBlockType} from './CompilerBlockContext';
+import {InstructionType} from '../common/InstructionType';
+import {ReferenceScope} from '../machine/objects/ReferenceObject';
+import {PyErrorType} from '../api/ErrorType';
 
 export class Comprehension {
   public code: GeneratedCode;
@@ -28,22 +28,32 @@ export class CodeGenerator {
     }
   }
 
-  public static forCycle(variable: string, position: TokenPosition, expression: GeneratedCode, body: GeneratedCode, context: CompilerContext): GeneratedCode {
+  // public static forCycle(variable: string, position: TokenPosition, expression: GeneratedCode, body: GeneratedCode, context: CompilerContext): GeneratedCode {
+  public static forCycle(parts: CompilerBlockContext[], context: CompilerContext): GeneratedCode {
+    const forPart = parts[0];
+    const varId = forPart.arg1;
+    const noBreakPart = parts[1];
     const ret = new GeneratedCode();
-    const varId = context.getIdentifier(variable);
-    CodeGenerator.appendTo(ret, expression);
-    ret.add(InstructionType.IReadProperty, position, context.getIdentifier('__iter__'), 0, 1);
-    ret.add(InstructionType.ICallMethod, position, 0, 1, 0);
+    CodeGenerator.appendTo(ret, forPart.arg2);
+    ret.add(InstructionType.IReadProperty, forPart.position, context.getIdentifier('__iter__'), 0, 1);
+    ret.add(InstructionType.ICallMethod, forPart.position, 0, 1, 0);
     const endLabel = context.getNewLabel();
     const startLabel = context.getNewLabel();
-    ret.add(InstructionType.IForCycle, position, endLabel);
-    ret.add(InstructionType.ICreateVarRef, position, varId, 1, ReferenceScope.Default);
-    ret.add(InstructionType.ILabel, position, startLabel);
-    ret.add(InstructionType.IReadProperty, position, context.getIdentifier('__next__'), 0, 3);
-    ret.add(InstructionType.ICallMethod, position, 0, 3, 2);
-    ret.add(InstructionType.ICopyValue, position, 2, 1);
-    CodeGenerator.appendTo(ret, body, 2);
+    const noBreakLabel = noBreakPart ? context.getNewLabel() : -1;
+    ret.add(InstructionType.IForCycle, forPart.position, endLabel, noBreakLabel);
+    ret.add(InstructionType.ICreateVarRef, forPart.position, varId, 1, ReferenceScope.Default);
+    ret.add(InstructionType.ILabel, forPart.position, startLabel);
+    ret.add(InstructionType.IReadProperty, forPart.position, context.getIdentifier('__next__'), 0, 3);
+    ret.add(InstructionType.ICallMethod, forPart.position, 0, 3, 2);
+    ret.add(InstructionType.ICopyValue, forPart.position, 2, 1);
+    CodeGenerator.appendTo(ret, forPart.blockCode, 2);
     ret.add(InstructionType.IGoTo, null, startLabel);
+
+    if (noBreakPart) {
+      ret.add(InstructionType.ILabel, noBreakPart.position, noBreakLabel);
+      CodeGenerator.appendTo(ret, noBreakPart.blockCode);
+    }
+
     ret.add(InstructionType.ILabel, null, endLabel);
     ret.success = true;
     return ret;

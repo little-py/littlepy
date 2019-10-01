@@ -291,7 +291,11 @@ export function createDebugInformation(module: CompiledModule, instructions: Ins
         i.debug = `put value reg${i.arg1} and key '${idToText(i.arg2)}' into dictionary in reg${i.arg3}`;
         break;
       case InstructionType.IForCycle:
-        i.debug = `start for cycle, exit on label${i.arg1}`;
+        if (i.arg2 === -1) {
+          i.debug = `start for cycle, exit on label${i.arg1}`;
+        } else {
+          i.debug = `start for cycle, exit on label${i.arg1}; nobreak: label${i.arg2}`;
+        }
         break;
       case InstructionType.IWhileCycle:
         i.debug = `start while cycle, exit on label${i.arg1}`;

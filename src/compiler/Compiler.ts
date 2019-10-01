@@ -247,11 +247,12 @@ export class Compiler {
 
     switch (block.type) {
       case CompilerBlockType.For:
-        const forCode = CodeGenerator.forCycle(this._compiledModule.identifiers[block.arg1], block.position, block.arg2, block.blockCode, this._compilerContext);
-        if (!forCode.success) {
-          return false;
-        }
-        CodeGenerator.appendTo(parentBlock.blockCode, forCode);
+        this._pendingFinishedBlocks.push(block);
+        // const forCode = CodeGenerator.forCycle(this._compiledModule.identifiers[block.arg1], block.position, block.arg2, block.blockCode, this._compilerContext);
+        // if (!forCode.success) {
+        //   return false;
+        // }
+        // CodeGenerator.appendTo(parentBlock.blockCode, forCode);
         break;
       case CompilerBlockType.While:
         const whileCode = CodeGenerator.whileCycle(block.arg2, block.blockCode, this._compilerContext, block.position);
@@ -300,6 +301,15 @@ export class Compiler {
     return true;
   }
 
+  private finishForBlock() {
+    const forCode = CodeGenerator.forCycle(this._pendingFinishedBlocks, this._compilerContext);
+    if (!forCode.success) {
+      return false;
+    }
+    CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, forCode);
+    return true;
+  }
+
   private parseFinishedBlocks(nextToken: Token) {
     const lastBlock = this._pendingFinishedBlocks[this._pendingFinishedBlocks.length - 1];
     if (lastBlock.indent < this._indent) {
@@ -309,8 +319,6 @@ export class Compiler {
     const scopeType = this._pendingFinishedBlocks[0].type;
     switch (scopeType) {
       case CompilerBlockType.If:
-      case CompilerBlockType.Else:
-      case CompilerBlockType.ElseIf:
         switch (keyword) {
           case KeywordType.KeywordElse:
           case KeywordType.KeywordElif:
@@ -319,14 +327,18 @@ export class Compiler {
         this.finishIfBlock();
         break;
       case CompilerBlockType.Try:
-      case CompilerBlockType.Except:
-      case CompilerBlockType.Finally:
         switch (keyword) {
           case KeywordType.KeywordExcept:
           case KeywordType.KeywordFinally:
             return;
         }
         this.finishTryBlock();
+        break;
+      case CompilerBlockType.For:
+        if (this._pendingFinishedBlocks.length === 1 && keyword === KeywordType.KeywordElse) {
+          return;
+        }
+        this.finishForBlock();
         break;
     }
     this._pendingFinishedBlocks = [];
@@ -689,8 +701,8 @@ export class Compiler {
     const first = this._line[0];
 
     if (first.arg1 === KeywordType.KeywordElif) {
-      const lastBlock = this._pendingFinishedBlocks[this._pendingFinishedBlocks.length - 1];
-      if (!lastBlock || (lastBlock.type !== CompilerBlockType.ElseIf && lastBlock.type !== CompilerBlockType.If)) {
+      const firstBlock = this._pendingFinishedBlocks[0];
+      if (!firstBlock || firstBlock.type !== CompilerBlockType.If) {
         this._compilerContext.addError(PyErrorType.Error_Compiler_CannotFindIfOrElifForElif, first);
         return false;
       }
@@ -718,8 +730,8 @@ export class Compiler {
 
   private parseElseDefinition(): boolean {
     const first = this._line[0];
-    const lastBlock = this._pendingFinishedBlocks[this._pendingFinishedBlocks.length - 1];
-    if (!lastBlock || (lastBlock.type !== CompilerBlockType.ElseIf && lastBlock.type !== CompilerBlockType.If)) {
+    const firstBlock = this._pendingFinishedBlocks[0];
+    if (!firstBlock || (firstBlock.type !== CompilerBlockType.If && firstBlock.type !== CompilerBlockType.For)) {
       this._compilerContext.addError(PyErrorType.Error_Compiler_CannotFindIfOrElifForElse, first);
       return false;
     }

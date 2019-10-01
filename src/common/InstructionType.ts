@@ -57,7 +57,7 @@ export enum InstructionType {
   ISetAdd, // puts reg1 into set in reg2
   IDictionary, // creates dictionary and puts it into reg1
   IDictionaryAdd, // puts value reg1 and key identifier2 into dictionary in reg3
-  IForCycle, // iterates values, exits on label1
+  IForCycle, // iterates values, exits on label1, jumps to label2 (if not -1) if no break is called during cycle execution
   IWhileCycle, // starts while cycle; exits on label1; used for continue/break logic only
   IGoTo, // jumps to label1
   IImport, // imports module identifier1
