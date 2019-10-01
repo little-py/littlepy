@@ -30,6 +30,6 @@ publish:
     - git config user.name "${PUBLISH_USER_NAME}"
     - git config user.email "${PUBLISH_USER_EMAIL}"
     - yarn build:publish
-    - npm version patch -m "Publish version %s"
+    - npm version patch -m "publish version %s"
     - npm publish
     - git push https://${PUBLISH_USER_NAME}:${PUBLISH_USER_TOKEN}@gitlab.com/littlepy/littlepy.git HEAD:release --follow-tags
