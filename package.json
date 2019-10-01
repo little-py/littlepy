@@ -6,8 +6,7 @@
     "test:coverage": "jest --coverage",
     "lint": "eslint . --ext .ts --ignore-pattern node_modules/ --ignore-pattern /lib --max-warnings 0 --fix",
     "test:watch": "jest --watch",
-    "version": "yarn clean && yarn lint && yarn test && yarn build",
-    "postversion": "npm publish"
+    "build:publish": "yarn clean && yarn lint && yarn test && yarn build"
   },
   "repository": {
     "url": "https://gitlab.com/littlepy/littlepy"
