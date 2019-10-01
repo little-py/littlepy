@@ -1,12 +1,12 @@
-import {GeneratedCode, Instruction} from '../common/Instructions';
-import {CompilerContext} from './CompilerContext';
-import {OperatorDelimiterType, Token, TokenPosition, TokenType} from './Token';
-import {KeywordType} from './Keyword';
-import {Literal} from './Literal';
-import {CompilerBlockContext, CompilerBlockType} from './CompilerBlockContext';
-import {InstructionType} from '../common/InstructionType';
-import {ReferenceScope} from '../machine/objects/ReferenceObject';
-import {PyErrorType} from '../api/ErrorType';
+import { GeneratedCode, Instruction } from '../common/Instructions';
+import { CompilerContext } from './CompilerContext';
+import { OperatorDelimiterType, Token, TokenPosition, TokenType } from './Token';
+import { KeywordType } from './Keyword';
+import { Literal } from './Literal';
+import { CompilerBlockContext, CompilerBlockType } from './CompilerBlockContext';
+import { InstructionType } from '../common/InstructionType';
+import { ReferenceScope } from '../machine/objects/ReferenceObject';
+import { PyErrorType } from '../api/ErrorType';
 
 export class Comprehension {
   public code: GeneratedCode;
