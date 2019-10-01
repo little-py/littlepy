@@ -1933,6 +1933,22 @@ const scenarios: TestScenario[] = [
     `,
     output: ['[2, 3]'],
   },
+  {
+    input: `
+      max = 25
+
+      for val in range(1, max):
+        isPrime = True
+        for n in range(2, val): 
+          if (val % n) == 0: 
+            isPrime = False
+            break
+        if isPrime:
+          print(val)
+    `,
+    output: ['1', '2', '3', '5', '7', '11', '13', '17', '19', '23'],
+    onlyThis: true,
+  },
 ];
 
 export default scenarios;

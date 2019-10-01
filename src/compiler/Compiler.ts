@@ -19,7 +19,7 @@ import {
   TokenPosition,
   TokenType,
 } from './Token';
-import { ArgumentType, FunctionArgument, FunctionBody, FunctionType } from '../common/FunctionBody';
+import { ArgumentType, createDebugInformation, FunctionArgument, FunctionBody, FunctionType } from '../common/FunctionBody';
 import { CodeGenerator } from './CodeGenerator';
 import { KeywordType } from './Keyword';
 import { ExpressionCompiler, fillIdentifiers } from './ExpressionCompiler';
@@ -175,6 +175,7 @@ export class Compiler {
     func.name = name;
     func.type = FunctionType.FunctionTypeModule;
     func.code = CodeGenerator.copyCode(block.blockCode);
+    func.initialize();
 
     return true;
   }
@@ -234,6 +235,8 @@ export class Compiler {
       }
     }
 
+    createDebugInformation(this._compiledModule, block.blockCode.code);
+
     if (!parentBlock) {
       if (block.type === CompilerBlockType.Module) {
         return true;
@@ -259,6 +262,7 @@ export class Compiler {
       case CompilerBlockType.Function: {
         const func = this._compiledModule.functions[block.arg1];
         func.code = CodeGenerator.copyCode(block.blockCode);
+        func.initialize();
         this._compilerContext.leaveBlock();
         if (block.type === CompilerBlockType.Function || block.type === CompilerBlockType.Class) {
           if (!this.declareFunction(block.arg1, block.position)) {
