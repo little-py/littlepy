@@ -1,9 +1,9 @@
 import { BaseObject } from './BaseObject';
-import { ObjectType } from '../../api/ObjectType';
+import { ExceptionType } from '../../api/ExceptionType';
 
 export class IntegerObject extends BaseObject {
   public constructor(value: number) {
-    super(ObjectType.Integer);
+    super();
     this.value = value;
   }
 
@@ -32,4 +32,14 @@ export class IntegerObject extends BaseObject {
   }
 
   public readonly value: number;
+
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  public native_bit_length() {
+    BaseObject.throwException(ExceptionType.NotImplementedError, 'bit_length');
+  }
+
+  // eslint-disable-next-line @typescript-eslint/camelcase,@typescript-eslint/no-unused-vars
+  public native_to_bytes(bytes: BaseObject) {
+    BaseObject.throwException(ExceptionType.NotImplementedError, 'to_bytes');
+  }
 }

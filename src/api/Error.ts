@@ -1,5 +1,4 @@
 import { PyErrorType } from './ErrorType';
-import { ErrorCodeToTitle } from '../common/PythonErrorType';
 
 // eslint-disable-next-line @typescript-eslint/prefer-interface
 export type PyErrorContext = { [key: string]: string };
@@ -12,7 +11,6 @@ export class PyError {
     this.length = length;
     this.position = position;
     this.context = context;
-    this.prefix = ErrorCodeToTitle[this.type];
   }
 
   public prefix: string;

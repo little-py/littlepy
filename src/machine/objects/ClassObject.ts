@@ -1,5 +1,5 @@
 import { CallableObject } from './CallableObject';
-import { ObjectType } from '../../api/ObjectType';
+import { FunctionRunContext } from '../FunctionRunContext';
 
 export class ClassInheritance {
   public constructor(name, object) {
@@ -12,10 +12,14 @@ export class ClassInheritance {
 }
 
 export class ClassObject extends CallableObject {
-  public constructor(inheritsFrom: ClassInheritance[], type: ObjectType = ObjectType.Class) {
-    super(type);
+  public constructor(context: FunctionRunContext, inheritsFrom: ClassInheritance[]) {
+    super();
     this.inheritsFrom = inheritsFrom;
   }
 
   public readonly inheritsFrom: ClassInheritance[];
+
+  public toString(): string {
+    return `<class '${this.name}'>`;
+  }
 }

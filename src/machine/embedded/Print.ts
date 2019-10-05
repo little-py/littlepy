@@ -2,20 +2,21 @@ import { RunContext } from '../RunContext';
 import { CallableContext } from '../CallableContext';
 import { BaseObject } from '../objects/BaseObject';
 import { ReferenceObject } from '../objects/ReferenceObject';
-import { FunctionObject } from '../objects/FunctionObject';
-import { ObjectType } from '../../api/ObjectType';
 
-function printFunction(runContext: RunContext, callContext: CallableContext): BaseObject {
+export function print(runContext: RunContext, callContext: CallableContext): BaseObject {
   let output = '';
   for (let i = 0; i < callContext.indexedArgs.length; i++) {
     if (i > 0) {
       output += ' ';
     }
     let arg = callContext.indexedArgs[i];
-    if (arg.type === ObjectType.Reference) {
-      arg = (arg as ReferenceObject).getValue(runContext);
+    if (arg.object instanceof ReferenceObject) {
+      arg = {
+        object: arg.object.getValue(runContext),
+        expand: arg.expand,
+      };
     }
-    output += arg.toString();
+    output += arg.object.toString();
   }
   if (callContext.namedArgs.end) {
     runContext.write(output);
@@ -35,10 +36,4 @@ function printFunction(runContext: RunContext, callContext: CallableContext): Ba
     runContext.writeLine(output);
   }
   return null;
-}
-
-export function print() {
-  const func = new FunctionObject();
-  func.internalFunction = printFunction;
-  return func;
 }

@@ -1,33 +1,27 @@
 import { PyObject } from '../../api/Object';
-import { ObjectType } from '../../api/ObjectType';
+import { ExceptionType } from '../../api/ExceptionType';
 
 export class BaseObject implements PyObject {
   private static idCounter = 1;
+  private static _nativeMethods: { [name: string]: BaseObject } = {};
+  protected static createNativeMethod: (func: Function) => BaseObject;
+  protected static throwException: (type: ExceptionType, ...args: string[]) => void;
 
-  public constructor(t: ObjectType) {
-    this.type = t;
+  protected attributes: { [key: string]: BaseObject } = {};
+  public id: number = BaseObject.idCounter++;
+  public name: string;
+
+  public getClassName() {
+    return this.constructor.name;
   }
 
-  public isCallable() {
-    return false;
-  }
-
-  public isContainer(): boolean {
-    return false;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public contains(value: BaseObject): boolean {
-    return false;
-  }
-
-  public count(): number {
-    return 0;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public getItem(index: number): BaseObject {
-    return null;
+  public equals(to: BaseObject) {
+    if (this === to) {
+      return true;
+    }
+    if (this.canBeReal() && to.canBeReal()) {
+      return this.toReal() === to.toReal();
+    }
   }
 
   public toBoolean() {
@@ -54,13 +48,9 @@ export class BaseObject implements PyObject {
     return '(object)';
   }
 
-  public readonly type: ObjectType;
-  protected attributes: { [key: string]: BaseObject } = {};
-  public id: number = BaseObject.idCounter++;
-  public name: string;
-
   public getAttribute(name: string): BaseObject {
-    return this.attributes[name];
+    const ret = this.attributes[name];
+    return ret || this.getNativeMethod(name);
   }
 
   public setAttribute(name: string, value: BaseObject) {
@@ -69,5 +59,17 @@ export class BaseObject implements PyObject {
 
   public deleteAttribute(name: string) {
     delete this.attributes[name];
+  }
+
+  private getNativeMethod(name: string): BaseObject {
+    const fullName = `${this.getClassName()}.${name}`;
+    if (!BaseObject._nativeMethods[fullName]) {
+      const func = this['native_' + name];
+      if (!func) {
+        return null;
+      }
+      BaseObject._nativeMethods[fullName] = BaseObject.createNativeMethod(func);
+    }
+    return BaseObject._nativeMethods[fullName];
   }
 }

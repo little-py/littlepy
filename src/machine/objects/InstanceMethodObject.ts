@@ -1,8 +1,15 @@
 import { CallableObject } from './CallableObject';
-import { ObjectType } from '../../api/ObjectType';
+import { FunctionRunContext } from '../FunctionRunContext';
+import { BaseObject } from './BaseObject';
 
 export class InstanceMethodObject extends CallableObject {
-  public constructor() {
-    super(ObjectType.InstanceMethod);
+  public constructor(context: FunctionRunContext, nativeFunction: Function = null) {
+    super(context, nativeFunction);
+  }
+
+  public static setCreateNativeMethod() {
+    BaseObject.createNativeMethod = (func: Function): BaseObject => new InstanceMethodObject(null, func);
   }
 }
+
+InstanceMethodObject.setCreateNativeMethod();

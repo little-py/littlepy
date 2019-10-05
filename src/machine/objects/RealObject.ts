@@ -1,9 +1,8 @@
 import { BaseObject } from './BaseObject';
-import { ObjectType } from '../../api/ObjectType';
 
 export class RealObject extends BaseObject {
   public constructor(value: number) {
-    super(ObjectType.Real);
+    super();
     this.value = value;
   }
 

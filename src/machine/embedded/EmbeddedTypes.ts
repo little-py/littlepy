@@ -1,12 +1,35 @@
 import { BaseObject } from '../objects/BaseObject';
-import { print } from './print';
-import { range } from './range';
-import { exceptions } from './exceptions';
-import { ExceptionType } from '../objects/ExceptionObject';
+import { print } from './Print';
+import { range } from './Range';
+import { exceptions } from './Exceptions';
+import { FunctionObject } from '../objects/FunctionObject';
+import { sys } from './Sys';
+import { ExceptionType } from '../../api/ExceptionType';
+import { len } from './Len';
+import { ClassObject } from '../objects/ClassObject';
+import { IntegerClassObject } from '../objects/IntegerClassObject';
+import { FloatClassObject } from '../objects/FloatClassObject';
+import { hash } from './Hash';
 
-const GLOBAL_FUNCTIONS: { [key: string]: () => BaseObject } = {
-  print: print,
-  range: range,
+function getFunctionObject(func: Function, name: string): FunctionObject {
+  const ret = new FunctionObject(null, func);
+  ret.name = name;
+  return ret;
+}
+
+function getClassObject(object: ClassObject, name: string): ClassObject {
+  object.name = name;
+  return object;
+}
+
+const GlobalPropertiesCreators: { [key: string]: () => BaseObject } = {
+  print: () => getFunctionObject(print, 'print'),
+  range: () => getFunctionObject(range, 'range'),
+  len: () => getFunctionObject(len, 'len'),
+  hash: () => getFunctionObject(hash, 'hash'),
+  int: () => getClassObject(new IntegerClassObject(null), 'int'),
+  float: () => getClassObject(new FloatClassObject(null), 'float'),
+  __sys__: sys,
   Exception: exceptions(ExceptionType.Base, 'Exception'),
   SystemExit: exceptions(ExceptionType.SystemExit, 'SystemExit'),
   KeyboardInterrupt: exceptions(ExceptionType.KeyboardInterrupt, 'KeyboardInterrupt'),
@@ -60,7 +83,7 @@ const GLOBAL_FUNCTIONS: { [key: string]: () => BaseObject } = {
 };
 
 export function getEmbeddedType(name: string): BaseObject {
-  const def = GLOBAL_FUNCTIONS[name];
+  const def = GlobalPropertiesCreators[name];
   if (!def) {
     return;
   }

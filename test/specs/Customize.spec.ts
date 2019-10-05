@@ -2,7 +2,7 @@ import { compileAndStartModule, compileModule, runModules } from './Utils';
 import { RunContext } from '../../src/machine/RunContext';
 import { BaseObject } from '../../src/machine/objects/BaseObject';
 import { ExceptionObject } from '../../src/machine/objects/ExceptionObject';
-import { ObjectType } from '../../src/api/ObjectType';
+import { ModuleObject } from '../../src/machine/objects/ModuleObject';
 
 describe('Customize runContext', () => {
   it('should write to callback instead of internal buffer', () => {
@@ -31,8 +31,8 @@ describe('Customize runContext', () => {
     let finishCalled = false;
     runContext.startCallModule('main', (returnValue: BaseObject, unhandledException: ExceptionObject) => {
       finishCalled = true;
-      expect(unhandledException).toBeUndefined();
-      expect(returnValue.type).toEqual(ObjectType.Module);
+      expect(unhandledException).toBeFalsy();
+      expect(returnValue instanceof ModuleObject).toBeTruthy();
     });
     runContext.run();
     expect(finishCalled).toBeTruthy();
