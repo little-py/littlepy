@@ -15,5 +15,6 @@ module.exports =  {
     "@typescript-eslint/no-empty-function": "off",
     "@typescript-eslint/ban-ts-ignore": "off",
     "eqeqeq": ["error", "smart"],
+    //"array-element-newline": ["error", { "multiline": true, "minItems": 3 }],
   },
 };
