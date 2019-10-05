@@ -1,5 +1,5 @@
 import { BaseObject } from './objects/BaseObject';
-import { getEmbeddedType } from './embedded/index';
+import { getEmbeddedType } from './embedded/EmbeddedTypes';
 import { PyScope } from '../api/Scope';
 
 export class ObjectScope implements PyScope {

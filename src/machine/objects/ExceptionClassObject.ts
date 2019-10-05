@@ -1,10 +1,10 @@
 import { ClassInheritance, ClassObject } from './ClassObject';
-import { ExceptionType } from './ExceptionObject';
-import { ObjectType } from '../../api/ObjectType';
+import { FunctionRunContext } from '../FunctionRunContext';
+import { ExceptionType } from '../../api/ExceptionType';
 
 export class ExceptionClassObject extends ClassObject {
-  public constructor(exceptionType: ExceptionType, inheritsFrom?: ClassInheritance[]) {
-    super(inheritsFrom || [], ObjectType.ExceptionClass);
+  public constructor(context: FunctionRunContext, exceptionType: ExceptionType, inheritsFrom?: ClassInheritance[]) {
+    super(context, inheritsFrom || []);
     this.exceptionType = exceptionType;
   }
 

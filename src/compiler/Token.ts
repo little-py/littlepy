@@ -1,65 +1,67 @@
 import { KeywordType } from './Keyword';
 
 export enum TokenType {
-  Invalid,
-  NewLine,
-  Comment,
-  Indent,
-  Dedent,
-  Identifier,
-  Keyword,
-  Literal,
-  Operator,
-  Delimiter,
+  Invalid = 'Invalid',
+  NewLine = 'NewLine',
+  Comment = 'Comment',
+  Indent = 'Indent',
+  Dedent = 'Dedent',
+  Identifier = 'Identifier',
+  Keyword = 'Keyword',
+  Literal = 'Literal',
+  Operator = 'Operator',
+  Delimiter = 'Delimiter',
 }
 
-export enum OperatorDelimiterType {
-  Plus, // +
-  Minus, // -
-  Multiply, // * (also changes argument type in function definition)
-  Power, // **
-  Divide, // /
-  FloorDivide, // //
-  Modulus, // %
-  At, // @
-  ShiftLeft, // <<
-  ShiftRight, // >>
-  And, // &
-  Or, // |
-  Xor, // ^
-  Invert, // ~
-  Less, // <
-  Greater, // >
-  LessEqual, // <=
-  GreaterEqual, // >=
-  Equal, // ==
-  NotEqual, // !=
-  LastOperator,
-  LeftBracket, // (
-  RightBracket, // )
-  LeftSquareBracket, // [
-  RightSquareBracket, // ]
-  LeftFigureBracket, // {
-  RightFigureBracket, // }
-  Comma, // ,
-  Colon, // :
-  Point, // .
-  Semicolon, // ;
-  EqualSign, // =
-  Arrow, // ->
-  EqualPlus, // +=
-  EqualMinus, // -=
-  EqualMultiply, // *=
-  EqualDivide, // /=
-  EqualFloorDivide, // //=
-  EqualModulus, // %=
-  EqualAt, // @=
-  EqualAnd, // &=
-  EqualOr, // |=
-  EqualXor, // ^=
-  EqualShiftRight, // >>=
-  EqualShiftLeft, // <<=
-  EqualPower, // **=
+export enum OperatorType {
+  Plus = '+',
+  Minus = '-',
+  Multiply = '*', // * (also changes argument type in function definition)
+  Power = '**',
+  Divide = '/',
+  FloorDivide = '//',
+  Modulus = '%',
+  At = '@',
+  ShiftLeft = '<<',
+  ShiftRight = '>>',
+  And = '&',
+  Or = '|',
+  Xor = '^',
+  Invert = '~',
+  Less = '<',
+  Greater = '>',
+  LessEqual = '<=',
+  GreaterEqual = '>=',
+  Equal = '==',
+  NotEqual = '!=',
+}
+
+export enum DelimiterType {
+  LeftBracket = '(',
+  RightBracket = ')',
+  LeftSquareBracket = '[',
+  RightSquareBracket = ']',
+  LeftFigureBracket = '{',
+  RightFigureBracket = '}',
+  Comma = ',',
+  Colon = ':',
+  Point = '.',
+  Semicolon = ';',
+  EqualSign = '=',
+  Arrow = '->',
+  EqualPlus = '+=',
+  EqualMinus = '-=',
+  EqualMultiply = '*=',
+  EqualDivide = '/=',
+  EqualFloorDivide = '//=',
+  EqualModulus = '%=',
+  EqualAt = '@=',
+  EqualAnd = '&=',
+  EqualOr = '|=',
+  EqualXor = '^=',
+  EqualShiftRight = '>>=',
+  EqualShiftLeft = '<<=',
+  EqualPower = '**=',
 }
 
 export interface TokenPosition {
@@ -86,9 +88,11 @@ export class Token {
   public length: number;
   public row: number;
   public col: number;
-  public arg1: number;
-  public arg2: number;
-  public id: number;
+  public operator: OperatorType;
+  public delimiter: DelimiterType;
+  public keyword: KeywordType;
+  public identifier: number;
+  public literal: number;
   public debug: string;
   public getPosition(): TokenPosition {
     return {
@@ -104,22 +108,22 @@ export function isLiteral(token: Token): boolean {
 }
 
 export function isColon(token: Token): boolean {
-  return token && token.type === TokenType.Delimiter && token.arg1 === OperatorDelimiterType.Colon;
+  return token && token.type === TokenType.Delimiter && token.delimiter === DelimiterType.Colon;
 }
 
 export function isBlockKeyword(token: Token): boolean {
   if (token && token.type === TokenType.Keyword) {
-    switch (token.arg1) {
-      case KeywordType.KeywordDef:
-      case KeywordType.KeywordFor:
-      case KeywordType.KeywordWhile:
-      case KeywordType.KeywordIf:
-      case KeywordType.KeywordElif:
-      case KeywordType.KeywordElse:
-      case KeywordType.KeywordClass:
-      case KeywordType.KeywordTry:
-      case KeywordType.KeywordExcept:
-      case KeywordType.KeywordFinally:
+    switch (token.keyword) {
+      case KeywordType.Def:
+      case KeywordType.For:
+      case KeywordType.While:
+      case KeywordType.If:
+      case KeywordType.Elif:
+      case KeywordType.Else:
+      case KeywordType.Class:
+      case KeywordType.Try:
+      case KeywordType.Except:
+      case KeywordType.Finally:
         return true;
     }
   }
@@ -127,35 +131,35 @@ export function isBlockKeyword(token: Token): boolean {
 }
 
 export function isSemicolon(token: Token): boolean {
-  return token && token.type === TokenType.Delimiter && token.arg1 === OperatorDelimiterType.Semicolon;
+  return token && token.type === TokenType.Delimiter && token.delimiter === DelimiterType.Semicolon;
 }
 
 export function isLeftBracket(token: Token): boolean {
-  return token && token.type === TokenType.Delimiter && token.arg1 === OperatorDelimiterType.LeftBracket;
+  return token && token.type === TokenType.Delimiter && token.delimiter === DelimiterType.LeftBracket;
 }
 
 export function isRightBracket(token: Token): boolean {
-  return token && token.type === TokenType.Delimiter && token.arg1 === OperatorDelimiterType.RightBracket;
+  return token && token.type === TokenType.Delimiter && token.delimiter === DelimiterType.RightBracket;
 }
 
 export function isComma(token: Token): boolean {
-  return token && token.type === TokenType.Delimiter && token.arg1 === OperatorDelimiterType.Comma;
+  return token && token.type === TokenType.Delimiter && token.delimiter === DelimiterType.Comma;
 }
 
 export function isPoint(token: Token): boolean {
-  return token && token.type === TokenType.Delimiter && token.arg1 === OperatorDelimiterType.Point;
+  return token && token.type === TokenType.Delimiter && token.delimiter === DelimiterType.Point;
 }
 
 export function isLeftSquareBracket(token: Token): boolean {
-  return token && token.type === TokenType.Delimiter && token.arg1 === OperatorDelimiterType.LeftSquareBracket;
+  return token && token.type === TokenType.Delimiter && token.delimiter === DelimiterType.LeftSquareBracket;
 }
 
 export function isRightSquareBracket(token: Token): boolean {
-  return token && token.type === TokenType.Delimiter && token.arg1 === OperatorDelimiterType.RightSquareBracket;
+  return token && token.type === TokenType.Delimiter && token.delimiter === DelimiterType.RightSquareBracket;
 }
 
 export function isRightFigureBracket(token: Token): boolean {
-  return token && token.type === TokenType.Delimiter && token.arg1 === OperatorDelimiterType.RightFigureBracket;
+  return token && token.type === TokenType.Delimiter && token.delimiter === DelimiterType.RightFigureBracket;
 }
 
 export function isIdentifier(token: Token): boolean {
@@ -163,49 +167,52 @@ export function isIdentifier(token: Token): boolean {
 }
 
 export function isKeywordIn(token: Token) {
-  return token && token.type === TokenType.Keyword && token.arg1 === KeywordType.KeywordIn;
+  return token && token.type === TokenType.Keyword && token.keyword === KeywordType.In;
 }
 
 export function isKeywordElse(token: Token) {
-  return token && token.type === TokenType.Keyword && token.arg1 === KeywordType.KeywordElse;
+  return token && token.type === TokenType.Keyword && token.keyword === KeywordType.Else;
 }
 
 export function isKeywordAs(token: Token) {
-  return token && token.type === TokenType.Keyword && token.arg1 === KeywordType.KeywordAs;
+  return token && token.type === TokenType.Keyword && token.keyword === KeywordType.As;
 }
 
 export function isDelimiterEqual(token: Token) {
-  return token && token.type === TokenType.Delimiter && token.arg1 === OperatorDelimiterType.EqualSign;
+  return token && token.type === TokenType.Delimiter && token.delimiter === DelimiterType.EqualSign;
 }
 
 export function isOperatorMultiply(token: Token) {
-  return token && token.type === TokenType.Operator && token.arg1 === OperatorDelimiterType.Multiply;
+  return token && token.type === TokenType.Operator && token.operator === OperatorType.Multiply;
 }
 
 export function isUnaryOperator(token: Token): boolean {
-  if (token.type === TokenType.Operator && (token.arg1 === OperatorDelimiterType.Invert || token.arg1 === OperatorDelimiterType.Plus || token.arg1 === OperatorDelimiterType.Minus)) {
+  if (
+    token.type === TokenType.Operator &&
+    (token.operator === OperatorType.Invert || token.operator === OperatorType.Plus || token.operator === OperatorType.Minus)
+  ) {
     return true;
   }
-  return token.type === TokenType.Keyword && (token.arg1 === KeywordType.KeywordNot || token.arg1 === KeywordType.KeywordCount);
+  return token.type === TokenType.Keyword && token.keyword === KeywordType.Not;
 }
 
 export function isAssignmentDelimiter(token: Token): boolean {
   if (token && token.type === TokenType.Delimiter) {
-    switch (token.arg1) {
-      case OperatorDelimiterType.EqualSign:
-      case OperatorDelimiterType.EqualPlus:
-      case OperatorDelimiterType.EqualMinus:
-      case OperatorDelimiterType.EqualMultiply:
-      case OperatorDelimiterType.EqualDivide:
-      case OperatorDelimiterType.EqualFloorDivide:
-      case OperatorDelimiterType.EqualModulus:
-      case OperatorDelimiterType.EqualAt:
-      case OperatorDelimiterType.EqualAnd:
-      case OperatorDelimiterType.EqualOr:
-      case OperatorDelimiterType.EqualXor:
-      case OperatorDelimiterType.EqualShiftRight:
-      case OperatorDelimiterType.EqualShiftLeft:
-      case OperatorDelimiterType.EqualPower:
+    switch (token.delimiter) {
+      case DelimiterType.EqualSign:
+      case DelimiterType.EqualPlus:
+      case DelimiterType.EqualMinus:
+      case DelimiterType.EqualMultiply:
+      case DelimiterType.EqualDivide:
+      case DelimiterType.EqualFloorDivide:
+      case DelimiterType.EqualModulus:
+      case DelimiterType.EqualAt:
+      case DelimiterType.EqualAnd:
+      case DelimiterType.EqualOr:
+      case DelimiterType.EqualXor:
+      case DelimiterType.EqualShiftRight:
+      case DelimiterType.EqualShiftLeft:
+      case DelimiterType.EqualPower:
         return true;
     }
   }
@@ -217,19 +224,20 @@ export function isExpressionEnd(token: Token): boolean {
     return true;
   }
   if (token.type === TokenType.Delimiter) {
-    switch (token.arg1) {
-      case OperatorDelimiterType.Comma:
-      case OperatorDelimiterType.RightBracket:
-      case OperatorDelimiterType.RightSquareBracket:
-      case OperatorDelimiterType.RightFigureBracket:
-      case OperatorDelimiterType.EqualSign:
-      case OperatorDelimiterType.Colon:
+    switch (token.delimiter) {
+      case DelimiterType.Comma:
+      case DelimiterType.RightBracket:
+      case DelimiterType.RightSquareBracket:
+      case DelimiterType.RightFigureBracket:
+      case DelimiterType.EqualSign:
+      case DelimiterType.Colon:
         return true;
     }
   }
   if (token.type === TokenType.Keyword) {
-    switch (token.arg1) {
-      case KeywordType.KeywordElse:
+    switch (token.keyword) {
+      case KeywordType.Else:
+      case KeywordType.As:
         return true;
     }
   }
@@ -238,94 +246,93 @@ export function isExpressionEnd(token: Token): boolean {
 
 export function getTokenOperatorPriority(token: Token): number {
   const type = token.type;
-  const arg = token.arg1;
   if (type === TokenType.Keyword) {
-    switch (arg) {
-      case KeywordType.KeywordOr:
+    switch (token.keyword) {
+      case KeywordType.Or:
         return 1;
-      case KeywordType.KeywordAnd:
+      case KeywordType.And:
         return 2;
-      case KeywordType.KeywordNot:
+      case KeywordType.Not:
         return 3;
-      case KeywordType.KeywordIn:
-      case KeywordType.KeywordNotIn:
-      case KeywordType.KeywordIs:
-      case KeywordType.KeywordIsNot:
+      case KeywordType.In:
+      case KeywordType.NotIn:
+      case KeywordType.Is:
+      case KeywordType.IsNot:
         return 4;
     }
   }
   if (type === TokenType.Operator) {
-    switch (arg) {
-      case OperatorDelimiterType.Less:
-      case OperatorDelimiterType.Greater:
-      case OperatorDelimiterType.LessEqual:
-      case OperatorDelimiterType.GreaterEqual:
-      case OperatorDelimiterType.NotEqual:
-      case OperatorDelimiterType.Equal:
+    switch (token.operator) {
+      case OperatorType.Less:
+      case OperatorType.Greater:
+      case OperatorType.LessEqual:
+      case OperatorType.GreaterEqual:
+      case OperatorType.NotEqual:
+      case OperatorType.Equal:
         return 4;
-      case OperatorDelimiterType.Or:
+      case OperatorType.Or:
         return 5;
-      case OperatorDelimiterType.Xor:
+      case OperatorType.Xor:
         return 6;
-      case OperatorDelimiterType.And:
+      case OperatorType.And:
         return 7;
-      case OperatorDelimiterType.ShiftLeft:
-      case OperatorDelimiterType.ShiftRight:
+      case OperatorType.ShiftLeft:
+      case OperatorType.ShiftRight:
         return 8;
-      case OperatorDelimiterType.Plus:
-      case OperatorDelimiterType.Minus:
+      case OperatorType.Plus:
+      case OperatorType.Minus:
         return 9;
-      case OperatorDelimiterType.Multiply:
-      case OperatorDelimiterType.At:
-      case OperatorDelimiterType.Divide:
-      case OperatorDelimiterType.FloorDivide:
-      case OperatorDelimiterType.Modulus:
+      case OperatorType.Multiply:
+      case OperatorType.At:
+      case OperatorType.Divide:
+      case OperatorType.FloorDivide:
+      case OperatorType.Modulus:
         return 10;
-      case OperatorDelimiterType.Power:
+      case OperatorType.Power:
         return 11;
     }
   }
-  if (type === TokenType.Keyword && arg === KeywordType.KeywordAwait) {
+  if (type === TokenType.Keyword && token.keyword === KeywordType.Await) {
     return 12;
   }
   return -1;
 }
 
 export function isIfOperator(token: Token): boolean {
-  return token && token.type === TokenType.Keyword && token.arg1 === KeywordType.KeywordIf;
+  return token && token.type === TokenType.Keyword && token.keyword === KeywordType.If;
 }
 
 export function isBinaryOperator(token: Token): boolean {
   if (token.type === TokenType.Operator) {
-    switch (token.arg1) {
-      case OperatorDelimiterType.Plus:
-      case OperatorDelimiterType.Minus:
-      case OperatorDelimiterType.Multiply:
-      case OperatorDelimiterType.Power:
-      case OperatorDelimiterType.Divide:
-      case OperatorDelimiterType.FloorDivide:
-      case OperatorDelimiterType.Modulus:
-      case OperatorDelimiterType.ShiftLeft:
-      case OperatorDelimiterType.ShiftRight:
-      case OperatorDelimiterType.And:
-      case OperatorDelimiterType.Or:
-      case OperatorDelimiterType.Xor:
-      case OperatorDelimiterType.Less:
-      case OperatorDelimiterType.Greater:
-      case OperatorDelimiterType.LessEqual:
-      case OperatorDelimiterType.GreaterEqual:
-      case OperatorDelimiterType.Equal:
-      case OperatorDelimiterType.NotEqual:
+    switch (token.operator) {
+      case OperatorType.Plus:
+      case OperatorType.Minus:
+      case OperatorType.Multiply:
+      case OperatorType.Power:
+      case OperatorType.Divide:
+      case OperatorType.FloorDivide:
+      case OperatorType.Modulus:
+      case OperatorType.ShiftLeft:
+      case OperatorType.ShiftRight:
+      case OperatorType.And:
+      case OperatorType.Or:
+      case OperatorType.Xor:
+      case OperatorType.Less:
+      case OperatorType.Greater:
+      case OperatorType.LessEqual:
+      case OperatorType.GreaterEqual:
+      case OperatorType.Equal:
+      case OperatorType.NotEqual:
         return true;
     }
   } else if (token.type === TokenType.Keyword) {
-    switch (token.arg1) {
-      case KeywordType.KeywordAnd:
-      case KeywordType.KeywordIs:
-      case KeywordType.KeywordIsNot:
-      case KeywordType.KeywordOr:
-      case KeywordType.KeywordIn:
-      case KeywordType.KeywordNotIn:
+    switch (token.keyword) {
+      case KeywordType.And:
+      case KeywordType.Is:
+      case KeywordType.IsNot:
+      case KeywordType.Or:
+      case KeywordType.In:
+      case KeywordType.NotIn:
         return true;
     }
   }

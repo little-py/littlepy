@@ -2,85 +2,8 @@ import { ClassInstanceObject } from './ClassInstanceObject';
 import { ClassInheritance } from './ClassObject';
 import { ExceptionClassObject } from './ExceptionClassObject';
 import { StringObject } from './StringObject';
-import { IntegerObject } from './IntegerObject';
-import { ObjectType } from '../../api/ObjectType';
 import { BaseObject } from './BaseObject';
-
-export enum ExceptionType {
-  Base,
-  ArithmeticError,
-  BufferError,
-  LookupError,
-  AssertionError,
-  AttributeError,
-  EofError,
-  FloatingPointError,
-  GeneratorExit,
-  ImportError,
-  ModuleNotFoundError,
-  IndexError,
-  KeyError,
-  KeyboardInterrupt,
-  MemoryError,
-  NameError,
-  NotImplementedError,
-  OsError,
-  OverflowError,
-  RecursionError,
-  ReferenceError,
-  RuntimeError,
-  StopIteration,
-  StopAsyncIteration,
-  SyntaxError,
-  IndentationError,
-  TabError,
-  SystemError,
-  SystemExit,
-  TypeError,
-  UnboundLocalError,
-  UnicodeError,
-  UnicodeEncodeError,
-  UnicodeDecodeError,
-  UnicodeTranslateError,
-  ValueError,
-  ZeroDivisionError,
-  EnvironmentError,
-  IoError,
-  BlockingIoError,
-  ChildProcessError,
-  ConnectionError,
-  BrokenPipeError,
-  ConnectionAbortedError,
-  ConnectionRefusedError,
-  ConnectionResetError,
-  FileExistsError,
-  FileNotFoundError,
-  InterruptedError,
-  IsADirectoryError,
-  NotADirectoryError,
-  PermissionError,
-  ProcessLookupError,
-  TimeoutError,
-  NotASequence,
-  NotAFunction,
-  UnknownIdentifier,
-  FunctionArgumentError,
-  FunctionMissingArgument,
-  FunctionDuplicateArgumentError,
-  ExpectedReference,
-  UnpackSourceIsNotSequence,
-  CannotUnpackToEmptyTuple,
-  UnpackCountDoesntMatch,
-  FunctionArgumentCountMismatch,
-  FunctionTooManyArguments,
-  ImportAllowedOnlyOnModuleLevel,
-  CannotBuildClassHierarchy,
-  CannotDeriveFromMultipleException,
-  BreakOrContinueOutsideOfCycle,
-  ResolutionOrder,
-
-  NonPublicExceptionType, // not an exception, used for getExceptionType only
-}
+import { ExceptionType } from '../../api/ExceptionType';
 
 const MAP_PUBLIC_EXCEPTION_NAME_TO_CODE = {
   BaseException: ExceptionType.Base,
@@ -139,7 +62,7 @@ const MAP_PUBLIC_EXCEPTION_NAME_TO_CODE = {
   TimeoutError: ExceptionType.TimeoutError,
 };
 
-const EXCEPTION_DESCRIPTION: { [key: number]: string } = {
+const EXCEPTION_DESCRIPTION: { [key: string]: string } = {
   [ExceptionType.ArithmeticError]: 'Arithmetic error',
   [ExceptionType.BufferError]: 'Buffer error',
   [ExceptionType.LookupError]: 'Lookup error',
@@ -209,11 +132,12 @@ const EXCEPTION_DESCRIPTION: { [key: number]: string } = {
   [ExceptionType.CannotBuildClassHierarchy]: 'Cannot build class hierarchy',
   [ExceptionType.BreakOrContinueOutsideOfCycle]: 'Break or continue is called outside of cycle',
   [ExceptionType.ResolutionOrder]: 'Cannot determine resolution order',
+  [ExceptionType.CannotReRaise]: 'Cannot re-raise exception',
 };
 
 export class ExceptionObject extends ClassInstanceObject {
   public constructor(t: ExceptionType, inherits?: ClassInheritance[], ...params: string[]) {
-    super(inherits || [], ObjectType.ExceptionInstance);
+    super(inherits || [], null);
     this.exceptionType = t;
     this.message = EXCEPTION_DESCRIPTION[this.exceptionType] || '';
     if (params.length) {
@@ -226,7 +150,7 @@ export class ExceptionObject extends ClassInstanceObject {
       case 'message':
         return new StringObject(this.message);
       case 'type':
-        return new IntegerObject(this.exceptionType);
+        return new StringObject(this.exceptionType);
     }
     return super.getAttribute(name);
   }
@@ -245,7 +169,11 @@ export class ExceptionObject extends ClassInstanceObject {
         case ExceptionType.Base:
           return true;
         case ExceptionType.ArithmeticError:
-          return this.exceptionType === ExceptionType.FloatingPointError || this.exceptionType === ExceptionType.OverflowError || this.exceptionType === ExceptionType.ZeroDivisionError;
+          return (
+            this.exceptionType === ExceptionType.FloatingPointError ||
+            this.exceptionType === ExceptionType.OverflowError ||
+            this.exceptionType === ExceptionType.ZeroDivisionError
+          );
         case ExceptionType.ImportError:
           return this.exceptionType === ExceptionType.ModuleNotFoundError;
         case ExceptionType.NameError:
@@ -270,7 +198,9 @@ export class ExceptionObject extends ClassInstanceObject {
           );
         case ExceptionType.ConnectionError:
           return (
-            this.exceptionType === ExceptionType.ConnectionAbortedError || this.exceptionType === ExceptionType.ConnectionRefusedError || this.exceptionType === ExceptionType.ConnectionResetError
+            this.exceptionType === ExceptionType.ConnectionAbortedError ||
+            this.exceptionType === ExceptionType.ConnectionRefusedError ||
+            this.exceptionType === ExceptionType.ConnectionResetError
           );
         case ExceptionType.RuntimeError:
           return this.exceptionType === ExceptionType.NotImplementedError || this.exceptionType === ExceptionType.RecursionError;
@@ -286,7 +216,11 @@ export class ExceptionObject extends ClassInstanceObject {
             this.exceptionType === ExceptionType.UnicodeTranslateError
           );
         case ExceptionType.UnicodeError:
-          return this.exceptionType === ExceptionType.UnicodeDecodeError || this.exceptionType === ExceptionType.UnicodeEncodeError || this.exceptionType === ExceptionType.UnicodeTranslateError;
+          return (
+            this.exceptionType === ExceptionType.UnicodeDecodeError ||
+            this.exceptionType === ExceptionType.UnicodeEncodeError ||
+            this.exceptionType === ExceptionType.UnicodeTranslateError
+          );
       }
       return false;
     }
@@ -304,4 +238,12 @@ export class ExceptionObject extends ClassInstanceObject {
   public readonly exceptionType: ExceptionType;
   public readonly message: string;
   public readonly params: string[];
+
+  public static setThrowExceptionHandler() {
+    BaseObject.throwException = (type: ExceptionType, ...args: string[]) => {
+      throw new ExceptionObject(type, [], ...args);
+    };
+  }
 }
+
+ExceptionObject.setThrowExceptionHandler();

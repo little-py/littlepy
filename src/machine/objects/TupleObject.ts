@@ -1,23 +1,18 @@
 import { BaseObject } from './BaseObject';
-import { setIteratorFunction } from './IteratorObject';
-import { ObjectType } from '../../api/ObjectType';
+import { StringObject } from './StringObject';
+import { ContainerObject } from './ContainerObject';
 
-export class TupleObject extends BaseObject {
+export class TupleObject extends ContainerObject {
+  public getCount(): number {
+    return this.items.length;
+  }
+
   public constructor(items: BaseObject[]) {
-    super(ObjectType.Tuple);
+    super();
     this.items = items;
-    setIteratorFunction(this);
   }
 
   private readonly items: BaseObject[];
-
-  public isContainer(): boolean {
-    return true;
-  }
-
-  public count(): number {
-    return this.items.length;
-  }
 
   public getItem(index: number): BaseObject {
     return this.items[index];
@@ -28,13 +23,13 @@ export class TupleObject extends BaseObject {
   }
 
   public contains(value: BaseObject): boolean {
-    return this.items.indexOf(value) >= 0;
+    return this.items.findIndex(r => r.equals(value)) >= 0;
   }
 
   public toString(): string {
     return `(${this.items
       .map(r => {
-        if (r.type === ObjectType.String) {
+        if (r instanceof StringObject) {
           return `'${r.toString()}'`;
         } else {
           return r.toString();

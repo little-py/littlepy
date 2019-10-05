@@ -1,9 +1,20 @@
 import { BaseObject } from './BaseObject';
-import { ObjectType } from '../../api/ObjectType';
+import { ContainerObject } from './ContainerObject';
+import { ExceptionType } from '../../api/ExceptionType';
 
-export class StringObject extends BaseObject {
+export class StringObject extends ContainerObject {
+  getCount(): number {
+    return this.value.length;
+  }
+
+  getItem(index: number | string): BaseObject {
+    if (typeof index !== 'number') {
+      BaseObject.throwException(ExceptionType.TypeError, 'index');
+    }
+    return new StringObject(this.value[index]);
+  }
   public constructor(value: string) {
-    super(ObjectType.String);
+    super();
     this.value = value;
   }
 
@@ -15,8 +26,11 @@ export class StringObject extends BaseObject {
     return this.value;
   }
 
-  public isContainer(): boolean {
-    return true;
+  public equals(to: BaseObject): boolean | boolean {
+    if (to instanceof StringObject) {
+      return this.value === to.value;
+    }
+    return super.equals(to);
   }
 
   public contains(value: BaseObject): boolean {

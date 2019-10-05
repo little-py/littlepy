@@ -1,9 +1,8 @@
 import { BaseObject } from './BaseObject';
-import { ObjectType } from '../../api/ObjectType';
 
 export class BooleanObject extends BaseObject {
   public constructor(value: number) {
-    super(ObjectType.Boolean);
+    super();
     this.value = value;
   }
 

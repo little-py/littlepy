@@ -36,12 +36,12 @@ export enum InstructionType {
   IIsNot, // reg3 = reg1 is not reg2
   IIn, // reg3 = reg1 in reg2
   INotIn, // reg3 = reg1 not in reg2
-  IRegArg, // sets reg1 as argument with index2
+  IRegArg, // sets reg1 as argument with index2, expand if arg3 !== 0
   IRegArgName, // sets reg1 as named argument with identifier2
   ICallFunc, // calls function reg1(arg1, arg2, arg3, ...) and places result into reg2
   ICallMethod, // calls method reg1.reg2(arg1, rg2, arg3, ...) and places result into reg3
   IRet, // returns from function call with value in reg1; returns empty if reg1 = -1
-  IRaise, // raises exception with value in reg1
+  IRaise, // raises exception with value in reg1; if reg1 == -1 then re-raise the exception (only inside of except... block)
   // ISeqNext, // takes next sequence item from reg1 and puts result in reg2; puts 1 into reg3 if there is next value; puts 0 otherwise
   IGetBool, // takes reg1, calculates bool value based on it ant puts into reg2
   ILogicalNot, // applies logical not to reg1 and puts result in reg2

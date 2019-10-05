@@ -1,18 +1,20 @@
 import { GeneratedCode } from '../common/Instructions';
 import { TokenPosition } from './Token';
+import { ReferenceScope } from '../common/ReferenceScope';
 
 export enum CompilerBlockType {
-  For,
-  While,
-  Function,
-  Module,
-  Class,
-  If,
-  Else,
-  ElseIf,
-  Try,
-  Except,
-  Finally,
+  For = 'For',
+  While = 'While',
+  Function = 'Function',
+  Module = 'Module',
+  Class = 'Class',
+  If = 'If',
+  Else = 'Else',
+  ElseIf = 'ElseIf',
+  Try = 'Try',
+  Except = 'Except',
+  Finally = 'Finally',
+  With = 'With',
 }
 
 export class CompilerBlockContext {
@@ -28,5 +30,7 @@ export class CompilerBlockContext {
   public path: string;
   public index: number;
   public parent: CompilerBlockContext;
+  public documentation = '';
+  public scopeChange: { [id: string]: ReferenceScope } = {};
   //public declaredVariables: { [key: string]: boolean } = {};
 }

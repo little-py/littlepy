@@ -70,6 +70,7 @@ export class CompilerContext {
   private readonly intLiterals: { [key: string]: number } = {};
   public readonly rowDescriptors: RowDescriptor[] = [];
   public row: number;
+  private lambdaFunctionIndex = 1;
 
   public constructor(code: CompiledModule) {
     this.compiledCode = code;
@@ -196,5 +197,9 @@ export class CompilerContext {
 
   public getBlockCount(): number {
     return this.blocks.length;
+  }
+
+  public getLambdaFunctionName() {
+    return `<lambda>.${this.lambdaFunctionIndex++}`;
   }
 }

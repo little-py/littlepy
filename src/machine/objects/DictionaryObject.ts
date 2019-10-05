@@ -1,22 +1,21 @@
 import { BaseObject } from './BaseObject';
-import { setIteratorFunction } from './IteratorObject';
-import { ObjectType } from '../../api/ObjectType';
+import { ContainerObject } from './ContainerObject';
+import { StringObject } from './StringObject';
 
-export class DictionaryObject extends BaseObject {
+export class DictionaryObject extends ContainerObject {
   public constructor() {
-    super(ObjectType.Dictionary);
-    setIteratorFunction(this);
+    super();
   }
 
   private readonly items: { [key: string]: BaseObject } = {};
   private _count = 0;
 
-  public isContainer(): boolean {
-    return true;
+  public getCount(): number {
+    return this._count;
   }
 
-  public count(): number {
-    return this._count;
+  public getItem(index: string): BaseObject {
+    return this.items[index];
   }
 
   public contains(value: BaseObject): boolean {
@@ -24,13 +23,9 @@ export class DictionaryObject extends BaseObject {
     return !!this.items[name];
   }
 
-  public setDictionaryItem(key: string, value: BaseObject) {
+  public setItem(key: string, value: BaseObject) {
     this.items[key] = value;
     this._count = Object.keys(this.items).length;
-  }
-
-  public getDictionaryItem(key: string): BaseObject {
-    return this.items[key];
   }
 
   public toString(): string {
@@ -38,7 +33,7 @@ export class DictionaryObject extends BaseObject {
     return `{${keys
       .map(key => {
         const value = this.items[key];
-        return `'${key}': ${value.type === ObjectType.String ? `'${value.toString()}'` : value.toString()}`;
+        return `'${key}': ${value instanceof StringObject ? `'${value.toString()}'` : value.toString()}`;
       })
       .join(', ')}}`;
   }

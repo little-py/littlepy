@@ -1,9 +1,8 @@
 import { BaseObject } from './BaseObject';
-import { CallableObject } from './CallableObject';
 import { ClassInheritance } from './ClassObject';
-import { ObjectType } from '../../api/ObjectType';
+import { FunctionRunContext } from '../FunctionRunContext';
 
-export class ClassInstanceObject extends CallableObject {
+export class ClassInstanceObject extends BaseObject {
   public readonly classInheritance: ClassInheritance[];
 
   public getAttribute(name: string): BaseObject {
@@ -19,8 +18,9 @@ export class ClassInstanceObject extends CallableObject {
     }
   }
 
-  public constructor(classInheritance: ClassInheritance[], type: ObjectType = ObjectType.ClassInstance) {
-    super(type);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public constructor(classInheritance: ClassInheritance[], context: FunctionRunContext) {
+    super();
     this.classInheritance = classInheritance;
   }
 }

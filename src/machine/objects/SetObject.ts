@@ -1,22 +1,14 @@
 import { BaseObject } from './BaseObject';
-import { setIteratorFunction } from './IteratorObject';
-import { ObjectType } from '../../api/ObjectType';
+import { IteratorObject } from './IteratorObject';
+import { StringObject } from './StringObject';
+import { ContainerObject } from './ContainerObject';
 
-export class SetObject extends BaseObject {
+export class SetObject extends ContainerObject {
   public constructor() {
-    super(ObjectType.Set);
-    setIteratorFunction(this);
+    super();
   }
 
   private readonly items: BaseObject[] = [];
-
-  public isContainer(): boolean {
-    return true;
-  }
-
-  public count(): number {
-    return this.items.length;
-  }
 
   public getItem(index: number): BaseObject {
     return this.items[index];
@@ -27,10 +19,19 @@ export class SetObject extends BaseObject {
   }
 
   public contains(value: BaseObject): boolean {
-    return this.items.indexOf(value) >= 0;
+    return this.items.findIndex(r => r.equals(value)) >= 0;
   }
 
   public toString(): string {
-    return `{${this.items.map(o => (o.type === ObjectType.String ? `'${o.toString()}'` : o.toString())).join(', ')}}`;
+    return `{${this.items.map(o => (o instanceof StringObject ? `'${o.toString()}'` : o.toString())).join(', ')}}`;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  public native___iter__() {
+    return new IteratorObject(this);
+  }
+
+  getCount(): number {
+    return this.items.length;
   }
 }

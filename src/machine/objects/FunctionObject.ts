@@ -1,8 +1,8 @@
 import { CallableObject } from './CallableObject';
-import { ObjectType } from '../../api/ObjectType';
+import { FunctionRunContext } from '../FunctionRunContext';
 
 export class FunctionObject extends CallableObject {
-  public constructor() {
-    super(ObjectType.Function);
+  public constructor(context: FunctionRunContext = null, nativeFunction: Function = null) {
+    super(context, nativeFunction);
   }
 }

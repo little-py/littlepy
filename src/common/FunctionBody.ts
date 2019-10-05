@@ -2,8 +2,8 @@ import { Instruction } from './Instructions';
 import { CompiledModule } from '../compiler/CompiledModule';
 import { PyFunction } from '../api/Function';
 import { InstructionType } from './InstructionType';
-import { ReferenceScope } from '../machine/objects/ReferenceObject';
 import { LiteralType } from '../compiler/Literal';
+import { ReferenceScope } from './ReferenceScope';
 
 export enum ArgumentType {
   Normal,
@@ -18,10 +18,10 @@ export class FunctionArgument {
 }
 
 export enum FunctionType {
-  FunctionTypeRegular,
-  FunctionTypeClass,
-  FunctionTypeClassMember,
-  FunctionTypeModule,
+  Regular = 'Regular',
+  Class = 'Class',
+  ClassMember = 'ClassMember',
+  Module = 'Module',
 }
 
 /* istanbul ignore next */
@@ -156,7 +156,9 @@ export function createDebugInformation(module: CompiledModule, instructions: Ins
         i.debug = `reg${i.arg1} = ${literalToText(i.arg2)}`;
         break;
       case InstructionType.ICreateVarRef:
-        i.debug = `reg${i.arg2} = reference(${idToText(i.arg1)})${i.arg3 === ReferenceScope.Default ? '' : i.arg3 === ReferenceScope.Global ? '// global scope' : '// nonlocal scope'}`;
+        i.debug = `reg${i.arg2} = reference(${idToText(i.arg1)})${
+          i.arg3 === ReferenceScope.Default ? '' : i.arg3 === ReferenceScope.Global ? '// global scope' : '// nonlocal scope'
+        }`;
         break;
       case InstructionType.ICreateArrayIndexRef:
         i.debug = `reg${i.arg3} = reference(reg${i.arg1}[${i.arg2}])`;
@@ -249,7 +251,11 @@ export function createDebugInformation(module: CompiledModule, instructions: Ins
         i.debug = `i.debug = reg${i.arg1}`;
         break;
       case InstructionType.IRaise:
-        i.debug = `raise reg${i.arg1}`;
+        if (i.arg1 === -1) {
+          i.debug = 're-raise current exception';
+        } else {
+          i.debug = `raise reg${i.arg1}`;
+        }
         break;
       case InstructionType.IGetBool:
         i.debug = `reg${i.arg2} = bool(reg${i.arg1})`;
@@ -326,7 +332,11 @@ export function createDebugInformation(module: CompiledModule, instructions: Ins
         }
         break;
       case InstructionType.IGotoExcept:
-        i.debug = `start except block for class ${idToText(i.arg1)} from label${i.arg2}`;
+        if (i.arg1 === -1) {
+          i.debug = `start except block for all exceptions from label${i.arg2}`;
+        } else {
+          i.debug = `start except block for class ${idToText(i.arg1)} from label${i.arg2}`;
+        }
         break;
       case InstructionType.IGotoFinally:
         i.debug = `indicate finally block to start on label${i.arg1}`;
@@ -394,6 +404,7 @@ export function createDebugInformation(module: CompiledModule, instructions: Ins
 
 export class FunctionBody implements PyFunction {
   public name: string;
+  public documentation: string;
   public code: Instruction[];
   public arguments: FunctionArgument[] = [];
   public parent: number;

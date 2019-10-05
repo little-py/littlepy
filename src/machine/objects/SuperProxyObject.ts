@@ -1,12 +1,11 @@
 import { BaseObject } from './BaseObject';
 import { CallableObject } from './CallableObject';
 import { ClassInstanceObject } from './ClassInstanceObject';
-import { ObjectType } from '../../api/ObjectType';
 
 export class SuperProxyObject extends CallableObject {
   public readonly classInstance: ClassInstanceObject;
   public constructor(classInstance: ClassInstanceObject) {
-    super(ObjectType.SuperProxy);
+    super();
     this.classInstance = classInstance;
   }
   public getAttribute(name: string): BaseObject {

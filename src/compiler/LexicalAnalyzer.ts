@@ -1,5 +1,5 @@
 import { LexicalContext } from './LexicalContext';
-import { OperatorDelimiterType, Token, TokenType } from './Token';
+import { DelimiterType, OperatorType, Token, TokenType } from './Token';
 import { Keyword, KeywordType } from './Keyword';
 import { isDigit, isFirstIdentifierChar, isIdentifierChar, isStringMarkerChar } from './Characters';
 import { Literal, LiteralType } from './Literal';
@@ -147,20 +147,20 @@ export class LexicalAnalyzer {
       if (token.type === TokenType.Identifier) {
         const id = this._source.substr(tokenStart, token.length);
         const keywordType = Keyword.getKeywordType(id);
-        if (keywordType !== KeywordType.InvalidKeyword) {
+        if (keywordType !== KeywordType.Invalid) {
           const last = this._compiledCode.tokens[this._compiledCode.tokens.length - 1];
           if (last && last.type === TokenType.Keyword) {
-            const compositeKeyword = Keyword.getCompositeKeyword(last.arg1 as KeywordType, keywordType);
-            if (compositeKeyword !== KeywordType.InvalidKeyword) {
-              last.arg1 = compositeKeyword;
+            const compositeKeyword = Keyword.getCompositeKeyword(last.keyword, keywordType);
+            if (compositeKeyword !== KeywordType.Invalid) {
+              last.keyword = compositeKeyword;
               last.length = token.offset + token.length - last.offset;
               return;
             }
           }
-          token.arg1 = keywordType;
+          token.keyword = keywordType;
           token.type = TokenType.Keyword;
         } else {
-          token.arg1 = this._context.addIdentifier(id);
+          token.identifier = this._context.addIdentifier(id);
         }
       }
       this.addToken(token);
@@ -294,7 +294,10 @@ export class LexicalAnalyzer {
     token.type = TokenType.Literal;
     let value = '';
     while (this._sourcePos < this._source.length) {
-      if (this._currentChar === quoteType && (!isLong || (this._source[this._sourcePos + 1] === quoteType && this._source[this._sourcePos + 2] === quoteType))) {
+      if (
+        this._currentChar === quoteType &&
+        (!isLong || (this._source[this._sourcePos + 1] === quoteType && this._source[this._sourcePos + 2] === quoteType))
+      ) {
         if (isLong) {
           this.nextChar();
           this.nextChar();
@@ -346,7 +349,7 @@ export class LexicalAnalyzer {
       }
     }
     token.length = this._sourcePos - start;
-    token.arg1 = this._compiledCode.literals.length;
+    token.literal = this._compiledCode.literals.length;
     const literal = new Literal();
     literal.type = literalType;
     literal.string = value;
@@ -393,7 +396,7 @@ export class LexicalAnalyzer {
       this.nextChar();
       this._col++;
     }
-    token.arg1 = this._compiledCode.literals.length;
+    token.literal = this._compiledCode.literals.length;
     token.length = this._sourcePos - start;
     if (token.length === 0) {
       return false;
@@ -420,214 +423,253 @@ export class LexicalAnalyzer {
     const c1 = this._source[this._sourcePos];
     const c2 = this._sourcePos + 1 < this._source.length ? this._source[this._sourcePos + 1] : '';
     const c3 = this._sourcePos + 2 < this._source.length ? this._source[this._sourcePos + 2] : '';
-    let type = -1;
     let len = 0;
+    const token = new Token();
 
     switch (c1) {
       case '+':
         if (c2 === '=') {
-          type = OperatorDelimiterType.EqualPlus;
+          token.type = TokenType.Delimiter;
+          token.delimiter = DelimiterType.EqualPlus;
           len = 2;
         } else {
-          type = OperatorDelimiterType.Plus;
+          token.type = TokenType.Operator;
+          token.operator = OperatorType.Plus;
           len = 1;
         }
         break;
       case '-':
         if (c2 === '=') {
-          type = OperatorDelimiterType.EqualMinus;
+          token.type = TokenType.Delimiter;
+          token.delimiter = DelimiterType.EqualMinus;
           len = 2;
         } else if (c2 === '>') {
-          type = OperatorDelimiterType.Arrow;
+          token.type = TokenType.Delimiter;
+          token.delimiter = DelimiterType.Arrow;
           len = 2;
         } else {
-          type = OperatorDelimiterType.Minus;
+          token.type = TokenType.Operator;
+          token.operator = OperatorType.Minus;
           len = 1;
         }
         break;
       case '*':
         if (c2 === '=') {
-          type = OperatorDelimiterType.EqualMultiply;
+          token.type = TokenType.Delimiter;
+          token.delimiter = DelimiterType.EqualMultiply;
           len = 2;
         } else if (c2 === '*') {
           if (c3 === '=') {
-            type = OperatorDelimiterType.EqualPower;
+            token.type = TokenType.Delimiter;
+            token.delimiter = DelimiterType.EqualPower;
             len = 3;
           } else {
-            type = OperatorDelimiterType.Power;
+            token.type = TokenType.Operator;
+            token.operator = OperatorType.Power;
             len = 2;
           }
         } else {
-          type = OperatorDelimiterType.Multiply;
+          token.type = TokenType.Operator;
+          token.operator = OperatorType.Multiply;
           len = 1;
         }
         break;
       case '/':
         if (c2 === '=') {
-          type = OperatorDelimiterType.EqualDivide;
+          token.type = TokenType.Delimiter;
+          token.delimiter = DelimiterType.EqualDivide;
           len = 2;
         } else if (c2 === '/') {
           if (c3 === '=') {
-            type = OperatorDelimiterType.EqualFloorDivide;
+            token.type = TokenType.Delimiter;
+            token.delimiter = DelimiterType.EqualFloorDivide;
             len = 3;
           } else {
-            type = OperatorDelimiterType.FloorDivide;
+            token.type = TokenType.Operator;
+            token.operator = OperatorType.FloorDivide;
             len = 2;
           }
         } else {
-          type = OperatorDelimiterType.Divide;
+          token.type = TokenType.Operator;
+          token.operator = OperatorType.Divide;
           len = 1;
         }
         break;
       case '%':
         if (c2 === '=') {
-          type = OperatorDelimiterType.EqualModulus;
+          token.type = TokenType.Delimiter;
+          token.delimiter = DelimiterType.EqualModulus;
           len = 2;
         } else {
-          type = OperatorDelimiterType.Modulus;
+          token.type = TokenType.Operator;
+          token.operator = OperatorType.Modulus;
           len = 1;
         }
         break;
       case '@':
         if (c2 === '=') {
-          type = OperatorDelimiterType.EqualAt;
+          token.type = TokenType.Delimiter;
+          token.delimiter = DelimiterType.EqualAt;
           len = 2;
         } else {
-          type = OperatorDelimiterType.At;
+          token.type = TokenType.Operator;
+          token.operator = OperatorType.At;
           len = 1;
         }
         break;
       case '<':
         if (c2 === '<') {
           if (c3 === '=') {
-            type = OperatorDelimiterType.EqualShiftLeft;
+            token.type = TokenType.Delimiter;
+            token.delimiter = DelimiterType.EqualShiftLeft;
             len = 3;
           } else {
-            type = OperatorDelimiterType.ShiftLeft;
+            token.type = TokenType.Operator;
+            token.operator = OperatorType.ShiftLeft;
             len = 2;
           }
         } else if (c2 === '=') {
-          type = OperatorDelimiterType.LessEqual;
+          token.type = TokenType.Operator;
+          token.operator = OperatorType.LessEqual;
           len = 2;
         } else {
-          type = OperatorDelimiterType.Less;
+          token.type = TokenType.Operator;
+          token.operator = OperatorType.Less;
           len = 1;
         }
         break;
       case '>':
         if (c2 === '>') {
           if (c3 === '=') {
-            type = OperatorDelimiterType.EqualShiftRight;
+            token.type = TokenType.Delimiter;
+            token.delimiter = DelimiterType.EqualShiftRight;
             len = 3;
           } else {
-            type = OperatorDelimiterType.ShiftRight;
+            token.type = TokenType.Operator;
+            token.operator = OperatorType.ShiftRight;
             len = 2;
           }
         } else if (c2 === '=') {
-          type = OperatorDelimiterType.GreaterEqual;
+          token.type = TokenType.Operator;
+          token.operator = OperatorType.GreaterEqual;
           len = 2;
         } else {
-          type = OperatorDelimiterType.Greater;
+          token.type = TokenType.Operator;
+          token.operator = OperatorType.Greater;
           len = 1;
         }
         break;
       case '&':
         if (c2 === '=') {
-          type = OperatorDelimiterType.EqualAnd;
+          token.type = TokenType.Delimiter;
+          token.delimiter = DelimiterType.EqualAnd;
           len = 2;
         } else {
-          type = OperatorDelimiterType.And;
+          token.type = TokenType.Operator;
+          token.operator = OperatorType.And;
           len = 1;
         }
         break;
       case '|':
         if (c2 === '=') {
-          type = OperatorDelimiterType.EqualOr;
+          token.type = TokenType.Delimiter;
+          token.delimiter = DelimiterType.EqualOr;
           len = 2;
         } else {
-          type = OperatorDelimiterType.Or;
+          token.type = TokenType.Operator;
+          token.operator = OperatorType.Or;
           len = 1;
         }
         break;
       case '^':
         if (c2 === '=') {
-          type = OperatorDelimiterType.EqualXor;
+          token.type = TokenType.Delimiter;
+          token.delimiter = DelimiterType.EqualXor;
           len = 2;
           break;
         } else {
-          type = OperatorDelimiterType.Xor;
+          token.type = TokenType.Operator;
+          token.operator = OperatorType.Xor;
           len = 1;
         }
         break;
       case '~':
-        type = OperatorDelimiterType.Invert;
+        token.type = TokenType.Operator;
+        token.operator = OperatorType.Invert;
         len = 1;
         break;
       case '=':
         if (c2 === '=') {
-          type = OperatorDelimiterType.Equal;
+          token.type = TokenType.Operator;
+          token.operator = OperatorType.Equal;
           len = 2;
         } else {
-          type = OperatorDelimiterType.EqualSign;
+          token.type = TokenType.Delimiter;
+          token.delimiter = DelimiterType.EqualSign;
           len = 1;
         }
         break;
       case '!':
         if (c2 === '=') {
-          type = OperatorDelimiterType.NotEqual;
+          token.type = TokenType.Operator;
+          token.operator = OperatorType.NotEqual;
           len = 2;
         }
         break;
       case '(':
-        type = OperatorDelimiterType.LeftBracket;
+        token.type = TokenType.Delimiter;
+        token.delimiter = DelimiterType.LeftBracket;
         len = 1;
         break;
       case ')':
-        type = OperatorDelimiterType.RightBracket;
+        token.type = TokenType.Delimiter;
+        token.delimiter = DelimiterType.RightBracket;
         len = 1;
         break;
       case '[':
-        type = OperatorDelimiterType.LeftSquareBracket;
+        token.type = TokenType.Delimiter;
+        token.delimiter = DelimiterType.LeftSquareBracket;
         len = 1;
         break;
       case ']':
-        type = OperatorDelimiterType.RightSquareBracket;
+        token.type = TokenType.Delimiter;
+        token.delimiter = DelimiterType.RightSquareBracket;
         len = 1;
         break;
       case '{':
-        type = OperatorDelimiterType.LeftFigureBracket;
+        token.type = TokenType.Delimiter;
+        token.delimiter = DelimiterType.LeftFigureBracket;
         len = 1;
         break;
       case '}':
-        type = OperatorDelimiterType.RightFigureBracket;
+        token.type = TokenType.Delimiter;
+        token.delimiter = DelimiterType.RightFigureBracket;
         len = 1;
         break;
       case ',':
-        type = OperatorDelimiterType.Comma;
+        token.type = TokenType.Delimiter;
+        token.delimiter = DelimiterType.Comma;
         len = 1;
         break;
       case ':':
-        type = OperatorDelimiterType.Colon;
+        token.type = TokenType.Delimiter;
+        token.delimiter = DelimiterType.Colon;
         len = 1;
         break;
       case '.':
-        type = OperatorDelimiterType.Point;
+        token.type = TokenType.Delimiter;
+        token.delimiter = DelimiterType.Point;
         len = 1;
         break;
       case ';':
-        type = OperatorDelimiterType.Semicolon;
+        token.type = TokenType.Delimiter;
+        token.delimiter = DelimiterType.Semicolon;
         len = 1;
         break;
       default:
         return false;
     }
-    if (len === 0) {
-      return false;
-    }
-    const token = new Token();
-    token.type = type < OperatorDelimiterType.LastOperator ? TokenType.Operator : TokenType.Delimiter;
     this.prepareToken(token);
-    token.arg1 = type;
     token.length = len;
     this.addToken(token);
     for (let i = 0; i < len; i++) {

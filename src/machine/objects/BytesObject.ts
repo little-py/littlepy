@@ -1,11 +1,14 @@
 import { BaseObject } from './BaseObject';
-import { ObjectType } from '../../api/ObjectType';
 
 export class BytesObject extends BaseObject {
   public constructor(value: string) {
-    super(ObjectType.Bytes);
+    super();
     this.value = value;
   }
 
   public value: string;
+
+  public toString(): string {
+    return `b'${this.value}'`;
+  }
 }

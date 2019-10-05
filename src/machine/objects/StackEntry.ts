@@ -7,13 +7,13 @@ import { InstructionType } from '../../common/InstructionType';
 import { RunContext } from '../RunContext';
 import { ReferenceObject } from './ReferenceObject';
 import { GeneratorObject } from './GeneratorObject';
-import { ObjectType } from '../../api/ObjectType';
+import { ExceptionObject } from './ExceptionObject';
 
 export enum StackEntryType {
-  StackEntryWhileCycle,
-  StackEntryForCycle,
-  StackEntryTry,
-  StackEntryFunction,
+  WhileCycle = 'While',
+  ForCycle = 'For',
+  Try = 'Try',
+  Function = 'Function',
 }
 
 export class StackEntry {
@@ -21,7 +21,7 @@ export class StackEntry {
     this.type = t;
     this.parent = parent;
     this.name = name;
-    this.functionEntry = t === StackEntryType.StackEntryFunction ? this : parent && parent.functionEntry;
+    this.functionEntry = t === StackEntryType.Function ? this : parent && parent.functionEntry;
   }
 
   public setReg(num: number, value: BaseObject) {
@@ -34,8 +34,8 @@ export class StackEntry {
       runContext.raiseNullException();
       return;
     }
-    if (extractRef && reg.type === ObjectType.Reference) {
-      reg = (reg as ReferenceObject).getValue(runContext);
+    if (extractRef && reg instanceof ReferenceObject) {
+      reg = reg.getValue(runContext);
     }
     return reg;
   }
@@ -63,12 +63,11 @@ export class StackEntry {
   public trySection: boolean;
   public code: Instruction[];
   private regs: BaseObject[] = [];
-  public returnReg: number;
+  public onFinish: (ret: BaseObject, exception: ExceptionObject) => boolean | void | undefined;
   public callContext: CallableContext = new CallableContext();
   public finallyHandled: boolean;
   public exceptHandled: boolean;
   public defaultReturnValue: BaseObject;
-  public onReturn: (ret: BaseObject) => BaseObject;
   public generatorObject: GeneratorObject;
   public exceptionVariable: string;
 }

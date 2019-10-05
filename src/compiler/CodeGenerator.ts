@@ -1,12 +1,12 @@
 import { GeneratedCode, Instruction } from '../common/Instructions';
 import { CompilerContext } from './CompilerContext';
-import { OperatorDelimiterType, Token, TokenPosition, TokenType } from './Token';
+import { OperatorType, Token, TokenPosition, TokenType } from './Token';
 import { KeywordType } from './Keyword';
 import { Literal } from './Literal';
 import { CompilerBlockContext, CompilerBlockType } from './CompilerBlockContext';
 import { InstructionType } from '../common/InstructionType';
-import { ReferenceScope } from '../machine/objects/ReferenceObject';
 import { PyErrorType } from '../api/ErrorType';
+import { ReferenceScope } from '../common/ReferenceScope';
 
 export class Comprehension {
   public code: GeneratedCode;
@@ -108,6 +108,7 @@ export class CodeGenerator {
     const finishTry = context.getNewLabel();
 
     let finallyPart: CompilerBlockContext;
+    let elsePart: CompilerBlockContext;
     let tryPart: CompilerBlockContext;
     const exceptParts: CompilerBlockContext[] = [];
 
@@ -119,6 +120,9 @@ export class CodeGenerator {
         tryPart = part;
       } else if (part.type === CompilerBlockType.Except) {
         exceptParts.push(part);
+        part.label = context.getNewLabel();
+      } else if (part.type === CompilerBlockType.Else) {
+        elsePart = part;
         part.label = context.getNewLabel();
       }
     }
@@ -162,7 +166,67 @@ export class CodeGenerator {
 
     ret.add(InstructionType.ILabel, null, finishTry);
     ret.add(InstructionType.ILeaveTry, null);
+    if (elsePart) {
+      CodeGenerator.appendTo(ret, elsePart.blockCode);
+    }
     ret.success = true;
+    return ret;
+  }
+
+  public static with(
+    identifier: number,
+    expression: GeneratedCode,
+    block: GeneratedCode,
+    context: CompilerContext,
+    position: TokenPosition,
+  ): GeneratedCode {
+    const finishLabel = context.getNewLabel();
+    const exceptLabel = context.getNewLabel();
+    const exitLabel = context.getNewLabel();
+    const ret = new GeneratedCode();
+    ret.add(InstructionType.ICreateVarRef, position, identifier, 0, ReferenceScope.Default);
+    CodeGenerator.appendTo(ret, expression, 1);
+    ret.add(InstructionType.IReadProperty, position, context.getIdentifier('__enter__'), 1, 2);
+    ret.add(InstructionType.ICallMethod, position, 1, 2, 2);
+    ret.add(InstructionType.ICopyValue, position, 2, 0);
+    ret.add(InstructionType.IEnterTry, position, block.code.length + 2);
+    CodeGenerator.appendTo(ret, block);
+    ret.add(InstructionType.IGoTo, position, finishLabel);
+    ret.add(InstructionType.IGotoExcept, position, -1, exceptLabel);
+    ret.add(InstructionType.ILabel, position, exceptLabel);
+    ret.add(InstructionType.IEnterExcept, position, -1);
+
+    // call __exit__ with exception
+    ret.add(InstructionType.IReadObject, position, identifier, 0);
+    ret.add(InstructionType.IReadProperty, position, context.getIdentifier('__exit__'), 0, 1);
+    ret.add(InstructionType.IReadObject, position, context.getIdentifier('__sys__'), 2);
+    ret.add(InstructionType.IReadProperty, position, context.getIdentifier('exc_info'), 2, 3);
+    ret.add(InstructionType.ICallMethod, position, 2, 3, 2);
+    ret.add(InstructionType.IRegArg, position, 2, 0, 1);
+    ret.add(InstructionType.ICallMethod, position, 0, 1, 0);
+    ret.add(InstructionType.IGetBool, position, 0, 0);
+    ret.add(InstructionType.ILogicalNot, position, 0, 0);
+    const noRaiseLabel = context.getNewLabel();
+    ret.add(InstructionType.ICondition, position, 0, noRaiseLabel);
+    ret.add(InstructionType.IRaise, position, -1);
+    ret.add(InstructionType.ILabel, position, noRaiseLabel);
+
+    ret.add(InstructionType.ILeaveTry, position);
+    ret.add(InstructionType.IGoTo, position, exitLabel);
+    ret.add(InstructionType.ILabel, position, finishLabel);
+    ret.add(InstructionType.ILeaveTry, position);
+
+    // call __exit__ without exception
+    ret.add(InstructionType.IReadObject, position, identifier, 0);
+    ret.add(InstructionType.IReadProperty, position, context.getIdentifier('__exit__'), 0, 1);
+    ret.add(InstructionType.INone, position, 2);
+    ret.add(InstructionType.IRegArg, position, 2, 0, 0);
+    ret.add(InstructionType.IRegArg, position, 2, 1, 0);
+    ret.add(InstructionType.IRegArg, position, 2, 2, 0);
+    ret.add(InstructionType.ICallMethod, position, 0, 1, 0);
+
+    ret.add(InstructionType.ILabel, position, exitLabel);
+
     return ret;
   }
 
@@ -244,7 +308,13 @@ export class CodeGenerator {
     return ret;
   }
 
-  public static appendFunctionCall(code: GeneratedCode, args: GeneratedCode[], compilerContext: CompilerContext, position: TokenPosition, parentAt0: boolean): boolean {
+  public static appendFunctionCall(
+    code: GeneratedCode,
+    args: GeneratedCode[],
+    compilerContext: CompilerContext,
+    position: TokenPosition,
+    parentAt0: boolean,
+  ): boolean {
     let argIndex = 0;
     const argReg = 1 + (parentAt0 ? 1 : 0);
     for (const arg of args) {
@@ -276,18 +346,18 @@ export class CodeGenerator {
     const ret = new GeneratedCode();
     CodeGenerator.appendTo(ret, source);
     for (const token of unaryOperators) {
-      if (token.type === TokenType.Operator && token.arg1 === OperatorDelimiterType.Invert) {
+      if (token.type === TokenType.Operator && token.operator === OperatorType.Invert) {
         ret.add(InstructionType.IBinInv, token.getPosition(), 0, 0);
-      } else if (token.type === TokenType.Keyword && token.arg1 === KeywordType.KeywordNot) {
+      } else if (token.type === TokenType.Keyword && token.keyword === KeywordType.Not) {
         ret.add(InstructionType.IGetBool, token.getPosition(), 0, 0);
         ret.add(InstructionType.ILogicalNot, token.getPosition(), 0, 0);
-      } else if (token.type === TokenType.Operator && token.arg1 === OperatorDelimiterType.Plus) {
+      } else if (token.type === TokenType.Operator && token.operator === OperatorType.Plus) {
         // do nothing
-      } else if (token.type === TokenType.Operator && token.arg1 === OperatorDelimiterType.Minus) {
+      } else if (token.type === TokenType.Operator && token.operator === OperatorType.Minus) {
         ret.add(InstructionType.IInvert, token.getPosition(), 0, 0);
       } else {
         ret.success = false;
-        compilerContext.addError(PyErrorType.ErrorUnexpectedScenario_CodeGenerator_UnknownUnaryOperator, token);
+        compilerContext.addError(PyErrorType.UnknownUnaryOperator, token);
         return ret;
       }
     }
@@ -300,11 +370,11 @@ export class CodeGenerator {
     CodeGenerator.appendTo(ret, left);
     let opType = InstructionType.IPass;
     if (op.type === TokenType.Keyword) {
-      switch (op.arg1) {
-        case KeywordType.KeywordAnd:
+      switch (op.keyword) {
+        case KeywordType.And:
           opType = InstructionType.ILogicalAnd;
           break;
-        case KeywordType.KeywordOr:
+        case KeywordType.Or:
           opType = InstructionType.ILogicalOr;
           break;
       }
@@ -317,84 +387,84 @@ export class CodeGenerator {
     }
     CodeGenerator.appendTo(ret, right, 1);
     if (op.type === TokenType.Operator) {
-      switch (op.arg1) {
-        case OperatorDelimiterType.Plus:
+      switch (op.operator) {
+        case OperatorType.Plus:
           opType = InstructionType.IAdd;
           break;
-        case OperatorDelimiterType.Minus:
+        case OperatorType.Minus:
           opType = InstructionType.ISub;
           break;
-        case OperatorDelimiterType.Multiply:
+        case OperatorType.Multiply:
           opType = InstructionType.IMul;
           break;
-        case OperatorDelimiterType.Power:
+        case OperatorType.Power:
           opType = InstructionType.IPow;
           break;
-        case OperatorDelimiterType.Divide:
+        case OperatorType.Divide:
           opType = InstructionType.IDiv;
           break;
-        case OperatorDelimiterType.FloorDivide:
+        case OperatorType.FloorDivide:
           opType = InstructionType.IFloor;
           break;
-        case OperatorDelimiterType.Modulus:
+        case OperatorType.Modulus:
           opType = InstructionType.IMod;
           break;
-        case OperatorDelimiterType.At:
+        case OperatorType.At:
           opType = InstructionType.IAt;
           break;
-        case OperatorDelimiterType.ShiftLeft:
+        case OperatorType.ShiftLeft:
           opType = InstructionType.IShl;
           break;
-        case OperatorDelimiterType.ShiftRight:
+        case OperatorType.ShiftRight:
           opType = InstructionType.IShr;
           break;
-        case OperatorDelimiterType.And:
+        case OperatorType.And:
           opType = InstructionType.IBinAnd;
           break;
-        case OperatorDelimiterType.Or:
+        case OperatorType.Or:
           opType = InstructionType.IBinOr;
           break;
-        case OperatorDelimiterType.Xor:
+        case OperatorType.Xor:
           opType = InstructionType.IBinXor;
           break;
-        case OperatorDelimiterType.Less:
+        case OperatorType.Less:
           opType = InstructionType.ILess;
           break;
-        case OperatorDelimiterType.Greater:
+        case OperatorType.Greater:
           opType = InstructionType.IGreater;
           break;
-        case OperatorDelimiterType.LessEqual:
+        case OperatorType.LessEqual:
           opType = InstructionType.ILessEq;
           break;
-        case OperatorDelimiterType.GreaterEqual:
+        case OperatorType.GreaterEqual:
           opType = InstructionType.IGreaterEq;
           break;
-        case OperatorDelimiterType.Equal:
+        case OperatorType.Equal:
           opType = InstructionType.IEqual;
           break;
-        case OperatorDelimiterType.NotEqual:
+        case OperatorType.NotEqual:
           opType = InstructionType.INotEq;
           break;
       }
     } else if (op.type === TokenType.Keyword) {
-      switch (op.arg1) {
-        case KeywordType.KeywordIs:
+      switch (op.keyword) {
+        case KeywordType.Is:
           opType = InstructionType.IIs;
           break;
-        case KeywordType.KeywordIsNot:
+        case KeywordType.IsNot:
           opType = InstructionType.IIsNot;
           break;
-        case KeywordType.KeywordIn:
+        case KeywordType.In:
           opType = InstructionType.IIn;
           break;
-        case KeywordType.KeywordNotIn:
+        case KeywordType.NotIn:
           opType = InstructionType.INotIn;
           break;
       }
     }
     if (opType === InstructionType.IPass) {
       ret.success = false;
-      compilerContext.addError(PyErrorType.ErrorUnexpectedScenario_CodeGenerator_UnknownBinaryOperator, op);
+      compilerContext.addError(PyErrorType.UnknownBinaryOperator, op);
       return ret;
     }
     ret.add(opType, op.getPosition(), 0, 1, 0);
@@ -402,7 +472,13 @@ export class CodeGenerator {
     return ret;
   }
 
-  private static prepareReference(code: GeneratedCode, identifiers: string[], length: number, compilerContext: CompilerContext, position: TokenPosition) {
+  private static prepareReference(
+    code: GeneratedCode,
+    identifiers: string[],
+    length: number,
+    compilerContext: CompilerContext,
+    position: TokenPosition,
+  ) {
     code.add(InstructionType.IReadObject, position, compilerContext.getIdentifier(identifiers[0]), 0);
     for (let i = 1; i < length; i++) {
       code.add(InstructionType.IReadProperty, position, compilerContext.getIdentifier(identifiers[i]), 0, 0);
@@ -432,9 +508,9 @@ export class CodeGenerator {
     code.add(InstructionType.ICreateArrayIndexRef, position, objectReg, objectReg + 1, objectReg);
   }
 
-  public static createVarReference(identifier: number, position: TokenPosition): GeneratedCode {
+  public static createVarReference(identifier: number, scope: ReferenceScope, position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();
-    ret.add(InstructionType.ICreateVarRef, position, identifier, 0, ReferenceScope.Default);
+    ret.add(InstructionType.ICreateVarRef, position, identifier, 0, scope);
     ret.success = true;
     return ret;
   }
@@ -500,7 +576,13 @@ export class CodeGenerator {
     return ret;
   }
 
-  public static conditionalExpression(condition: GeneratedCode, ifPart: GeneratedCode, elsePart: GeneratedCode, compilerContext: CompilerContext, position: TokenPosition): GeneratedCode {
+  public static conditionalExpression(
+    condition: GeneratedCode,
+    ifPart: GeneratedCode,
+    elsePart: GeneratedCode,
+    compilerContext: CompilerContext,
+    position: TokenPosition,
+  ): GeneratedCode {
     const ret = new GeneratedCode();
     CodeGenerator.appendTo(ret, condition);
     const elseLabel = compilerContext.getNewLabel();

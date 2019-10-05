@@ -1,28 +1,28 @@
 import { BaseObject } from './BaseObject';
-import { setIteratorFunction } from './IteratorObject';
-import { ObjectType } from '../../api/ObjectType';
+import { IteratorObject } from './IteratorObject';
+import { ContainerObject } from './ContainerObject';
+import { StringObject } from './StringObject';
+import { ExceptionType } from '../../api/ExceptionType';
 
-export class ListObject extends BaseObject {
+export class ListObject extends ContainerObject {
   public constructor() {
-    super(ObjectType.List);
-    setIteratorFunction(this);
+    super();
   }
 
   private readonly items: BaseObject[] = [];
 
-  public isContainer(): boolean {
-    return true;
-  }
-
   public contains(value: BaseObject): boolean {
-    return this.items.indexOf(value) >= 0;
+    return this.items.findIndex(r => r.equals(value)) >= 0;
   }
 
-  public count(): number {
+  public getCount(): number {
     return this.items.length;
   }
 
-  public getItem(index: number): BaseObject {
+  public getItem(index: number | string): BaseObject {
+    if (typeof index === 'string') {
+      BaseObject.throwException(ExceptionType.TypeError);
+    }
     return this.items[index];
   }
 
@@ -41,12 +41,17 @@ export class ListObject extends BaseObject {
   public toString(): string {
     return `[${this.items
       .map(r => {
-        if (r.type === ObjectType.String) {
+        if (r instanceof StringObject) {
           return `'${r.toString()}'`;
         } else {
           return r.toString();
         }
       })
       .join(', ')}]`;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  public native___iter__() {
+    return new IteratorObject(this);
   }
 }

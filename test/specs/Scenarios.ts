@@ -1,5 +1,5 @@
-import { ExceptionType } from '../../src/machine/objects/ExceptionObject';
 import { PyErrorType } from '../../src/api/ErrorType';
+import { ExceptionType } from '../../src/api/ExceptionType';
 
 export interface TestScenario {
   input: string;
@@ -27,7 +27,11 @@ const scenarios: TestScenario[] = [
         for x in [1, 2, 3]:
            print(x)
       `,
-    output: ['1', '2', '3'],
+    output: [
+      '1', //
+      '2',
+      '3',
+    ],
   },
   {
     input: `
@@ -63,7 +67,11 @@ const scenarios: TestScenario[] = [
         print(y)
         print(z)
       `,
-    output: ['Orange', 'Banana', 'Cherry'],
+    output: [
+      'Orange', //
+      'Banana',
+      'Cherry',
+    ],
   },
   {
     input: `
@@ -173,7 +181,21 @@ const scenarios: TestScenario[] = [
       print(10 > 10)
       print(10 >= 10)
     `,
-    output: ['True', 'False', 'True', 'True', 'False', 'True', 'True', 'True', 'False', 'True', 'False', 'False', 'True'],
+    output: [
+      'True', //
+      'False',
+      'True',
+      'True',
+      'False',
+      'True',
+      'True',
+      'True',
+      'False',
+      'True',
+      'False',
+      'False',
+      'True',
+    ],
   },
   {
     input: `
@@ -201,8 +223,9 @@ const scenarios: TestScenario[] = [
       c = 20
       print(a in b)
       print(c in b)
+      print(c not in b)
     `,
-    output: ['True', 'False', 'True', 'False'],
+    output: ['True', 'False', 'True', 'False', 'True'],
   },
   {
     input: `
@@ -774,7 +797,30 @@ const scenarios: TestScenario[] = [
       print('test' != 'other')
       print('test' != 'test')
     `,
-    output: ['5', '2.5', '8', '2', '1', '64', '4', '8', '7', '11', 'True', 'False', 'True', 'False', 'True', 'False', 'True', 'False', 'True', 'False', 'True', 'False'],
+    output: [
+      '5',
+      '2.5',
+      '8',
+      '2',
+      '1',
+      '64',
+      '4',
+      '8',
+      '7',
+      '11',
+      'True',
+      'False',
+      'True',
+      'False',
+      'True',
+      'False',
+      'True',
+      'False',
+      'True',
+      'False',
+      'True',
+      'False',
+    ],
   },
   {
     input: `
@@ -967,7 +1013,7 @@ const scenarios: TestScenario[] = [
       else:
         print('a')
     `,
-    expectedCompilerError: PyErrorType.Error_Compiler_CannotFindIfOrElifForElse,
+    expectedCompilerError: PyErrorType.CannotFindIfOrElifForElse,
   },
   {
     input: `
@@ -1130,7 +1176,7 @@ const scenarios: TestScenario[] = [
       elif x > 3:
         print('x')
     `,
-    expectedCompilerError: PyErrorType.Error_Compiler_CannotFindIfOrElifForElif,
+    expectedCompilerError: PyErrorType.CannotFindIfOrElifForElif,
   },
   {
     input: `
@@ -1139,7 +1185,7 @@ const scenarios: TestScenario[] = [
       elif x > 3:
         print('x')
     `,
-    expectedCompilerError: PyErrorType.Error_Compiler_CannotFindIfOrElifForElif,
+    expectedCompilerError: PyErrorType.CannotFindIfOrElifForElif,
   },
   {
     input: `
@@ -1153,39 +1199,40 @@ const scenarios: TestScenario[] = [
   },
   {
     input: 'import',
-    expectedCompilerError: PyErrorType.Error_Compiler_IncompleteImportDefinition,
+    expectedCompilerError: PyErrorType.IncompleteImportDefinition,
   },
   {
     input: 'import a b',
-    expectedCompilerError: PyErrorType.Error_Compiler_ImportDefinitionIsTooLong,
+    expectedCompilerError: PyErrorType.ImportDefinitionIsTooLong,
   },
   {
     input: 'import 10',
-    expectedCompilerError: PyErrorType.Error_Compiler_ImportExpectedIdentifier,
+    expectedCompilerError: PyErrorType.ImportExpectedIdentifier,
   },
   {
     input: 'import a as 10',
-    expectedCompilerError: PyErrorType.Error_Compiler_ImportExpectedAsIdentifier,
+    expectedCompilerError: PyErrorType.ImportExpectedAsIdentifier,
   },
   {
     input: 'from x',
-    expectedCompilerError: PyErrorType.Error_Compiler_IncompleteImportFromDefinition,
+    expectedCompilerError: PyErrorType.IncompleteImportFromDefinition,
   },
   {
     input: 'from x import a b',
-    expectedCompilerError: PyErrorType.Error_Compiler_ImportFromDefinitionIsTooLong,
+    expectedCompilerError: PyErrorType.ImportFromDefinitionIsTooLong,
   },
   {
     input: 'from x a b',
-    expectedCompilerError: PyErrorType.Error_Compiler_ImportFromExpectedImport,
+    expectedCompilerError: PyErrorType.ImportFromExpectedImport,
   },
   {
     input: 'from 10 import a',
-    expectedCompilerError: PyErrorType.Error_Compiler_ImportFromExpectedIdentifier,
+    expectedCompilerError: PyErrorType.ImportFromExpectedIdentifier,
   },
   {
     input: 'from a import 10',
-    expectedCompilerError: PyErrorType.Error_Compiler_ImportFromExpectedIdentifier,
+    expectedCompilerError: PyErrorType.ImportFromExpectedIdentifier,
+    // onlyThis: true,
   },
   {
     input: `
@@ -1193,7 +1240,7 @@ const scenarios: TestScenario[] = [
         print(a)
         break a
     `,
-    expectedCompilerError: PyErrorType.Error_Compiler_BreakHasNoArguments,
+    expectedCompilerError: PyErrorType.BreakHasNoArguments,
   },
   {
     input: `
@@ -1201,11 +1248,11 @@ const scenarios: TestScenario[] = [
         print(a)
         continue a
     `,
-    expectedCompilerError: PyErrorType.Error_Compiler_ContinueHasNoArguments,
+    expectedCompilerError: PyErrorType.ContinueHasNoArguments,
   },
   {
     input: 'pass 100',
-    expectedCompilerError: PyErrorType.Error_Compiler_PassHasNoArguments,
+    expectedCompilerError: PyErrorType.PassHasNoArguments,
   },
   {
     input: 'raise 10 20',
@@ -1213,7 +1260,7 @@ const scenarios: TestScenario[] = [
   },
   {
     input: 'raise 10]',
-    expectedCompilerError: PyErrorType.Error_Compiler_RaiseExpectedEndOfLine,
+    expectedCompilerError: PyErrorType.RaiseExpectedEndOfLine,
   },
   {
     input: `
@@ -1229,7 +1276,7 @@ const scenarios: TestScenario[] = [
         yield
       func()
     `,
-    expectedCompilerError: PyErrorType.Error_Compiler_ExpectedYieldExpression,
+    expectedCompilerError: PyErrorType.ExpectedYieldExpression,
   },
   {
     input: `
@@ -1245,11 +1292,11 @@ const scenarios: TestScenario[] = [
         yield 10]
       func()
     `,
-    expectedCompilerError: PyErrorType.Error_Compiler_ReturnOrYieldExpectedEndOfLine,
+    expectedCompilerError: PyErrorType.ReturnOrYieldExpectedEndOfLine,
   },
   {
     input: 'except:',
-    expectedCompilerError: PyErrorType.Error_Compiler_ExceptExpectedTryOrExcept,
+    expectedCompilerError: PyErrorType.ExceptExpectedTry,
   },
   {
     input: `
@@ -1278,7 +1325,7 @@ const scenarios: TestScenario[] = [
       except 10:
         print('ok')
     `,
-    expectedCompilerError: PyErrorType.Error_Compiler_ExceptExpectedIdentifier,
+    expectedCompilerError: PyErrorType.ExceptExpectedIdentifier,
   },
   {
     input: `
@@ -1296,7 +1343,7 @@ const scenarios: TestScenario[] = [
       except (E
         print('ok')
     `,
-    expectedCompilerError: PyErrorType.Error_Compiler_ExceptExpectedRightBracket,
+    expectedCompilerError: PyErrorType.ExceptExpectedRightBracket,
   },
   {
     input: `
@@ -1305,7 +1352,7 @@ const scenarios: TestScenario[] = [
       except (E]
         print('ok')
     `,
-    expectedCompilerError: PyErrorType.Error_Compiler_ExceptExpectedRightBracket,
+    expectedCompilerError: PyErrorType.ExceptExpectedRightBracket,
   },
   {
     input: `
@@ -1323,33 +1370,33 @@ const scenarios: TestScenario[] = [
       except E as 10:
         print('ok')
     `,
-    expectedCompilerError: PyErrorType.Error_Compiler_ExceptExpectedIdentifierAfterAs,
+    expectedCompilerError: PyErrorType.ExceptExpectedIdentifierAfterAs,
   },
   {
     input: `
       finally:
         print(10)
     `,
-    expectedCompilerError: PyErrorType.Error_Compiler_FinallyCannotFindExceptOrTry,
+    expectedCompilerError: PyErrorType.FinallyCannotFindTry,
   },
   {
     input: `
       a = 10
       a += 10 += 20
     `,
-    expectedCompilerError: PyErrorType.Error_Compiler_MixingAugmentedOperators,
+    expectedCompilerError: PyErrorType.MixingAugmentedOperators,
   },
   {
     input: `
       del 10
     `,
-    expectedCompilerError: PyErrorType.Error_Compiler_ExpectedIdentifierForDel,
+    expectedCompilerError: PyErrorType.ExpectedIdentifierForDel,
   },
   {
     input: `
       del x.10
     `,
-    expectedCompilerError: PyErrorType.Error_Compiler_ExpectedEndOfIdentifierForDel,
+    expectedCompilerError: PyErrorType.ExpectedEndOfIdentifierForDel,
   },
   {
     input: `
@@ -1387,7 +1434,7 @@ const scenarios: TestScenario[] = [
       a = 10
       print(a < 20 if 5)
     `,
-    expectedCompilerError: PyErrorType.Error_Compiler_IfExpressionExpectedElse,
+    expectedCompilerError: PyErrorType.IfExpressionExpectedElse,
   },
   {
     input: `
@@ -1889,8 +1936,7 @@ const scenarios: TestScenario[] = [
       a = [10]
       print(a['test'])
     `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['test'],
+    expectedException: ExceptionType.TypeError,
   },
   {
     input: `
@@ -1965,6 +2011,741 @@ const scenarios: TestScenario[] = [
     `,
     output: ['found', 'not found'],
   },
+  {
+    input: `
+      x = 10
+      try:
+        1/0
+      except Exception as x:
+        print(x)
+      print(x)
+    `,
+    // exception 'as' parameter is undefined after except clause is finished
+    expectedException: ExceptionType.UnknownIdentifier,
+    exceptionArgs: ['x'],
+  },
+  {
+    input: `
+      x = 10
+      try:
+        1/0
+      except SystemException as x:
+        print(x)
+      except: pass
+      print(x)
+    `,
+    output: ['10'],
+  },
+  {
+    input: `
+      for x in ['a', 'b']:
+        try:
+          print(x)
+          1/0
+        except:
+          print(2)
+          continue
+        print(3)
+    `,
+    output: ['a', '2', 'b', '2'],
+  },
+  {
+    input: `
+      try:
+        for x in ['a', 'b']:
+          try:
+            print(x)
+            1/0
+          finally:
+            print(2)
+            continue
+          print(3)
+      except: pass
+    `,
+    output: ['a', '2', 'b', '2'],
+  },
+  {
+    input: `
+      for x in ['a', 'b']:
+        try:
+          print(x)
+          1/0
+        except:
+          print(2)
+          break
+        print(3)
+    `,
+    output: ['a', '2'],
+  },
+  {
+    input: `
+      x = lambda x, y: x * y
+      print(x(20, 30))
+    `,
+    output: ['600'],
+  },
+  {
+    input: `
+      def fib(n):
+        a, b = 0, 1
+        while a < n:
+          print(a, end=' ')
+          a, b = b, a + b
+        print()
+      fib(2000)
+    `,
+    output: ['0 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597 '],
+  },
+  {
+    input: `
+      def func():
+        """line1
+line2"""
+        print('call')
+      print(func.__doc__)
+    `,
+    output: ['line1', 'line2'],
+  },
+  {
+    input: `
+      try:
+        try:
+          print(1)
+        else:
+          print(2)
+          1/0
+        except:
+          print(3)
+        print(4)
+      except:
+        print(5)
+    `,
+    output: ['1', '2', '5'],
+  },
+  {
+    input: `
+      class ContextManager:
+          def __init__(self, name):
+              self.name = name
+      
+          def __enter__(self):
+              print('entered')
+              return self
+      
+          def __exit__(self, exc_type, exc_value, traceback):
+              if exc_type:
+                print('left with exception')
+              else:
+                print('left, no exception')
+      
+          def test(self):
+              print('inside')
+      
+      
+      with ContextManager('a') as c:
+          c.test()
+      
+      try:
+          with ContextManager('b') as x:
+              x.test()
+              1 / 0
+      except:
+          print('caught')
+      
+      print(x.name)
+    `,
+    output: [
+      'entered', //
+      'inside',
+      'left, no exception',
+      'entered',
+      'inside',
+      'left with exception',
+      'caught',
+      'b',
+    ],
+  },
+  {
+    input: `
+      class ContextManager:
+          def __init__(self, name):
+              self.name = name
+      
+          def __enter__(self):
+              print('entered')
+              return self
+      
+          def __exit__(self, exc_type, exc_value, traceback):
+              if exc_type:
+                print('left with exception')
+              else:
+                print('left, no exception')
+              return True
+      
+          def test(self):
+              print('inside')
+      
+      
+      with ContextManager('a') as c:
+          c.test()
+      
+      try:
+          with ContextManager('b') as x:
+              x.test()
+              1 / 0
+      except:
+          print('caught')
+      
+      print(x.name)
+    `,
+    output: [
+      'entered', //
+      'inside',
+      'left, no exception',
+      'entered',
+      'inside',
+      'left with exception',
+      'b',
+    ],
+  },
+  {
+    input: `
+      a = 'test'
+      print(len(a))
+    `,
+    output: ['4'],
+  },
+  {
+    input: `
+      class WithLen:
+        def __len__(self):
+          return 5
+      
+      a = WithLen()
+      print(len(a))
+    `,
+    output: ['5'],
+  },
+  {
+    input: `
+      a = 'test'
+      print(a['x'])
+    `,
+    expectedException: ExceptionType.TypeError,
+  },
+  {
+    input: `
+      a = b'1122'
+      print(a)
+    `,
+    output: ["b'1122'"],
+  },
+  {
+    input: `
+      a = { 10, 20 }
+      for x in a:
+        print(x)
+      print (10 in a)
+    `,
+    output: ['10', '20', 'True'],
+  },
+  {
+    input: `
+      a = ['abc', 'def']
+      print('abc' in a)
+      print(10 in a)
+    `,
+    output: ['True', 'False'],
+  },
+  {
+    input: `
+      a = ('abc', 'def')
+      print('abc' in a)
+      print(10 in a)
+      print(a)
+    `,
+    output: ['True', 'False', "('abc', 'def')"],
+  },
+  {
+    input: `
+      a = { 'abc': 10, 'def': 10 }
+      print('abc' in a)
+      print(10 in a)
+      print(a)
+      print(len(a))
+    `,
+    output: ['True', 'False', "{'abc': 10, 'def': 10}", '2'],
+  },
+  {
+    input: `
+      a = 'test'
+      print(a[2])
+      print(a if 1 else 2)
+    `,
+    output: ['s', '1'],
+  },
+  {
+    input: `
+      a = { 'x': 10, 'y': 20 }
+      print(a['x'])
+    `,
+    output: ['10'],
+  },
+  {
+    input: `
+      a = [10, '20']
+      print(a[0])
+      print(a if 1 else 2)
+      print(a)
+    `,
+    output: ['10', '1', "[10, '20']"],
+  },
+  {
+    input: `
+      def func():
+        print('test')
+        
+      print(func.__name__)
+    `,
+    output: ['func'],
+  },
+  {
+    input: `
+      def func():
+        print('test')
+        
+      print(func.__name)
+    `,
+    expectedException: ExceptionType.UnknownIdentifier,
+    exceptionArgs: ['__name'],
+  },
+  {
+    input: `
+      x = 10
+      def func1():
+        nonlocal x
+        x = 20
+      def func2():
+        x = 30
+      def func3():
+        global y
+        y = 40
+      func1()
+      print(x)
+      func2()
+      print(x)
+      func3()
+      print(y)
+    `,
+    output: ['20', '20', '40'],
+  },
+  {
+    input: `
+      n = -37
+      n.bit_length()
+    `,
+    // TBD: binary operations aren't supported
+    // output: ['-0b100101', '6'],
+    expectedException: ExceptionType.NotImplementedError,
+    exceptionArgs: ['bit_length'],
+  },
+  {
+    input: `
+      print((1024).to_bytes(2, byteorder='big'))
+      print((1024).to_bytes(10, byteorder='big'))
+      print((-1024).to_bytes(10, byteorder='big', signed=True))
+      x = 1000
+      print(x.to_bytes((x.bit_length() + 7) // 8, byteorder='little'))
+    `,
+    expectedException: ExceptionType.NotImplementedError,
+    exceptionArgs: ['to_bytes'],
+    // TBD: binary operations aren't supported
+    // output: ["b'\x04\x00'", "b'\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00'", "b'\xff\xff\xff\xff\xff\xff\xff\xff\xfc\x00'", "b'\xe8\x03'"],
+  },
+  {
+    input: `
+      print(int.from_bytes(b'\x00\x10', byteorder='big'))
+      print(int.from_bytes(b'\x00\x10', byteorder='little'))
+      print(int.from_bytes(b'\xfc\x00', byteorder='big', signed=True))
+      print(int.from_bytes(b'\xfc\x00', byteorder='big', signed=False))
+      print(int.from_bytes([255, 0, 0], byteorder='big'))
+    `,
+    // TBD: binary operations aren't supported
+    // output: ['16', '4096', '-1024', '64512', '16711680'],
+    expectedException: ExceptionType.NotImplementedError,
+    exceptionArgs: ['from_bytes'],
+  },
+  {
+    input: `
+      # print((3.12).hex())
+      print(float.fromhex('0x1.8f5c28f5c28f6p+1'))
+    `,
+    // TBD: binary operations aren't supported
+    // output: ["'0x1.8f5c28f5c28f6p+1'", '3.12'],
+    expectedException: ExceptionType.NotImplementedError,
+    exceptionArgs: ['fromhex'],
+  },
+  {
+    input: `
+      print(hash(30.2) == hash(30.2))
+    `,
+    // TBD: hash operations aren't supported
+    // output: ['True'],
+    expectedException: ExceptionType.NotImplementedError,
+    exceptionArgs: ['hash'],
+  },
+  //   {
+  //     input: `
+  //       print((2, 3) * 3)
+  //     `,
+  //     output: ['(2, 3, 2, 3, 2, 3)'],
+  //   },
+  //   {
+  //     input: `
+  //       s = (1,2,3,4,5)
+  //       print(s[2:3])
+  //       print(s[1:3])
+  //     `,
+  //     output: ['(3,)', '(2, 3)'],
+  //   },
+  //   {
+  //     input: `
+  //       s = (1,2,3,4,5,6,7)
+  //       print(s[2:7:2])
+  //     `,
+  //     output: ['(3, 5, 7)'],
+  //   },
+  //   {
+  //     input: `
+  //       s = (1,2,3)*4
+  //       print(s.index(2, 4, 5)
+  //     `,
+  //     output: ['4'],
+  //   },
+  //   {
+  //     input: `
+  //       s = (1,2,3)*4
+  //       print(s.index(2, 5, 6)
+  //     `,
+  //     expectedException: ExceptionType.ValueError,
+  //   },
+  //   {
+  //     input: `
+  //       lists = [[]]*3
+  //       lists.[0].append(3)
+  //       print(lists)
+  //     `,
+  //     output: ['[[3], [3], [3]]'],
+  //   },
+  //   {
+  //     input: `
+  //       a = 'test'
+  //       print(a.capitalize())
+  //       print(a.center(20, '-'))
+  //       print('abc def def de'.count('de', 6, 13))
+  //       print('abcdef'.endswith('ef'))
+  //       print('abcdefabcdef'.find('cd', 5))
+  //       print('abcdefabcdef'.find('cd', 5, 7))
+  //       print("The sum of 1 + 2 is {0}".format(1+2))
+  //       print('abcdef'.index('cd', 0, 5))
+  //       print('ab10'.isalnum())
+  //       print('ab-10'.isalnum())
+  //       print('ab10'.isalpha())
+  //       print('abc'.isalpha())
+  //       print('abc'.isascii())
+  //       print('你好，世界'.isascii())
+  //       print('123'.isdecimal())
+  //       print('ab12'.isdecimal())
+  //       print('123'.isidentifier())
+  //       print('a123'.isidentifier())
+  //       print('Abc'.islower())
+  //       print('abc'.islower())
+  //       print('123'.isnumeric())
+  //       print('abc'.isprintable())
+  //       print('abc\\ndef'.isprintable())
+  //       print('   '.isspace())
+  //       print(' \t'.isspace())
+  //       print('Title'.istitle())
+  //       print('title'.istitle())
+  //       print('ABC'.isupper())
+  //       print('Abc'.isupper())
+  //       print(':'.join(['abc','def']))
+  //       print('ABC'.ljust(10, '-'))
+  //       print('ABC'.ljust(2, '-'))
+  //       print('Abc'.lower())
+  //       print('www.example.com'.lstrip('cmowz.'))
+  //       print('   spacious   '.lstrip())
+  //       print('abcdefabcdef'.partition('cd'))
+  //       print('abcdefabcdef'.replace('def', '-', 1))
+  //       print('abcdefabcdef'.rfind('d'))
+  //       print('abcdefabcdef'.rindex('d'))
+  //       print('ABC'.rjust(20, '-'))
+  //       print('abcdefabcdef'.rpartition('cd'))
+  //       print('ab cd ef ab cd ef'.rsplit())
+  //       print('ab-cd-ef ab-cd ef'.rsplit('-', 1))
+  //       print('mississippi'.rstrip('ipz'))
+  //       print('1,2,3'.split(',', maxsplit=1))
+  //       print('1,2,,3,'.split(','))
+  //       print('   1   2   3   '.split())
+  //       print('ab c\\n\\nde fg\\rkl\\r\\n'.splitlines())
+  //       print('abcd'.startswith('ab'))
+  //       print('www.example.com'.strip('cmowz.'))
+  //       print('Abc'.swapcase())
+  //       print('Hello world'.title())
+  //       print('Abc'.upper())
+  //       print('-42'.zfill(5))
+  //       print(print('%(language)s has %(number)03d quote types.' % {'language': "Python", "number": 2}))
+  //       print("%s's bowling scores were %s"  % ('Ross', [190, 135]))
+  //     `,
+  //     output: [
+  //       'Test',
+  //       '--------test--------',
+  //       '1',
+  //       'True',
+  //       '8',
+  //       '-1',
+  //       'The sum of 1 + 2 is 3',
+  //       '2',
+  //       'True',
+  //       'False',
+  //       'False',
+  //       'True',
+  //       'True',
+  //       'False',
+  //       'True',
+  //       'False',
+  //       'False',
+  //       'True',
+  //       'False',
+  //       'True',
+  //       'True',
+  //       'True',
+  //       'False',
+  //       'True',
+  //       'True',
+  //       'True',
+  //       'False',
+  //       'True',
+  //       'False',
+  //       'abc:def',
+  //       'ABC-------',
+  //       'ABC',
+  //       'abc',
+  //       'example.com',
+  //       'spacious',
+  //       "('ab', 'cd', 'efabcdef')",
+  //       'abc-abcdef',
+  //       '9',
+  //       '9',
+  //       '-----------------ABC',
+  //       "('abcdefab', 'cd', 'ef')",
+  //       "['ab', 'cd', 'ef', 'ab', 'cd', 'ef']",
+  //       "['ab-cd-ef ab', 'cd ef']",
+  //       'mississ',
+  //       "['1', '2,3']",
+  //       "['1', '2', '', '3', '']",
+  //       "['1', '2', '3']",
+  //       "['ab c', '', 'de fg', 'kl']",
+  //       'True',
+  //       'example',
+  //       'aBC',
+  //       'Hello World',
+  //       'ABC',
+  //       '-0042',
+  //       'Python has 002 quote types.',
+  //       'None',
+  //       "Ross's bowling scores were [190, 135]",
+  //     ],
+  //   },
+  //   {
+  //     input: `
+  //       print(b'\\xf0\\xf1\\xf2'.hex())
+  //       print(bytes.fromhex('2Ef0 F1f2  '))
+  //       print(bytes('Test', 'utf-8'))
+  //       print(bytearray.fromhex('2Ef0 F1f2  '))
+  //       print(bytearray(b'\xf0\xf1\xf2').hex())
+  //     `,
+  //     output: [
+  //       'f0f1f2',
+  //       "'b'.\\xf0\\xf1\\xf2'",
+  //       "b'Test'",
+  //       "bytearray(b'.\\xf0\\xf1\\xf2')",
+  //       'f0f1f2',
+  //     ],
+  //   },
+  //   {
+  //     input: `
+  //       print(set([1,2,3]))
+  //       print(set('abc'))
+  //       print(frozenset([1,2,3]))
+  //       print(len({1,2,3}))
+  //       print(10 in {10, 20, 30})
+  //       print({10,20}.isdisjoint({30,40}))
+  //       print({10,20}.isdisjoint({20,30}))
+  //       print({10,20}.issubset({10,20,30}))
+  //       print({10,20} < {10,20,30})
+  //       print({10,20} <= {10,20,30})
+  //       print({10,20} <= {10,20})
+  //       print({10,20,30}.issuperset({10,20}))
+  //       print({10,20,30} > {10,20})
+  //       print({10,20,30} >= {10,20})
+  //       print({10,20} >= {10,20})
+  //       print({10,20}.union({20,30}))
+  //       print({10,20} | {20,30})
+  //       print({10,20}.intersection({20,30}))
+  //       print({10,20} & {20,30})
+  //       print({10,20}.difference({20,30}))
+  //       print({10,20} - {20,30})
+  //       print({10,20}.symmetric_difference({20,30}))
+  //       print({10,20} ^ {20,30})
+  //       print(set([10,20]).issubset([10,20,30]))
+  //       print(set('abc') == frozenset('abc'))
+  //       print({'c','b','a'} == {'c','a','b'})
+  //     `,
+  //     output: [
+  //       '{1, 2, 3}',
+  //       "{'a', 'b', 'c'}",
+  //       'frozenset({1, 2, 3})',
+  //       '3',
+  //       'True',
+  //       'True',
+  //       'False',
+  //       'True',
+  //       'True',
+  //       'True',
+  //       'True',
+  //       'True',
+  //       'True',
+  //       'True',
+  //       'True',
+  //       '{10, 20, 30}',
+  //       '{10, 20, 30}',
+  //       '{20}',
+  //       '{20}',
+  //       '{10}',
+  //       '{10}',
+  //       '{10, 30}',
+  //       '{10, 30}',
+  //       'True',
+  //       'True',
+  //       'True',
+  //     ],
+  //   },
+  //   {
+  //     input: `
+  //           print([10,20] <= [10,20,30])
+  //     `,
+  //     expectedException: ExceptionType.TypeError,
+  //   },
+  //   {
+  //     input: `
+  //       a = {1,2}
+  //       a.add(3)
+  //       print(a)
+  //       a.remove(1)
+  //       print(a)
+  //       a.discard(2)
+  //       a.update({5,6})
+  //       print(a)
+  //       a.clear()
+  //       print(a)
+  //     `,
+  //     output: [
+  //       '{1, 2, 3}', //
+  //       '{2, 3}',
+  //       '{3}',
+  //       '{3, 5, 6}',
+  //       '{}',
+  //     ],
+  //   },
+  //   {
+  //     input: `
+  //       a = dict(one=1, two=2, three=3)
+  //       print(a)
+  //       print(len(a))
+  //       print(a['one'])
+  //       a['four'] = 4
+  //       print(a)
+  //       print('one' in a)
+  //       print('five' in a)
+  //       for b in iter(a):
+  //         print(b)
+  //       a.pop('two')
+  //       for b in iter(a.keys()):
+  //         print(b)
+  //       print(a.get('three'))
+  //       print(a.popitem())
+  //       print(a)
+  //       a.clear()
+  //       print(len(a))
+  //     `,
+  //     output: [
+  //       "{'one': 1, 'two': 2, 'three': 3}",
+  //       '3',
+  //       '1',
+  //       "{'one': 1, 'two': 2, 'three': 3, 'four': 4}",
+  //       'True',
+  //       'False',
+  //       'one',
+  //       'two',
+  //       'three',
+  //       'four',
+  //       'one',
+  //       'three',
+  //       'four',
+  //       '3',
+  //       "('four', 4)",
+  //       "{'one': 1, 'three': 3}",
+  //       '0',
+  //     ],
+  //   },
+  //   {
+  //     input: `
+  //       dishes = {'eggs': 2, 'sausage': 1, 'bacon': 1, 'spam': 500}
+  //       keys = dishes.keys()
+  //       values = dishes.values()
+  //       print(len(values))
+  //       n = 0
+  //       for val in values: n += val
+  //       print(n)
+  //       print(list(keys))
+  //       print(list(values))
+  //       del dishes['eggs']
+  //       del dishes['sausage']
+  //       print(list(keys))
+  //       print(keys & {'eggs', 'bacon', 'salad'})
+  //       print(keys ^ {'sausage', 'juice'})
+  //     `,
+  //     output: [
+  //       '4',
+  //       '504',
+  //       "['eggs', 'sausage', 'bacon', 'spam']",
+  //       '[2, 1, 1, 500]',
+  //       "['bacon', 'spam']",
+  //       "{'bacon'}",
+  //       "{'spam', 'sausage', 'juice', 'bacon'}",
+  //     ],
+  //   },
+  //   {
+  //     input: `
+  //       class Parent: pass
+  //       class Child(Parent): pass
+  //       p = Parent()
+  //       c = Child()
+  //       print(p.__class__ == Parent)
+  //       print(c.__class__ == Child)
+  //       print(p.__class__.__name__)
+  //       def func(): pass
+  //       f = func
+  //       print(f.__name__)
+  //     `,
+  //     output: [
+  //       'True', //
+  //       'True',
+  //       'Parent',
+  //       'func',
+  //     ],
+  //   },
 ];
 
 export default scenarios;

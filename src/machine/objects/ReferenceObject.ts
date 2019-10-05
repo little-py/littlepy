@@ -5,23 +5,18 @@ import { IntegerObject } from './IntegerObject';
 import { StringObject } from './StringObject';
 import { ObjectScope } from '../ObjectScope';
 import { DictionaryObject } from './DictionaryObject';
-import { ObjectType } from '../../api/ObjectType';
+import { IterableObject } from './IterableObject';
+import { ReferenceScope } from '../../common/ReferenceScope';
 
 export enum ReferenceType {
-  Index,
-  Property,
-  Variable,
-}
-
-export enum ReferenceScope {
-  Default,
-  Global,
-  NonLocal,
+  Index = 'Index',
+  Property = 'Property',
+  Variable = 'Variable',
 }
 
 export class ReferenceObject extends BaseObject {
   public constructor(parent: BaseObject, indexer: BaseObject, type: ReferenceType, scope: ReferenceScope, runContext: RunContext) {
-    super(ObjectType.Reference);
+    super();
     this.parent = parent;
     this.indexer = indexer;
     this.referenceType = type;
@@ -32,22 +27,18 @@ export class ReferenceObject extends BaseObject {
   private validate(runContext: RunContext) {
     switch (this.referenceType) {
       case ReferenceType.Index:
-        if (this.parent.type === ObjectType.List && this.indexer.type === ObjectType.Integer) {
+        if (this.parent instanceof IterableObject) {
           return true;
-        }
-        if (this.indexer.type !== ObjectType.String) {
-          runContext.raiseTypeConversion();
-          return;
         }
         break;
       case ReferenceType.Property:
-        if (this.indexer.type !== ObjectType.String) {
+        if (!(this.indexer instanceof StringObject)) {
           runContext.raiseTypeConversion();
           return;
         }
         break;
       case ReferenceType.Variable:
-        if (this.parent.type !== ObjectType.String) {
+        if (!(this.parent instanceof StringObject)) {
           runContext.raiseTypeConversion();
           return;
         }
@@ -78,14 +69,14 @@ export class ReferenceObject extends BaseObject {
   public setValue(value: BaseObject, runContext: RunContext) {
     switch (this.referenceType) {
       case ReferenceType.Index: {
-        if (this.parent.type === ObjectType.List && this.indexer.type === ObjectType.Integer) {
+        if (this.parent instanceof ListObject && this.indexer instanceof IntegerObject) {
           const list = this.parent as ListObject;
           const indexer = this.indexer as IntegerObject;
           list.setItem(indexer.value, value);
         } else {
           const indexer = this.indexer as StringObject;
-          if (this.parent.type === ObjectType.Dictionary) {
-            (this.parent as DictionaryObject).setDictionaryItem(indexer.value, value);
+          if (this.parent instanceof DictionaryObject) {
+            this.parent.setItem(indexer.value, value);
           } else {
             this.parent.setAttribute(indexer.value, value);
           }
@@ -135,19 +126,15 @@ export class ReferenceObject extends BaseObject {
         return ret;
       }
       case ReferenceType.Index: {
-        if (this.parent.type === ObjectType.List && this.indexer.type === ObjectType.Integer) {
+        if (this.parent instanceof ListObject && this.indexer instanceof IntegerObject) {
           const list = this.parent as ListObject;
           const indexer = this.indexer as IntegerObject;
           return list.getItem(indexer.value);
         } else {
-          const indexer = this.indexer as StringObject;
-          if (this.parent.type === ObjectType.Dictionary) {
-            return (this.parent as DictionaryObject).getDictionaryItem(indexer.value);
-          } else {
-            const ret = this.parent.getAttribute(indexer.value);
-            if (!ret) {
-              runContext.raiseUnknownIdentifier(indexer.value);
-            }
+          if (this.parent instanceof IterableObject && this.indexer instanceof StringObject) {
+            return this.parent.getItem(this.indexer.value);
+          } else if (this.parent instanceof IterableObject && this.indexer instanceof IntegerObject) {
+            return this.parent.getItem(this.indexer.value);
           }
         }
         break;

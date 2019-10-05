@@ -1,4 +1,5 @@
 import {
+  DelimiterType,
   getTokenOperatorPriority,
   isBinaryOperator,
   isColon,
@@ -16,7 +17,6 @@ import {
   isRightFigureBracket,
   isRightSquareBracket,
   isUnaryOperator,
-  OperatorDelimiterType,
   Token,
   TokenPosition,
   TokenType,
@@ -30,14 +30,16 @@ import { CompiledModule } from './CompiledModule';
 import { LiteralType } from './Literal';
 import { InstructionType } from '../common/InstructionType';
 import { PyErrorType } from '../api/ErrorType';
+import { ArgumentType, FunctionArgument, FunctionBody, FunctionType } from '../common/FunctionBody';
+import { ReferenceScope } from '../common/ReferenceScope';
 
 export function fillIdentifiers(tokens: Token[], from: number, end: number, compiledCode: CompiledModule, identifiers: string[]): number {
   let token = tokens[from];
-  identifiers.push(compiledCode.identifiers[token.arg1]);
+  identifiers.push(compiledCode.identifiers[token.identifier]);
   from++;
   token = tokens[from];
   while (end - from >= 2 && isPoint(token) && isIdentifier(tokens[from + 1])) {
-    identifiers.push(compiledCode.identifiers[tokens[from + 1].arg1]);
+    identifiers.push(compiledCode.identifiers[tokens[from + 1].identifier]);
     from += 2;
     token = tokens[from];
   }
@@ -113,6 +115,14 @@ export class ExpressionCompiler {
         const expectOperator = operators.length < values.length;
         token = this._tokens[this._from];
         if (expectOperator) {
+          if (this.isAnyAccessor(this._from)) {
+            const value = values[values.length - 1];
+            this.compileAnyAccessor(value);
+            if (!value.success) {
+              return value;
+            }
+            continue;
+          }
           if (isExpressionEnd(token) || isIfOperator(token)) {
             break;
           }
@@ -142,31 +152,31 @@ export class ExpressionCompiler {
           values.push(arg);
         } else if (token.type === TokenType.Delimiter) {
           let stop = false;
-          switch (token.arg1) {
-            case OperatorDelimiterType.LeftSquareBracket:
+          switch (token.delimiter) {
+            case DelimiterType.LeftSquareBracket:
               this._from++;
               if (!this.compileListInstantiation(token, values)) {
                 return failedResult;
               }
               break;
-            case OperatorDelimiterType.LeftBracket:
+            case DelimiterType.LeftBracket:
               this._from++;
               if (!this.compileTupleInstantiation(token, values)) {
                 return failedResult;
               }
               break;
-            case OperatorDelimiterType.LeftFigureBracket:
+            case DelimiterType.LeftFigureBracket:
               this._from++;
               if (!this.compileSetOrDictionary(token, values)) {
                 return failedResult;
               }
               break;
-            case OperatorDelimiterType.Comma:
-            case OperatorDelimiterType.RightSquareBracket:
-            case OperatorDelimiterType.RightBracket:
-            case OperatorDelimiterType.RightFigureBracket:
-            case OperatorDelimiterType.EqualSign:
-            case OperatorDelimiterType.Colon: // for while/if/for end
+            case DelimiterType.Comma:
+            case DelimiterType.RightSquareBracket:
+            case DelimiterType.RightBracket:
+            case DelimiterType.RightFigureBracket:
+            case DelimiterType.EqualSign:
+            case DelimiterType.Colon: // for while/if/for end
               // end of the expression
               stop = true;
               break;
@@ -180,11 +190,14 @@ export class ExpressionCompiler {
           if (stop) {
             break;
           }
-          // } else if (token.type === TokenType.Keyword && token.arg1 === KeywordType.KeywordLambda) {
-          //   if (!this.compileLambdaExpression(token, values)) {
-          //     return failedResult;
-          //   }
-        } else if (token.type === TokenType.Keyword && (token.arg1 === KeywordType.KeywordFor || token.arg1 === KeywordType.KeywordAsyncFor)) {
+        } else if (token.type === TokenType.Keyword && token.keyword === KeywordType.Lambda) {
+          const lambdaExpression = this.compileLambdaExpression(token);
+          if (!lambdaExpression.success) {
+            return lambdaExpression;
+          }
+          values.push(lambdaExpression);
+          break;
+        } else if (token.type === TokenType.Keyword && (token.keyword === KeywordType.For || token.keyword === KeywordType.AsyncFor)) {
           break;
         } else {
           const valueResult = this.compileValue(this._from);
@@ -228,7 +241,7 @@ export class ExpressionCompiler {
         token = this._tokens[compiledPart.finish];
       }
 
-      // if (token && token.type === TokenType.Keyword && (token.arg1 === KeywordType.KeywordFor || token.arg1 === KeywordType.KeywordAsyncFor)) {
+      // if (token && token.type === TokenType.Keyword && (token.arg1 === KeywordType.For || token.arg1 === KeywordType.AsyncFor)) {
       //   compiledPart = this.compileListComprehension(token, this._from, compiledPart);
       // }
 
@@ -264,7 +277,7 @@ export class ExpressionCompiler {
       /* istanbul ignore next */
       if (maxValue < 0) {
         // this should never happen, just additional check; there are no error examples that can cause this error
-        this._compilerContext.addError(PyErrorType.ErrorUnexpectedScenario_01, operators[0]);
+        this._compilerContext.addError(PyErrorType.ErrorUnexpectedScenario01, operators[0]);
         return result;
       }
       for (let i = 1; i < operators.length; i++) {
@@ -272,7 +285,7 @@ export class ExpressionCompiler {
         /* istanbul ignore next */
         if (value < 0) {
           // this should never happen, just additional check; there are no error examples that can cause this error
-          this._compilerContext.addError(PyErrorType.ErrorUnexpectedScenario_02, operators[i]);
+          this._compilerContext.addError(PyErrorType.ErrorUnexpectedScenario02, operators[i]);
           return result;
         }
         if (value > maxValue) {
@@ -331,7 +344,7 @@ export class ExpressionCompiler {
     return this.isLeftSquareBracket(index);
   }
 
-  private appendFunctionCall(ret: GeneratedCode, position: TokenPosition, parentAt0: boolean) {
+  private appendFunctionCall(ret: GeneratedCode, position: TokenPosition, parentAt0: boolean): boolean {
     let token = this._tokens[this._from];
     const args: GeneratedCode[] = [];
     this._from++;
@@ -341,7 +354,7 @@ export class ExpressionCompiler {
       token = this._tokens[this._from];
       let argName: string;
       if (isIdentifier(token) && isDelimiterEqual(this._tokens[this._from + 1])) {
-        argName = this._compiledCode.identifiers[token.arg1];
+        argName = this._compiledCode.identifiers[token.identifier];
         this._from += 2;
         token = this._tokens[this._from];
         namedStarted = true;
@@ -357,7 +370,7 @@ export class ExpressionCompiler {
       }
       if (namedStarted && !argName) {
         this._compilerContext.addError(PyErrorType.OrderedArgumentAfterNamed, token || prevToken);
-        return null;
+        return false;
       }
       const arg = this.compileInternal(this._from, false);
       if (!arg.success) {
@@ -376,7 +389,7 @@ export class ExpressionCompiler {
       }
       if (!isRightBracket(token)) {
         this._compilerContext.addError(PyErrorType.ExpectedEndOfFunctionCall, token || prevToken);
-        return null;
+        return false;
       }
     }
   }
@@ -385,18 +398,35 @@ export class ExpressionCompiler {
     const first = this._tokens[this._from];
     if (!this.isAnyAccessor(this._from + 1)) {
       if (isIdentifier(first)) {
-        const reference = CodeGenerator.createVarReference(first.arg1, first.getPosition());
+        const block = this._compilerContext.getCurrentBlock();
+        const scopeType = block.scopeChange[first.identifier];
+        const reference = CodeGenerator.createVarReference(
+          first.identifier,
+          scopeType !== undefined ? scopeType : ReferenceScope.Default,
+          first.getPosition(),
+        );
         this._from++;
         return reference;
       }
     }
     this._from++;
     const ret = new GeneratedCode();
-    ret.add(InstructionType.IReadObject, first.getPosition(), first.arg1, 0);
+    ret.add(InstructionType.IReadObject, first.getPosition(), first.identifier, ReferenceScope.Default);
+    ret.success = true;
+    this.compileAnyAccessor(ret);
+    if (!ret.success) {
+      return;
+    }
+    ret.finish = this._from;
+    ret.success = true;
+    return ret;
+  }
+
+  private compileAnyAccessor(ret: GeneratedCode) {
     while (this.isAnyAccessor(this._from)) {
       const current = this._tokens[this._from];
       if (this.isPropertyAccessor(this._from)) {
-        const identifier = this._tokens[this._from + 1].arg1;
+        const identifier = this._tokens[this._from + 1].identifier;
         this._from += 2;
         if (!this.isAnyAccessor(this._from)) {
           CodeGenerator.appendPropertyReference(ret, 0, identifier, current.getPosition());
@@ -413,14 +443,15 @@ export class ExpressionCompiler {
       if (this.isLeftSquareBracket(this._from)) {
         const indexArg = this.compileInternal(this._from + 1, false);
         if (!indexArg.success) {
-          return indexArg;
+          ret.success = false;
+          return;
         }
         this._from = indexArg.finish;
         if (!isRightSquareBracket(this._tokens[this._from])) {
           this._compilerContext.addError(PyErrorType.ExpectedEndOfIndexer, current);
           const ret = new GeneratedCode();
           ret.success = false;
-          return ret;
+          return;
         }
         this._from++;
         if (!this.isAnyAccessor(this._from)) {
@@ -435,14 +466,10 @@ export class ExpressionCompiler {
         if (!this.appendFunctionCall(ret, current.getPosition(), false)) {
           const ret = new GeneratedCode();
           ret.success = false;
-          return ret;
+          return;
         }
       }
     }
-
-    ret.finish = this._from;
-    ret.success = true;
-    return ret;
   }
 
   private compileListInstantiation(startToken: Token, values: GeneratedCode[]): boolean {
@@ -470,7 +497,7 @@ export class ExpressionCompiler {
       }
       prevToken = token;
       token = this._tokens[this._from];
-      // if (token.type === TokenType.Keyword && token.arg1 === KeywordType.KeywordFor) {
+      // if (token.type === TokenType.Keyword && token.arg1 === KeywordType.For) {
       //   // comprehension
       //   const comprehension = this.compileListComprehension(token, this._from, arg);
       //   if (!comprehension.success) {
@@ -494,7 +521,7 @@ export class ExpressionCompiler {
         return false;
       }
       records.push(arg);
-      if (token.arg1 === OperatorDelimiterType.Comma) {
+      if (token.delimiter === DelimiterType.Comma) {
         this._from++;
         continue;
       }
@@ -524,7 +551,7 @@ export class ExpressionCompiler {
   //     if (token.type !== TokenType.Keyword) {
   //       break;
   //     }
-  //     if (token.arg1 === KeywordType.KeywordFor || token.arg1 === KeywordType.KeywordAsyncFor) {
+  //     if (token.arg1 === KeywordType.For || token.arg1 === KeywordType.AsyncFor) {
   //       from++;
   //       prevToken = token;
   //       token = this._tokens[from];
@@ -552,7 +579,7 @@ export class ExpressionCompiler {
   //       comprehension.code = arg;
   //       comprehension.forArgument = idToken;
   //       comprehensions.push(comprehension);
-  //     } else if (token.arg1 === KeywordType.KeywordIf) {
+  //     } else if (token.arg1 === KeywordType.If) {
   //       from++;
   //       const arg = this.compileInternal(from, false);
   //       if (!arg.success) {
@@ -657,7 +684,7 @@ export class ExpressionCompiler {
           return false;
         }
         isDictionary = true;
-        literalIndex = token.arg1;
+        literalIndex = token.literal;
         this._from += 2;
       }
       if (literalIndex === -1 && isDictionary) {
@@ -691,7 +718,9 @@ export class ExpressionCompiler {
       // means it is comma
       this._from++;
     }
-    const code = isDictionary ? CodeGenerator.dictionary(literals, records, this._compilerContext, startToken.getPosition()) : CodeGenerator.set(records, startToken.getPosition());
+    const code = isDictionary
+      ? CodeGenerator.dictionary(literals, records, this._compilerContext, startToken.getPosition())
+      : CodeGenerator.set(records, startToken.getPosition());
     if (!code.success) {
       return false;
     }
@@ -709,7 +738,7 @@ export class ExpressionCompiler {
     const token = this._tokens[this._from];
     if (this._from >= this._end || !isKeywordElse(token)) {
       const source = token || this._tokens[this._tokens.length - 1];
-      this._compilerContext.addError(PyErrorType.Error_Compiler_IfExpressionExpectedElse, source);
+      this._compilerContext.addError(PyErrorType.IfExpressionExpectedElse, source);
       const ret = new GeneratedCode();
       ret.success = false;
       return ret;
@@ -728,24 +757,59 @@ export class ExpressionCompiler {
     return ret;
   }
 
-  // // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  // private compileLambdaExpression(startToken: Token, values: GeneratedCode[]): boolean {
-  //   // TODO: finish lambda
-  //   return false;
-  // }
+  private compileLambdaExpression(startToken: Token): GeneratedCode {
+    this._from++;
+    const args: number[] = [];
+    for (;;) {
+      const token = this._tokens[this._from];
+      const nextToken = this._tokens[this._from + 1];
+      if (isColon(token)) {
+        break;
+      }
+      if (!isIdentifier(token) || (!isColon(nextToken) && !isComma(nextToken))) {
+        this._compilerContext.addError(PyErrorType.ExpectedFunctionArgumentList, token || this._tokens[this._tokens.length - 1]);
+        const ret = new GeneratedCode();
+        ret.success = false;
+        return ret;
+      }
+      args.push(token.identifier);
+      this._from += 2;
+      if (isColon(nextToken)) {
+        break;
+      }
+    }
+    const body = this.compileInternal(this._from, false);
+    body.add(InstructionType.IRet, startToken.getPosition(), 0);
+    this._from = body.finish;
+    const func = new FunctionBody();
+    const funcDef = this._compiledCode.functions.length;
+    this._compiledCode.functions.push(func);
+    func.module = this._compiledCode;
+    func.type = FunctionType.Regular;
+    func.name = this._compilerContext.getLambdaFunctionName();
+    func.arguments = args.map(arg => {
+      const ret = new FunctionArgument();
+      ret.type = ArgumentType.Normal;
+      ret.id = arg;
+      ret.initReg = -1;
+      return ret;
+    });
+    func.code = body.code;
+    return CodeGenerator.readFunctionDef(funcDef, startToken.getPosition());
+  }
 
   private compileValue(from: number): GeneratedCode {
     const token = this._tokens[from];
     let ret: GeneratedCode;
     if (token.type === TokenType.Keyword) {
-      switch (token.arg1) {
-        case KeywordType.KeywordFalse:
+      switch (token.keyword) {
+        case KeywordType.False:
           ret = CodeGenerator.bool(0, token.getPosition());
           break;
-        case KeywordType.KeywordTrue:
+        case KeywordType.True:
           ret = CodeGenerator.bool(1, token.getPosition());
           break;
-        case KeywordType.KeywordNone:
+        case KeywordType.None:
           ret = CodeGenerator.none(token.getPosition());
           break;
       }
@@ -754,13 +818,13 @@ export class ExpressionCompiler {
         return ret;
       }
     }
-    if (token.type !== TokenType.Literal) {
+    if (!isLiteral(token)) {
       this._compilerContext.addError(PyErrorType.ExpectedLiteral, token);
       ret = new GeneratedCode();
       ret.success = false;
       return ret;
     }
-    const literal = this._compiledCode.literals[token.arg1];
+    const literal = this._compiledCode.literals[token.literal];
     ret = CodeGenerator.literal(literal, this._compilerContext, token.getPosition());
     if (ret.success) {
       ret.finish = from + 1;

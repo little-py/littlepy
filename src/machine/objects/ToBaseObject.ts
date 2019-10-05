@@ -1,27 +1,22 @@
 import { IntegerObject } from './IntegerObject';
 import { RealObject } from './RealObject';
-import { FunctionObject } from './FunctionObject';
-import { RunContext } from '../RunContext';
-import { CallableContext } from '../CallableContext';
 import { BaseObject } from './BaseObject';
 import { NoneObject } from './NoneObject';
 import { ObjectWrapperObject } from './ObjectWrapperObject';
 import { StringObject } from './StringObject';
-import { ObjectType } from '../../api/ObjectType';
+import { FunctionObject } from './FunctionObject';
 
 export const fromBaseObject = (val: BaseObject, useObjectWrapper = true) => {
-  switch (val.type) {
-    case ObjectType.ObjectWrapper:
-      if (!useObjectWrapper) {
-        break;
-      }
-      return (val as ObjectWrapperObject).object;
-    case ObjectType.String:
-      return (val as StringObject).value;
-    case ObjectType.Integer:
-      return (val as IntegerObject).value;
-    case ObjectType.Real:
-      return (val as RealObject).value;
+  if (val instanceof ObjectWrapperObject) {
+    if (useObjectWrapper) {
+      return val.object;
+    }
+  } else if (val instanceof StringObject) {
+    return val.value;
+  } else if (val instanceof IntegerObject) {
+    return val.value;
+  } else if (val instanceof RealObject) {
+    return val.value;
   }
   return undefined;
 };
@@ -30,13 +25,7 @@ export const fromBaseObject = (val: BaseObject, useObjectWrapper = true) => {
 export const toBaseObject = (val: any, useObjectWrapper = true) => {
   if (val) {
     if (typeof val === 'function') {
-      const func = new FunctionObject();
-      func.internalFunction = (runContext: RunContext, callContext: CallableContext, parent: BaseObject): BaseObject => {
-        const args = callContext.indexedArgs.map(arg => fromBaseObject(arg));
-        const ret = val.apply(parent ? fromBaseObject(parent) : undefined, args);
-        return toBaseObject(ret);
-      };
-      return func;
+      return new FunctionObject(null, val);
     } else if (typeof val === 'string') {
       return new StringObject(val);
     } else if (typeof val === 'number') {

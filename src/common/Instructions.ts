@@ -83,7 +83,6 @@ export class Instruction {
       case InstructionType.INone:
       case InstructionType.IDel:
       case InstructionType.IRaise:
-      case InstructionType.IEnterExcept:
         this.arg1 += countReg;
         break;
       case InstructionType.IDictionaryAdd:
@@ -107,6 +106,7 @@ export class Instruction {
       case InstructionType.IContinue:
       case InstructionType.IBreak:
       case InstructionType.IForCycle:
+      case InstructionType.IEnterExcept:
         break;
       case InstructionType.IAdd:
       case InstructionType.ISub:
