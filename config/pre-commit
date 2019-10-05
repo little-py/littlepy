@@ -1,0 +1,6 @@
+#!/bin/sh
+ps -p $$
+echo $0
+pwd
+yarn lint
+yarn test
