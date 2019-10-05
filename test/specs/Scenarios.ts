@@ -16,6 +16,10 @@ const scenarios: TestScenario[] = [
     output: [],
   },
   {
+    input: 'print("test1")\nprint("test2")\rprint("test3")\r\nprint("test4")\n\rprint("test5")',
+    output: ['test1', 'test2', 'test3', 'test4', 'test5'],
+  },
+  {
     input: `
         # This is a comment
         print("hello world")
@@ -253,8 +257,9 @@ const scenarios: TestScenario[] = [
       print(p.age)
       del p.age
       print(p.age)
+      print(Parent);
     `,
-    output: ['20', '10'],
+    output: ['20', '10', "<class 'Parent'>"],
   },
   {
     input: `

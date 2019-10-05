@@ -342,7 +342,7 @@ export class CodeGenerator {
     return ret;
   }
 
-  public static unaryOperators(unaryOperators: Token[], source: GeneratedCode, compilerContext: CompilerContext): GeneratedCode {
+  public static unaryOperators(unaryOperators: Token[], source: GeneratedCode): GeneratedCode {
     const ret = new GeneratedCode();
     CodeGenerator.appendTo(ret, source);
     for (const token of unaryOperators) {
@@ -355,10 +355,6 @@ export class CodeGenerator {
         // do nothing
       } else if (token.type === TokenType.Operator && token.operator === OperatorType.Minus) {
         ret.add(InstructionType.Invert, token.getPosition(), 0, 0);
-      } else {
-        ret.success = false;
-        compilerContext.addError(PyErrorType.UnknownUnaryOperator, token);
-        return ret;
       }
     }
     ret.success = true;
@@ -534,13 +530,13 @@ export class CodeGenerator {
     return ret;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public static comprehension(expression: GeneratedCode, parts: Comprehension[], position: TokenPosition): GeneratedCode {
-    const ret = new GeneratedCode();
-    ret.success = false;
-    // TODO: implement comprehension
-    return ret;
-  }
+  // // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // public static comprehension(expression: GeneratedCode, parts: Comprehension[], position: TokenPosition): GeneratedCode {
+  //   const ret = new GeneratedCode();
+  //   ret.success = false;
+  //   // TODO: implement comprehension
+  //   return ret;
+  // }
 
   public static tuple(records: GeneratedCode[], position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();

@@ -208,7 +208,7 @@ export class ExpressionCompiler {
           this._from = valueResult.finish;
         }
         if (unaryOperators.length) {
-          const unaryResult = CodeGenerator.unaryOperators(unaryOperators, values[values.length - 1], this._compilerContext);
+          const unaryResult = CodeGenerator.unaryOperators(unaryOperators, values[values.length - 1]);
           if (!unaryResult.success) {
             return failedResult;
           }

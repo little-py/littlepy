@@ -140,9 +140,7 @@ export class ExceptionObject extends ClassInstanceObject {
     super(inherits || [], null);
     this.exceptionType = t;
     this.message = EXCEPTION_DESCRIPTION[this.exceptionType] || '';
-    if (params.length) {
-      this.params = params;
-    }
+    this.params = params;
   }
 
   getAttribute(name: string): BaseObject {
