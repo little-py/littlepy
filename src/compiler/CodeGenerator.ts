@@ -35,26 +35,26 @@ export class CodeGenerator {
     const noBreakPart = parts[1];
     const ret = new GeneratedCode();
     CodeGenerator.appendTo(ret, forPart.arg2);
-    ret.add(InstructionType.IReadProperty, forPart.position, context.getIdentifier('__iter__'), 0, 1);
-    ret.add(InstructionType.ICallMethod, forPart.position, 0, 1, 0);
+    ret.add(InstructionType.ReadProperty, forPart.position, context.getIdentifier('__iter__'), 0, 1);
+    ret.add(InstructionType.CallMethod, forPart.position, 0, 1, 0);
     const endLabel = context.getNewLabel();
     const startLabel = context.getNewLabel();
     const noBreakLabel = noBreakPart ? context.getNewLabel() : -1;
-    ret.add(InstructionType.IForCycle, forPart.position, endLabel, noBreakLabel);
-    ret.add(InstructionType.ICreateVarRef, forPart.position, varId, 1, ReferenceScope.Default);
-    ret.add(InstructionType.ILabel, forPart.position, startLabel);
-    ret.add(InstructionType.IReadProperty, forPart.position, context.getIdentifier('__next__'), 0, 3);
-    ret.add(InstructionType.ICallMethod, forPart.position, 0, 3, 2);
-    ret.add(InstructionType.ICopyValue, forPart.position, 2, 1);
+    ret.add(InstructionType.ForCycle, forPart.position, endLabel, noBreakLabel);
+    ret.add(InstructionType.CreateVarRef, forPart.position, varId, 1, ReferenceScope.Default);
+    ret.add(InstructionType.Label, forPart.position, startLabel);
+    ret.add(InstructionType.ReadProperty, forPart.position, context.getIdentifier('__next__'), 0, 3);
+    ret.add(InstructionType.CallMethod, forPart.position, 0, 3, 2);
+    ret.add(InstructionType.CopyValue, forPart.position, 2, 1);
     CodeGenerator.appendTo(ret, forPart.blockCode, 2);
-    ret.add(InstructionType.IGoTo, null, startLabel);
+    ret.add(InstructionType.GoTo, null, startLabel);
 
     if (noBreakPart) {
-      ret.add(InstructionType.ILabel, noBreakPart.position, noBreakLabel);
+      ret.add(InstructionType.Label, noBreakPart.position, noBreakLabel);
       CodeGenerator.appendTo(ret, noBreakPart.blockCode);
     }
 
-    ret.add(InstructionType.ILabel, null, endLabel);
+    ret.add(InstructionType.Label, null, endLabel);
     ret.success = true;
     return ret;
   }
@@ -63,15 +63,15 @@ export class CodeGenerator {
     const ret = new GeneratedCode();
     const startLabel = context.getNewLabel();
     const endLabel = context.getNewLabel();
-    ret.add(InstructionType.IWhileCycle, position, endLabel);
-    ret.add(InstructionType.ILabel, position, startLabel);
+    ret.add(InstructionType.WhileCycle, position, endLabel);
+    ret.add(InstructionType.Label, position, startLabel);
     CodeGenerator.appendTo(ret, condition);
-    ret.add(InstructionType.IGetBool, null, 0, 0);
-    ret.add(InstructionType.ICondition, null, 0, endLabel);
+    ret.add(InstructionType.GetBool, null, 0, 0);
+    ret.add(InstructionType.Condition, null, 0, endLabel);
     CodeGenerator.appendTo(ret, body);
-    ret.add(InstructionType.IGoTo, null, startLabel);
-    ret.add(InstructionType.ILabel, null, endLabel);
-    ret.add(InstructionType.ILeaveCycle, null);
+    ret.add(InstructionType.GoTo, null, startLabel);
+    ret.add(InstructionType.Label, null, endLabel);
+    ret.add(InstructionType.LeaveCycle, null);
     ret.success = true;
     return ret;
   }
@@ -85,11 +85,11 @@ export class CodeGenerator {
         case CompilerBlockType.ElseIf: {
           CodeGenerator.appendTo(ret, part.arg2);
           const nextLabel = context.getNewLabel();
-          ret.add(InstructionType.IGetBool, part.position, 0, 0);
-          ret.add(InstructionType.ICondition, part.position, 0, nextLabel);
+          ret.add(InstructionType.GetBool, part.position, 0, 0);
+          ret.add(InstructionType.Condition, part.position, 0, nextLabel);
           CodeGenerator.appendTo(ret, part.blockCode);
-          ret.add(InstructionType.IGoTo, part.position, endLabel);
-          ret.add(InstructionType.ILabel, null, nextLabel);
+          ret.add(InstructionType.GoTo, part.position, endLabel);
+          ret.add(InstructionType.Label, null, nextLabel);
           break;
         }
         case CompilerBlockType.Else: {
@@ -98,7 +98,7 @@ export class CodeGenerator {
         }
       }
     }
-    ret.add(InstructionType.ILabel, null, endLabel);
+    ret.add(InstructionType.Label, null, endLabel);
     ret.success = true;
     return ret;
   }
@@ -127,45 +127,45 @@ export class CodeGenerator {
       }
     }
 
-    ret.add(InstructionType.IEnterTry, tryPart.position, tryPart.blockCode.code.length + 2);
+    ret.add(InstructionType.EnterTry, tryPart.position, tryPart.blockCode.code.length + 2);
     CodeGenerator.appendTo(ret, tryPart.blockCode);
-    ret.add(InstructionType.IGoTo, null, finallyPart ? finallyPart.arg1 : finishTry);
+    ret.add(InstructionType.GoTo, null, finallyPart ? finallyPart.arg1 : finishTry);
     if (finallyPart) {
-      ret.add(InstructionType.IGotoFinally, null, finallyPart.arg1);
+      ret.add(InstructionType.GotoFinally, null, finallyPart.arg1);
     }
     for (const part of exceptParts) {
       if (!part.arg4 || !part.arg4.length) {
-        ret.add(InstructionType.IGotoExcept, part.position, -1, part.label);
+        ret.add(InstructionType.GotoExcept, part.position, -1, part.label);
       } else {
         for (const type of part.arg4) {
-          ret.add(InstructionType.IGotoExcept, part.position, type, part.label);
+          ret.add(InstructionType.GotoExcept, part.position, type, part.label);
         }
       }
     }
 
     if (finallyPart) {
-      ret.add(InstructionType.ILabel, finallyPart.position, finallyPart.label);
-      ret.add(InstructionType.IEnterFinally, finallyPart.position);
+      ret.add(InstructionType.Label, finallyPart.position, finallyPart.label);
+      ret.add(InstructionType.EnterFinally, finallyPart.position);
       CodeGenerator.appendTo(ret, finallyPart.blockCode);
-      ret.add(InstructionType.ILeaveFinally, null);
+      ret.add(InstructionType.LeaveFinally, null);
       if (exceptParts.length) {
-        ret.add(InstructionType.IGoTo, null, finishTry);
+        ret.add(InstructionType.GoTo, null, finishTry);
       }
     }
 
     for (const part of exceptParts) {
-      ret.add(InstructionType.ILabel, part.position, part.label);
-      ret.add(InstructionType.IEnterExcept, part.position, part.arg1);
+      ret.add(InstructionType.Label, part.position, part.label);
+      ret.add(InstructionType.EnterExcept, part.position, part.arg1);
       CodeGenerator.appendTo(ret, part.blockCode);
       if (finallyPart) {
-        ret.add(InstructionType.IGoTo, null, finallyPart.label);
+        ret.add(InstructionType.GoTo, null, finallyPart.label);
       } else if (part !== exceptParts[exceptParts.length - 1]) {
-        ret.add(InstructionType.IGoTo, null, finishTry);
+        ret.add(InstructionType.GoTo, null, finishTry);
       }
     }
 
-    ret.add(InstructionType.ILabel, null, finishTry);
-    ret.add(InstructionType.ILeaveTry, null);
+    ret.add(InstructionType.Label, null, finishTry);
+    ret.add(InstructionType.LeaveTry, null);
     if (elsePart) {
       CodeGenerator.appendTo(ret, elsePart.blockCode);
     }
@@ -184,48 +184,48 @@ export class CodeGenerator {
     const exceptLabel = context.getNewLabel();
     const exitLabel = context.getNewLabel();
     const ret = new GeneratedCode();
-    ret.add(InstructionType.ICreateVarRef, position, identifier, 0, ReferenceScope.Default);
+    ret.add(InstructionType.CreateVarRef, position, identifier, 0, ReferenceScope.Default);
     CodeGenerator.appendTo(ret, expression, 1);
-    ret.add(InstructionType.IReadProperty, position, context.getIdentifier('__enter__'), 1, 2);
-    ret.add(InstructionType.ICallMethod, position, 1, 2, 2);
-    ret.add(InstructionType.ICopyValue, position, 2, 0);
-    ret.add(InstructionType.IEnterTry, position, block.code.length + 2);
+    ret.add(InstructionType.ReadProperty, position, context.getIdentifier('__enter__'), 1, 2);
+    ret.add(InstructionType.CallMethod, position, 1, 2, 2);
+    ret.add(InstructionType.CopyValue, position, 2, 0);
+    ret.add(InstructionType.EnterTry, position, block.code.length + 2);
     CodeGenerator.appendTo(ret, block);
-    ret.add(InstructionType.IGoTo, position, finishLabel);
-    ret.add(InstructionType.IGotoExcept, position, -1, exceptLabel);
-    ret.add(InstructionType.ILabel, position, exceptLabel);
-    ret.add(InstructionType.IEnterExcept, position, -1);
+    ret.add(InstructionType.GoTo, position, finishLabel);
+    ret.add(InstructionType.GotoExcept, position, -1, exceptLabel);
+    ret.add(InstructionType.Label, position, exceptLabel);
+    ret.add(InstructionType.EnterExcept, position, -1);
 
     // call __exit__ with exception
-    ret.add(InstructionType.IReadObject, position, identifier, 0);
-    ret.add(InstructionType.IReadProperty, position, context.getIdentifier('__exit__'), 0, 1);
-    ret.add(InstructionType.IReadObject, position, context.getIdentifier('__sys__'), 2);
-    ret.add(InstructionType.IReadProperty, position, context.getIdentifier('exc_info'), 2, 3);
-    ret.add(InstructionType.ICallMethod, position, 2, 3, 2);
-    ret.add(InstructionType.IRegArg, position, 2, 0, 1);
-    ret.add(InstructionType.ICallMethod, position, 0, 1, 0);
-    ret.add(InstructionType.IGetBool, position, 0, 0);
-    ret.add(InstructionType.ILogicalNot, position, 0, 0);
+    ret.add(InstructionType.ReadObject, position, identifier, 0);
+    ret.add(InstructionType.ReadProperty, position, context.getIdentifier('__exit__'), 0, 1);
+    ret.add(InstructionType.ReadObject, position, context.getIdentifier('__sys__'), 2);
+    ret.add(InstructionType.ReadProperty, position, context.getIdentifier('exc_info'), 2, 3);
+    ret.add(InstructionType.CallMethod, position, 2, 3, 2);
+    ret.add(InstructionType.RegArg, position, 2, 0, 1);
+    ret.add(InstructionType.CallMethod, position, 0, 1, 0);
+    ret.add(InstructionType.GetBool, position, 0, 0);
+    ret.add(InstructionType.LogicalNot, position, 0, 0);
     const noRaiseLabel = context.getNewLabel();
-    ret.add(InstructionType.ICondition, position, 0, noRaiseLabel);
-    ret.add(InstructionType.IRaise, position, -1);
-    ret.add(InstructionType.ILabel, position, noRaiseLabel);
+    ret.add(InstructionType.Condition, position, 0, noRaiseLabel);
+    ret.add(InstructionType.Raise, position, -1);
+    ret.add(InstructionType.Label, position, noRaiseLabel);
 
-    ret.add(InstructionType.ILeaveTry, position);
-    ret.add(InstructionType.IGoTo, position, exitLabel);
-    ret.add(InstructionType.ILabel, position, finishLabel);
-    ret.add(InstructionType.ILeaveTry, position);
+    ret.add(InstructionType.LeaveTry, position);
+    ret.add(InstructionType.GoTo, position, exitLabel);
+    ret.add(InstructionType.Label, position, finishLabel);
+    ret.add(InstructionType.LeaveTry, position);
 
     // call __exit__ without exception
-    ret.add(InstructionType.IReadObject, position, identifier, 0);
-    ret.add(InstructionType.IReadProperty, position, context.getIdentifier('__exit__'), 0, 1);
-    ret.add(InstructionType.INone, position, 2);
-    ret.add(InstructionType.IRegArg, position, 2, 0, 0);
-    ret.add(InstructionType.IRegArg, position, 2, 1, 0);
-    ret.add(InstructionType.IRegArg, position, 2, 2, 0);
-    ret.add(InstructionType.ICallMethod, position, 0, 1, 0);
+    ret.add(InstructionType.ReadObject, position, identifier, 0);
+    ret.add(InstructionType.ReadProperty, position, context.getIdentifier('__exit__'), 0, 1);
+    ret.add(InstructionType.None, position, 2);
+    ret.add(InstructionType.RegArg, position, 2, 0, 0);
+    ret.add(InstructionType.RegArg, position, 2, 1, 0);
+    ret.add(InstructionType.RegArg, position, 2, 2, 0);
+    ret.add(InstructionType.CallMethod, position, 0, 1, 0);
 
-    ret.add(InstructionType.ILabel, position, exitLabel);
+    ret.add(InstructionType.Label, position, exitLabel);
 
     return ret;
   }
@@ -233,7 +233,7 @@ export class CodeGenerator {
   public static importDirective(path: string, context: CompilerContext, position: TokenPosition): GeneratedCode {
     const id = context.getIdentifier(path);
     const ret = new GeneratedCode();
-    ret.add(InstructionType.IImport, position, id);
+    ret.add(InstructionType.Import, position, id);
     ret.success = true;
     return ret;
   }
@@ -242,7 +242,7 @@ export class CodeGenerator {
     const id = context.getIdentifier(path);
     const as = context.getIdentifier(rename);
     const ret = new GeneratedCode();
-    ret.add(InstructionType.IImportAs, position, id, as);
+    ret.add(InstructionType.ImportAs, position, id, as);
     ret.success = true;
     return ret;
   }
@@ -251,28 +251,28 @@ export class CodeGenerator {
     const funcId = context.getIdentifier(func);
     const moduleId = context.getIdentifier(module);
     const ret = new GeneratedCode();
-    ret.add(InstructionType.IImportFrom, position, funcId, moduleId);
+    ret.add(InstructionType.ImportFrom, position, funcId, moduleId);
     ret.success = true;
     return ret;
   }
 
   public static pass(position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();
-    ret.add(InstructionType.IPass, position);
+    ret.add(InstructionType.Pass, position);
     ret.success = true;
     return ret;
   }
 
   public static breakCode(position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();
-    ret.add(InstructionType.IBreak, position);
+    ret.add(InstructionType.Break, position);
     ret.success = true;
     return ret;
   }
 
   public static continueCode(position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();
-    ret.add(InstructionType.IContinue, position);
+    ret.add(InstructionType.Continue, position);
     ret.success = true;
     return ret;
   }
@@ -280,14 +280,14 @@ export class CodeGenerator {
   public static raise(expression: GeneratedCode, position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();
     CodeGenerator.appendTo(ret, expression);
-    ret.add(InstructionType.IRaise, position, 0);
+    ret.add(InstructionType.Raise, position, 0);
     ret.success = true;
     return ret;
   }
 
   public static returnEmpty(position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();
-    ret.add(InstructionType.IRet, position, -1);
+    ret.add(InstructionType.Ret, position, -1);
     ret.success = true;
     return ret;
   }
@@ -295,7 +295,7 @@ export class CodeGenerator {
   public static returnValue(expression: GeneratedCode, position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();
     CodeGenerator.appendTo(ret, expression);
-    ret.add(InstructionType.IRet, position, 0);
+    ret.add(InstructionType.Ret, position, 0);
     ret.success = true;
     return ret;
   }
@@ -303,7 +303,7 @@ export class CodeGenerator {
   public static yield(expression: GeneratedCode, position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();
     CodeGenerator.appendTo(ret, expression);
-    ret.add(InstructionType.IYield, position, 0);
+    ret.add(InstructionType.Yield, position, 0);
     ret.success = true;
     return ret;
   }
@@ -320,24 +320,24 @@ export class CodeGenerator {
     for (const arg of args) {
       CodeGenerator.appendTo(code, arg, argReg);
       if (!arg.nameLiteral) {
-        code.add(InstructionType.IRegArg, position, argReg, argIndex);
+        code.add(InstructionType.RegArg, position, argReg, argIndex);
         argIndex++;
       } else {
         const nameId = compilerContext.getIdentifier(arg.nameLiteral);
-        code.add(InstructionType.IRegArgName, position, argReg, nameId);
+        code.add(InstructionType.RegArgName, position, argReg, nameId);
       }
     }
     if (parentAt0) {
-      code.add(InstructionType.ICallMethod, position, 0, 1, 0);
+      code.add(InstructionType.CallMethod, position, 0, 1, 0);
     } else {
-      code.add(InstructionType.ICallFunc, position, 0, 0);
+      code.add(InstructionType.CallFunc, position, 0, 0);
     }
     return true;
   }
 
   public static readFunctionDef(defIndex: number, position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();
-    ret.add(InstructionType.ICreateFunc, position, defIndex, 0);
+    ret.add(InstructionType.CreateFunc, position, defIndex, 0);
     ret.success = true;
     return ret;
   }
@@ -347,14 +347,14 @@ export class CodeGenerator {
     CodeGenerator.appendTo(ret, source);
     for (const token of unaryOperators) {
       if (token.type === TokenType.Operator && token.operator === OperatorType.Invert) {
-        ret.add(InstructionType.IBinInv, token.getPosition(), 0, 0);
+        ret.add(InstructionType.BinInv, token.getPosition(), 0, 0);
       } else if (token.type === TokenType.Keyword && token.keyword === KeywordType.Not) {
-        ret.add(InstructionType.IGetBool, token.getPosition(), 0, 0);
-        ret.add(InstructionType.ILogicalNot, token.getPosition(), 0, 0);
+        ret.add(InstructionType.GetBool, token.getPosition(), 0, 0);
+        ret.add(InstructionType.LogicalNot, token.getPosition(), 0, 0);
       } else if (token.type === TokenType.Operator && token.operator === OperatorType.Plus) {
         // do nothing
       } else if (token.type === TokenType.Operator && token.operator === OperatorType.Minus) {
-        ret.add(InstructionType.IInvert, token.getPosition(), 0, 0);
+        ret.add(InstructionType.Invert, token.getPosition(), 0, 0);
       } else {
         ret.success = false;
         compilerContext.addError(PyErrorType.UnknownUnaryOperator, token);
@@ -368,101 +368,101 @@ export class CodeGenerator {
   public static binaryOperator(left: GeneratedCode, op: Token, right: GeneratedCode, compilerContext: CompilerContext): GeneratedCode {
     const ret = new GeneratedCode();
     CodeGenerator.appendTo(ret, left);
-    let opType = InstructionType.IPass;
+    let opType = InstructionType.Pass;
     if (op.type === TokenType.Keyword) {
       switch (op.keyword) {
         case KeywordType.And:
-          opType = InstructionType.ILogicalAnd;
+          opType = InstructionType.LogicalAnd;
           break;
         case KeywordType.Or:
-          opType = InstructionType.ILogicalOr;
+          opType = InstructionType.LogicalOr;
           break;
       }
-      if (opType !== InstructionType.IPass) {
-        ret.add(InstructionType.IGetBool, op.getPosition(), 0, 0);
+      if (opType !== InstructionType.Pass) {
+        ret.add(InstructionType.GetBool, op.getPosition(), 0, 0);
         ret.add(opType, op.getPosition(), 0, 0, right.code.length + 1);
         CodeGenerator.appendTo(ret, right);
-        ret.add(InstructionType.IGetBool, op.getPosition(), 0, 0);
+        ret.add(InstructionType.GetBool, op.getPosition(), 0, 0);
       }
     }
     CodeGenerator.appendTo(ret, right, 1);
     if (op.type === TokenType.Operator) {
       switch (op.operator) {
         case OperatorType.Plus:
-          opType = InstructionType.IAdd;
+          opType = InstructionType.Add;
           break;
         case OperatorType.Minus:
-          opType = InstructionType.ISub;
+          opType = InstructionType.Sub;
           break;
         case OperatorType.Multiply:
-          opType = InstructionType.IMul;
+          opType = InstructionType.Mul;
           break;
         case OperatorType.Power:
-          opType = InstructionType.IPow;
+          opType = InstructionType.Pow;
           break;
         case OperatorType.Divide:
-          opType = InstructionType.IDiv;
+          opType = InstructionType.Div;
           break;
         case OperatorType.FloorDivide:
-          opType = InstructionType.IFloor;
+          opType = InstructionType.Floor;
           break;
         case OperatorType.Modulus:
-          opType = InstructionType.IMod;
+          opType = InstructionType.Mod;
           break;
         case OperatorType.At:
-          opType = InstructionType.IAt;
+          opType = InstructionType.At;
           break;
         case OperatorType.ShiftLeft:
-          opType = InstructionType.IShl;
+          opType = InstructionType.Shl;
           break;
         case OperatorType.ShiftRight:
-          opType = InstructionType.IShr;
+          opType = InstructionType.Shr;
           break;
         case OperatorType.And:
-          opType = InstructionType.IBinAnd;
+          opType = InstructionType.BinAnd;
           break;
         case OperatorType.Or:
-          opType = InstructionType.IBinOr;
+          opType = InstructionType.BinOr;
           break;
         case OperatorType.Xor:
-          opType = InstructionType.IBinXor;
+          opType = InstructionType.BinXor;
           break;
         case OperatorType.Less:
-          opType = InstructionType.ILess;
+          opType = InstructionType.Less;
           break;
         case OperatorType.Greater:
-          opType = InstructionType.IGreater;
+          opType = InstructionType.Greater;
           break;
         case OperatorType.LessEqual:
-          opType = InstructionType.ILessEq;
+          opType = InstructionType.LessEq;
           break;
         case OperatorType.GreaterEqual:
-          opType = InstructionType.IGreaterEq;
+          opType = InstructionType.GreaterEq;
           break;
         case OperatorType.Equal:
-          opType = InstructionType.IEqual;
+          opType = InstructionType.Equal;
           break;
         case OperatorType.NotEqual:
-          opType = InstructionType.INotEq;
+          opType = InstructionType.NotEq;
           break;
       }
     } else if (op.type === TokenType.Keyword) {
       switch (op.keyword) {
         case KeywordType.Is:
-          opType = InstructionType.IIs;
+          opType = InstructionType.Is;
           break;
         case KeywordType.IsNot:
-          opType = InstructionType.IIsNot;
+          opType = InstructionType.IsNot;
           break;
         case KeywordType.In:
-          opType = InstructionType.IIn;
+          opType = InstructionType.In;
           break;
         case KeywordType.NotIn:
-          opType = InstructionType.INotIn;
+          opType = InstructionType.NotIn;
           break;
       }
     }
-    if (opType === InstructionType.IPass) {
+    if (opType === InstructionType.Pass) {
       ret.success = false;
       compilerContext.addError(PyErrorType.UnknownBinaryOperator, op);
       return ret;
@@ -479,9 +479,9 @@ export class CodeGenerator {
     compilerContext: CompilerContext,
     position: TokenPosition,
   ) {
-    code.add(InstructionType.IReadObject, position, compilerContext.getIdentifier(identifiers[0]), 0);
+    code.add(InstructionType.ReadObject, position, compilerContext.getIdentifier(identifiers[0]), 0);
     for (let i = 1; i < length; i++) {
-      code.add(InstructionType.IReadProperty, position, compilerContext.getIdentifier(identifiers[i]), 0, 0);
+      code.add(InstructionType.ReadProperty, position, compilerContext.getIdentifier(identifiers[i]), 0, 0);
     }
   }
 
@@ -489,28 +489,28 @@ export class CodeGenerator {
     const ret = new GeneratedCode();
     if (identifiers.length > 1) {
       CodeGenerator.prepareReference(ret, identifiers, identifiers.length - 1, compilerContext, position);
-      ret.add(InstructionType.IIdentifier, position, 1, compilerContext.getIdentifier(identifiers[identifiers.length - 1]));
-      ret.add(InstructionType.ICreatePropertyRef, position, 0, 1, 0);
+      ret.add(InstructionType.Identifier, position, 1, compilerContext.getIdentifier(identifiers[identifiers.length - 1]));
+      ret.add(InstructionType.CreatePropertyRef, position, 0, 1, 0);
     } else {
-      ret.add(InstructionType.ICreateVarRef, position, compilerContext.getIdentifier(identifiers[0]), 0, ReferenceScope.Default);
+      ret.add(InstructionType.CreateVarRef, position, compilerContext.getIdentifier(identifiers[0]), 0, ReferenceScope.Default);
     }
     ret.success = true;
     return ret;
   }
 
   public static appendPropertyReference(code: GeneratedCode, objectReg: number, identifier: number, position: TokenPosition) {
-    code.add(InstructionType.IIdentifier, position, objectReg + 1, identifier);
-    code.add(InstructionType.ICreatePropertyRef, position, objectReg, objectReg + 1, objectReg);
+    code.add(InstructionType.Identifier, position, objectReg + 1, identifier);
+    code.add(InstructionType.CreatePropertyRef, position, objectReg, objectReg + 1, objectReg);
   }
 
   public static appendArrayIndexerReference(code: GeneratedCode, objectReg: number, indexExpression: GeneratedCode, position: TokenPosition) {
     CodeGenerator.appendTo(code, indexExpression, objectReg + 1);
-    code.add(InstructionType.ICreateArrayIndexRef, position, objectReg, objectReg + 1, objectReg);
+    code.add(InstructionType.CreateArrayIndexRef, position, objectReg, objectReg + 1, objectReg);
   }
 
   public static createVarReference(identifier: number, scope: ReferenceScope, position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();
-    ret.add(InstructionType.ICreateVarRef, position, identifier, 0, scope);
+    ret.add(InstructionType.CreateVarRef, position, identifier, 0, scope);
     ret.success = true;
     return ret;
   }
@@ -518,17 +518,17 @@ export class CodeGenerator {
   public static deleteProperty(identifiers: string[], compilerContext: CompilerContext, position: TokenPosition) {
     const ret = new GeneratedCode();
     CodeGenerator.prepareReference(ret, identifiers, identifiers.length - 1, compilerContext, position);
-    ret.add(InstructionType.IDel, position, 0, compilerContext.getIdentifier(identifiers[identifiers.length - 1]));
+    ret.add(InstructionType.Del, position, 0, compilerContext.getIdentifier(identifiers[identifiers.length - 1]));
     ret.success = true;
     return ret;
   }
 
   public static list(records: GeneratedCode[], position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();
-    ret.add(InstructionType.IList, position, 0);
+    ret.add(InstructionType.List, position, 0);
     for (const record of records) {
       CodeGenerator.appendTo(ret, record, 1);
-      ret.add(InstructionType.IListAdd, null, 1, 0);
+      ret.add(InstructionType.ListAdd, null, 1, 0);
     }
     ret.success = true;
     return ret;
@@ -544,10 +544,10 @@ export class CodeGenerator {
 
   public static tuple(records: GeneratedCode[], position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();
-    ret.add(InstructionType.ITuple, position, 0);
+    ret.add(InstructionType.Tuple, position, 0);
     for (const record of records) {
       CodeGenerator.appendTo(ret, record, 1);
-      ret.add(InstructionType.ITupleAdd, null, 1, 0);
+      ret.add(InstructionType.TupleAdd, null, 1, 0);
     }
     ret.success = true;
     return ret;
@@ -555,11 +555,11 @@ export class CodeGenerator {
 
   public static dictionary(literals: string[], values: GeneratedCode[], compilerContext: CompilerContext, position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();
-    ret.add(InstructionType.IDictionary, position, 0);
+    ret.add(InstructionType.Dictionary, position, 0);
     for (let i = 0; i < literals.length; i++) {
       const identifier = compilerContext.getIdentifier(literals[i]);
       CodeGenerator.appendTo(ret, values[i], 1);
-      ret.add(InstructionType.IDictionaryAdd, null, 1, identifier, 0);
+      ret.add(InstructionType.DictionaryAdd, null, 1, identifier, 0);
     }
     ret.success = true;
     return ret;
@@ -567,10 +567,10 @@ export class CodeGenerator {
 
   public static set(records: GeneratedCode[], position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();
-    ret.add(InstructionType.ISet, position, 0);
+    ret.add(InstructionType.Set, position, 0);
     for (const record of records) {
       CodeGenerator.appendTo(ret, record, 1);
-      ret.add(InstructionType.ISetAdd, null, 1, 0);
+      ret.add(InstructionType.SetAdd, null, 1, 0);
     }
     ret.success = true;
     return ret;
@@ -586,14 +586,14 @@ export class CodeGenerator {
     const ret = new GeneratedCode();
     CodeGenerator.appendTo(ret, condition);
     const elseLabel = compilerContext.getNewLabel();
-    ret.add(InstructionType.IGetBool, position, 0, 0);
-    ret.add(InstructionType.ICondition, position, 0, elseLabel);
+    ret.add(InstructionType.GetBool, position, 0, 0);
+    ret.add(InstructionType.Condition, position, 0, elseLabel);
     const endLabel = compilerContext.getNewLabel();
     CodeGenerator.appendTo(ret, ifPart);
-    ret.add(InstructionType.IGoTo, null, endLabel);
-    ret.add(InstructionType.ILabel, null, elseLabel);
+    ret.add(InstructionType.GoTo, null, endLabel);
+    ret.add(InstructionType.Label, null, elseLabel);
     CodeGenerator.appendTo(ret, elsePart);
-    ret.add(InstructionType.ILabel, null, endLabel);
+    ret.add(InstructionType.Label, null, endLabel);
     ret.success = true;
     return ret;
   }
@@ -601,21 +601,21 @@ export class CodeGenerator {
   public static literal(literal: Literal, compilerContext: CompilerContext, position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();
     const litId = compilerContext.getLiteral(literal);
-    ret.add(InstructionType.ILiteral, position, 0, litId);
+    ret.add(InstructionType.Literal, position, 0, litId);
     ret.success = true;
     return ret;
   }
 
   public static bool(value: number, position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();
-    ret.add(InstructionType.IBool, position, value, 0);
+    ret.add(InstructionType.Bool, position, value, 0);
     ret.success = true;
     return ret;
   }
 
   public static none(position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();
-    ret.add(InstructionType.INone, position, 0);
+    ret.add(InstructionType.None, position, 0);
     ret.success = true;
     return ret;
   }

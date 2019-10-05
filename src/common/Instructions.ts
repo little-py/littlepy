@@ -3,16 +3,23 @@ import { TokenPosition } from '../compiler/Token';
 
 export class Instruction {
   public debug?: string;
-  public readonly iType: InstructionType;
+  public readonly type: InstructionType;
   public arg1: number;
   public arg2: number;
   public arg3: number;
-  public typeText?: string;
+  public arg4: InstructionType;
   public readonly row: number;
   public readonly column: number;
   public readonly position: number;
 
-  public constructor(type: InstructionType = InstructionType.IPass, position: TokenPosition, arg1 = 0, arg2 = 0, arg3 = 0) {
+  public constructor(
+    type: InstructionType = InstructionType.Pass,
+    position: TokenPosition,
+    arg1 = 0,
+    arg2 = 0,
+    arg3 = 0,
+    arg4 = InstructionType.None,
+  ) {
     if (position) {
       this.position = position.position;
       this.column = position.column;
@@ -22,15 +29,16 @@ export class Instruction {
       this.row = -1;
       this.column = -1;
     }
-    this.iType = type;
+    this.type = type;
     this.arg1 = arg1;
     this.arg2 = arg2;
     this.arg3 = arg3;
+    this.arg4 = arg4;
   }
 
   public copy(): Instruction {
     return new Instruction(
-      this.iType,
+      this.type,
       {
         position: this.position,
         column: this.column,
@@ -39,25 +47,26 @@ export class Instruction {
       this.arg1,
       this.arg2,
       this.arg3,
+      this.arg4,
     );
   }
 
   public isOperator(): boolean {
-    switch (this.iType) {
-      case InstructionType.IAdd:
-      case InstructionType.ISub:
-      case InstructionType.IMul:
-      case InstructionType.IDiv:
-      case InstructionType.IPow:
-      case InstructionType.IFloor:
-      case InstructionType.IMod:
-      case InstructionType.IShl:
-      case InstructionType.IShr:
-      case InstructionType.IAt:
-      case InstructionType.IBinAnd:
-      case InstructionType.IBinOr:
-      case InstructionType.IBinXor:
-      case InstructionType.IBinInv:
+    switch (this.type) {
+      case InstructionType.Add:
+      case InstructionType.Sub:
+      case InstructionType.Mul:
+      case InstructionType.Div:
+      case InstructionType.Pow:
+      case InstructionType.Floor:
+      case InstructionType.Mod:
+      case InstructionType.Shl:
+      case InstructionType.Shr:
+      case InstructionType.At:
+      case InstructionType.BinAnd:
+      case InstructionType.BinOr:
+      case InstructionType.BinXor:
+      case InstructionType.BinInv:
         return true;
       default:
         return false;
@@ -65,103 +74,103 @@ export class Instruction {
   }
 
   public isArrayIndex(): boolean {
-    return this.iType === InstructionType.ICreateArrayIndexRef;
+    return this.type === InstructionType.CreateArrayIndexRef;
   }
 
   public shiftRight(countReg: number) {
-    switch (this.iType) {
-      case InstructionType.ILiteral:
-      case InstructionType.ICondition:
-      case InstructionType.IRegArg:
-      case InstructionType.IRegArgName:
-      case InstructionType.IRet:
-      case InstructionType.IList:
-      case InstructionType.ITuple:
-      case InstructionType.ISet:
-      case InstructionType.IDictionary:
-      case InstructionType.IIdentifier:
-      case InstructionType.INone:
-      case InstructionType.IDel:
-      case InstructionType.IRaise:
+    switch (this.type) {
+      case InstructionType.Literal:
+      case InstructionType.Condition:
+      case InstructionType.RegArg:
+      case InstructionType.RegArgName:
+      case InstructionType.Ret:
+      case InstructionType.List:
+      case InstructionType.Tuple:
+      case InstructionType.Set:
+      case InstructionType.Dictionary:
+      case InstructionType.Identifier:
+      case InstructionType.None:
+      case InstructionType.Del:
+      case InstructionType.Raise:
         this.arg1 += countReg;
         break;
-      case InstructionType.IDictionaryAdd:
+      case InstructionType.DictionaryAdd:
         this.arg1 += countReg;
         this.arg3 += countReg;
         break;
-      case InstructionType.ILabel:
-      case InstructionType.IPass:
-      case InstructionType.IGoTo:
-      case InstructionType.IImport:
-      case InstructionType.IImportFrom:
-      case InstructionType.IImportAs:
-      case InstructionType.IEnterTry:
-      case InstructionType.ILeaveTry:
-      case InstructionType.IEnterFinally:
-      case InstructionType.ILeaveFinally:
-      case InstructionType.IWhileCycle:
-      case InstructionType.IGotoExcept:
-      case InstructionType.IGotoFinally:
-      case InstructionType.ILeaveCycle:
-      case InstructionType.IContinue:
-      case InstructionType.IBreak:
-      case InstructionType.IForCycle:
-      case InstructionType.IEnterExcept:
+      case InstructionType.Label:
+      case InstructionType.Pass:
+      case InstructionType.GoTo:
+      case InstructionType.Import:
+      case InstructionType.ImportFrom:
+      case InstructionType.ImportAs:
+      case InstructionType.EnterTry:
+      case InstructionType.LeaveTry:
+      case InstructionType.EnterFinally:
+      case InstructionType.LeaveFinally:
+      case InstructionType.WhileCycle:
+      case InstructionType.GotoExcept:
+      case InstructionType.GotoFinally:
+      case InstructionType.LeaveCycle:
+      case InstructionType.Continue:
+      case InstructionType.Break:
+      case InstructionType.ForCycle:
+      case InstructionType.EnterExcept:
         break;
-      case InstructionType.IAdd:
-      case InstructionType.ISub:
-      case InstructionType.IMul:
-      case InstructionType.IDiv:
-      case InstructionType.IPow:
-      case InstructionType.IFloor:
-      case InstructionType.IMod:
-      case InstructionType.IShl:
-      case InstructionType.IShr:
-      case InstructionType.IAt:
-      case InstructionType.IBinAnd:
-      case InstructionType.IBinOr:
-      case InstructionType.IBinXor:
-      case InstructionType.IBinInv:
-      case InstructionType.ILess:
-      case InstructionType.IGreater:
-      case InstructionType.ILessEq:
-      case InstructionType.IGreaterEq:
-      case InstructionType.IEqual:
-      case InstructionType.INotEq:
+      case InstructionType.Add:
+      case InstructionType.Sub:
+      case InstructionType.Mul:
+      case InstructionType.Div:
+      case InstructionType.Pow:
+      case InstructionType.Floor:
+      case InstructionType.Mod:
+      case InstructionType.Shl:
+      case InstructionType.Shr:
+      case InstructionType.At:
+      case InstructionType.BinAnd:
+      case InstructionType.BinOr:
+      case InstructionType.BinXor:
+      case InstructionType.BinInv:
+      case InstructionType.Less:
+      case InstructionType.Greater:
+      case InstructionType.LessEq:
+      case InstructionType.GreaterEq:
+      case InstructionType.Equal:
+      case InstructionType.NotEq:
       // case InstructionType.ISeqNext:
-      case InstructionType.ICreateArrayIndexRef:
-      case InstructionType.ICreatePropertyRef:
-      case InstructionType.IReadArrayIndex:
-      case InstructionType.ICallMethod:
-      case InstructionType.IIn:
-      case InstructionType.IIs:
-      case InstructionType.IIsNot:
-      case InstructionType.INotIn:
+      case InstructionType.CreateArrayIndexRef:
+      case InstructionType.CreatePropertyRef:
+      case InstructionType.ReadArrayIndex:
+      case InstructionType.CallMethod:
+      case InstructionType.In:
+      case InstructionType.Is:
+      case InstructionType.IsNot:
+      case InstructionType.NotIn:
         this.arg1 += countReg;
         this.arg2 += countReg;
         this.arg3 += countReg;
         break;
-      case InstructionType.ILogicalNot:
-      case InstructionType.IInvert:
-      case InstructionType.IListAdd:
-      case InstructionType.ITupleAdd:
-      case InstructionType.ISetAdd:
-      case InstructionType.ICopyValue:
-      case InstructionType.IAugmentedCopy:
-      case InstructionType.IGetBool:
-      case InstructionType.ILogicalOr:
-      case InstructionType.ILogicalAnd:
-      case InstructionType.ICallFunc:
+      case InstructionType.LogicalNot:
+      case InstructionType.Invert:
+      case InstructionType.ListAdd:
+      case InstructionType.TupleAdd:
+      case InstructionType.SetAdd:
+      case InstructionType.CopyValue:
+      case InstructionType.AugmentedCopy:
+      case InstructionType.GetBool:
+      case InstructionType.LogicalOr:
+      case InstructionType.LogicalAnd:
+      case InstructionType.CallFunc:
         this.arg1 += countReg;
         this.arg2 += countReg;
         break;
-      case InstructionType.ICreateFunc:
-      case InstructionType.IReadObject:
-      case InstructionType.ICreateVarRef:
-      case InstructionType.IBool:
+      case InstructionType.CreateFunc:
+      case InstructionType.ReadObject:
+      case InstructionType.CreateVarRef:
+      case InstructionType.Bool:
         this.arg2 += countReg;
         break;
-      case InstructionType.IReadProperty:
+      case InstructionType.ReadProperty:
         this.arg2 += countReg;
         this.arg3 += countReg;
         break;
@@ -176,7 +185,7 @@ export class GeneratedCode {
   public nameLiteral: string;
   public position: TokenPosition;
 
-  public add(t: InstructionType, position: TokenPosition, a1 = 0, a2 = 0, a3 = 0) {
-    this.code.push(new Instruction(t, position, a1, a2, a3));
+  public add(t: InstructionType, position: TokenPosition, a1 = 0, a2 = 0, a3 = 0, a4 = InstructionType.None) {
+    this.code.push(new Instruction(t, position, a1, a2, a3, a4));
   }
 }

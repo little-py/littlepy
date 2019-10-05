@@ -411,7 +411,7 @@ export class ExpressionCompiler {
     }
     this._from++;
     const ret = new GeneratedCode();
-    ret.add(InstructionType.IReadObject, first.getPosition(), first.identifier, ReferenceScope.Default);
+    ret.add(InstructionType.ReadObject, first.getPosition(), first.identifier, ReferenceScope.Default);
     ret.success = true;
     this.compileAnyAccessor(ret);
     if (!ret.success) {
@@ -433,10 +433,10 @@ export class ExpressionCompiler {
           break;
         }
         if (this.isLeftBracket(this._from)) {
-          ret.add(InstructionType.IReadProperty, current.getPosition(), identifier, 0, 1);
+          ret.add(InstructionType.ReadProperty, current.getPosition(), identifier, 0, 1);
           this.appendFunctionCall(ret, current.getPosition(), true);
         } else {
-          ret.add(InstructionType.IReadProperty, current.getPosition(), identifier, 0, 0);
+          ret.add(InstructionType.ReadProperty, current.getPosition(), identifier, 0, 0);
           continue;
         }
       }
@@ -459,7 +459,7 @@ export class ExpressionCompiler {
           break;
         }
         CodeGenerator.appendTo(ret, indexArg, 1);
-        ret.add(InstructionType.IReadArrayIndex, current.getPosition(), 0, 1, 0);
+        ret.add(InstructionType.ReadArrayIndex, current.getPosition(), 0, 1, 0);
         continue;
       }
       if (this.isLeftBracket(this._from)) {
@@ -779,7 +779,7 @@ export class ExpressionCompiler {
       }
     }
     const body = this.compileInternal(this._from, false);
-    body.add(InstructionType.IRet, startToken.getPosition(), 0);
+    body.add(InstructionType.Ret, startToken.getPosition(), 0);
     this._from = body.finish;
     const func = new FunctionBody();
     const funcDef = this._compiledCode.functions.length;

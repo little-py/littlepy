@@ -35,47 +35,47 @@ import { LiteralType } from './Literal';
 import { ReferenceScope } from '../common/ReferenceScope';
 
 function getAssignmentInstruction(assignmentOperator: Token): InstructionType {
-  let opType = InstructionType.IPass;
+  let opType = InstructionType.Pass;
   if (assignmentOperator.type === TokenType.Delimiter) {
     switch (assignmentOperator.delimiter) {
       case DelimiterType.EqualPlus:
-        opType = InstructionType.IAdd;
+        opType = InstructionType.Add;
         break;
       case DelimiterType.EqualMinus:
-        opType = InstructionType.ISub;
+        opType = InstructionType.Sub;
         break;
       case DelimiterType.EqualMultiply:
-        opType = InstructionType.IMul;
+        opType = InstructionType.Mul;
         break;
       case DelimiterType.EqualDivide:
-        opType = InstructionType.IDiv;
+        opType = InstructionType.Div;
         break;
       case DelimiterType.EqualFloorDivide:
-        opType = InstructionType.IFloor;
+        opType = InstructionType.Floor;
         break;
       case DelimiterType.EqualModulus:
-        opType = InstructionType.IMod;
+        opType = InstructionType.Mod;
         break;
       case DelimiterType.EqualAt:
-        opType = InstructionType.IAt;
+        opType = InstructionType.At;
         break;
       case DelimiterType.EqualAnd:
-        opType = InstructionType.IBinAnd;
+        opType = InstructionType.BinAnd;
         break;
       case DelimiterType.EqualOr:
-        opType = InstructionType.IBinOr;
+        opType = InstructionType.BinOr;
         break;
       case DelimiterType.EqualXor:
-        opType = InstructionType.IBinXor;
+        opType = InstructionType.BinXor;
         break;
       case DelimiterType.EqualShiftRight:
-        opType = InstructionType.IShr;
+        opType = InstructionType.Shr;
         break;
       case DelimiterType.EqualShiftLeft:
-        opType = InstructionType.IShl;
+        opType = InstructionType.Shl;
         break;
       case DelimiterType.EqualPower:
-        opType = InstructionType.IPow;
+        opType = InstructionType.Pow;
         break;
     }
   }
@@ -1132,9 +1132,9 @@ export class Compiler {
       const assignment = expressions[i];
       CodeGenerator.appendTo(assignment, result, 1);
       if (isAugmented) {
-        assignment.add(InstructionType.IAugmentedCopy, assignment.position, 1, 0, getAssignmentInstruction(augmentedOperator));
+        assignment.add(InstructionType.AugmentedCopy, assignment.position, 1, 0, 0, getAssignmentInstruction(augmentedOperator));
       } else {
-        assignment.add(InstructionType.ICopyValue, assignment.position, 1, 0);
+        assignment.add(InstructionType.CopyValue, assignment.position, 1, 0);
       }
       result = assignment;
     }
@@ -1183,7 +1183,7 @@ export class Compiler {
     const code = CodeGenerator.createReference(identifiers, this._compilerContext, position);
     // It is important not to touch registers starting from index 2 because they are used for default values
     CodeGenerator.appendTo(code, createFunction, 1);
-    code.add(InstructionType.ICopyValue, position, 1, 0);
+    code.add(InstructionType.CopyValue, position, 1, 0);
     CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, code);
     return true;
   }
@@ -1203,7 +1203,7 @@ export class Compiler {
     }
     const print = new GeneratedCode();
     const first = this._line[0];
-    print.add(InstructionType.IReadObject, first.getPosition(), this._compilerContext.getIdentifier('print'), 0);
+    print.add(InstructionType.ReadObject, first.getPosition(), this._compilerContext.getIdentifier('print'), 0);
     CodeGenerator.appendFunctionCall(print, [expression], this._compilerContext, this._line[0].getPosition(), false);
     CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, print);
   }

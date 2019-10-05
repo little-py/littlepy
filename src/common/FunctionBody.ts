@@ -25,91 +25,6 @@ export enum FunctionType {
 }
 
 /* istanbul ignore next */
-let InstructionMapping: { [key: string]: string } = {};
-
-/* istanbul ignore next */
-if (DEBUG) {
-  InstructionMapping = {
-    [InstructionType.ICreateFunc]: 'CreateFunc',
-    [InstructionType.ILiteral]: 'Literal',
-    [InstructionType.ICreateVarRef]: 'CreateVarRef',
-    [InstructionType.ICreateArrayIndexRef]: 'CreateArrayIndexRef',
-    [InstructionType.ICreatePropertyRef]: 'CreatePropertyRef',
-    [InstructionType.ICopyValue]: 'CopyValue',
-    [InstructionType.IAugmentedCopy]: 'AugmentedCopy',
-    [InstructionType.IAdd]: 'Add',
-    [InstructionType.ISub]: 'Sub',
-    [InstructionType.IMul]: 'Mul',
-    [InstructionType.IDiv]: 'Div',
-    [InstructionType.IPow]: 'Pow',
-    [InstructionType.IFloor]: 'Floor',
-    [InstructionType.IMod]: 'Mod',
-    [InstructionType.IAt]: 'At',
-    [InstructionType.IShl]: 'Shl',
-    [InstructionType.IShr]: 'Shr',
-    [InstructionType.IBinAnd]: 'BinAnd',
-    [InstructionType.IBinOr]: 'BinOr',
-    [InstructionType.IBinXor]: 'BinXor',
-    [InstructionType.IBinInv]: 'BinInv',
-    [InstructionType.ILabel]: 'Label',
-    [InstructionType.ICondition]: 'Condition',
-    [InstructionType.ILess]: 'Less',
-    [InstructionType.IGreater]: 'Greater',
-    [InstructionType.ILessEq]: 'LessEq',
-    [InstructionType.IGreaterEq]: 'GreaterEq',
-    [InstructionType.IEqual]: 'Equal',
-    [InstructionType.INotEq]: 'NotEq',
-    [InstructionType.IRegArg]: 'RegArg',
-    [InstructionType.IRegArgName]: 'RegArgName',
-    [InstructionType.ICallFunc]: 'CallFunc',
-    [InstructionType.IRet]: 'Ret',
-    [InstructionType.IRaise]: 'Raise',
-    [InstructionType.ILogicalNot]: 'LogicalNot',
-    [InstructionType.ILogicalAnd]: 'LogicalAnd',
-    [InstructionType.ILogicalOr]: 'LogicalOr',
-    [InstructionType.IGetBool]: 'GetBool',
-    [InstructionType.IPass]: 'Pass',
-    [InstructionType.IInvert]: 'Invert',
-    [InstructionType.IList]: 'List',
-    [InstructionType.IListAdd]: 'ListAdd',
-    [InstructionType.ITuple]: 'Tuple',
-    [InstructionType.ITupleAdd]: 'TupleAdd',
-    [InstructionType.ISet]: 'Set',
-    [InstructionType.ISetAdd]: 'SetAdd',
-    [InstructionType.IDictionary]: 'Dictionary',
-    [InstructionType.IDictionaryAdd]: 'DictionaryAdd',
-    [InstructionType.IForCycle]: 'ForCycle',
-    [InstructionType.IWhileCycle]: 'WhileCycle',
-    [InstructionType.IGoTo]: 'GoTo',
-    [InstructionType.IImport]: 'Import',
-    [InstructionType.IImportAs]: 'ImportAs',
-    [InstructionType.IImportFrom]: 'ImportFrom',
-    [InstructionType.IEnterTry]: 'EnterTry',
-    [InstructionType.IEnterFinally]: 'EnterFinally',
-    [InstructionType.IEnterExcept]: 'EnterExcept',
-    [InstructionType.IGotoExcept]: 'GotoExcept',
-    [InstructionType.IGotoFinally]: 'GotoFinally',
-    [InstructionType.ILeaveTry]: 'LeaveTry',
-    [InstructionType.ILeaveFinally]: 'LeaveFinally',
-    [InstructionType.ILeaveCycle]: 'LeaveCycle',
-    [InstructionType.IContinue]: 'Continue',
-    [InstructionType.IBreak]: 'Break',
-    [InstructionType.IReadObject]: 'ReadObject',
-    [InstructionType.IReadProperty]: 'ReadProperty',
-    [InstructionType.IIdentifier]: 'Identifier',
-    [InstructionType.IBool]: 'Bool',
-    [InstructionType.INone]: 'None',
-    [InstructionType.IIs]: 'Is',
-    [InstructionType.IIsNot]: 'IsNot',
-    [InstructionType.IIn]: 'In',
-    [InstructionType.INotIn]: 'NotIn',
-    [InstructionType.IDel]: 'Del',
-    [InstructionType.IReadArrayIndex]: 'ReadArrayIndex',
-    [InstructionType.ICallMethod]: 'CallMethod',
-  };
-}
-
-/* istanbul ignore next */
 export function createDebugInformation(module: CompiledModule, instructions: Instruction[]) {
   /* istanbul ignore next */
   const functionToText = (arg: number): string => {
@@ -146,257 +61,255 @@ export function createDebugInformation(module: CompiledModule, instructions: Ins
   };
 
   for (const i of instructions) {
-    i.typeText = InstructionMapping[i.iType];
-
-    switch (i.iType) {
-      case InstructionType.ICreateFunc:
+    switch (i.type) {
+      case InstructionType.CreateFunc:
         i.debug = `reg${i.arg2} = function ${functionToText(i.arg1)}(...)`;
         break;
-      case InstructionType.ILiteral:
+      case InstructionType.Literal:
         i.debug = `reg${i.arg1} = ${literalToText(i.arg2)}`;
         break;
-      case InstructionType.ICreateVarRef:
+      case InstructionType.CreateVarRef:
         i.debug = `reg${i.arg2} = reference(${idToText(i.arg1)})${
           i.arg3 === ReferenceScope.Default ? '' : i.arg3 === ReferenceScope.Global ? '// global scope' : '// nonlocal scope'
         }`;
         break;
-      case InstructionType.ICreateArrayIndexRef:
+      case InstructionType.CreateArrayIndexRef:
         i.debug = `reg${i.arg3} = reference(reg${i.arg1}[${i.arg2}])`;
         break;
-      case InstructionType.ICreatePropertyRef:
+      case InstructionType.CreatePropertyRef:
         i.debug = `reg${i.arg3} = reference(reg${i.arg1}[reg${i.arg2}])`;
         break;
-      case InstructionType.ICopyValue:
+      case InstructionType.CopyValue:
         i.debug = `*reg${i.arg2} = *reg${i.arg1}`;
         break;
-      case InstructionType.IAugmentedCopy:
-        i.debug = `reg${i.arg1} = reg${i.arg1} ${InstructionMapping[i.arg3]} reg${i.arg2}`;
+      case InstructionType.AugmentedCopy:
+        i.debug = `reg${i.arg1} = reg${i.arg1} ${i.arg4} reg${i.arg2}`;
         break;
-      case InstructionType.IAdd:
+      case InstructionType.Add:
         i.debug = `reg${i.arg3} = reg${i.arg1} + reg${i.arg2}`;
         break;
-      case InstructionType.ISub:
+      case InstructionType.Sub:
         i.debug = `reg${i.arg3} = reg${i.arg1} - reg${i.arg2}`;
         break;
-      case InstructionType.IMul:
+      case InstructionType.Mul:
         i.debug = `reg${i.arg3} = reg${i.arg1} * reg${i.arg2}`;
         break;
-      case InstructionType.IDiv:
+      case InstructionType.Div:
         i.debug = `reg${i.arg3} = reg${i.arg1} / reg${i.arg2}`;
         break;
-      case InstructionType.IPow:
+      case InstructionType.Pow:
         i.debug = `reg${i.arg3} = reg${i.arg1} ** reg${i.arg2}`;
         break;
-      case InstructionType.IFloor:
+      case InstructionType.Floor:
         i.debug = `reg${i.arg3} = reg${i.arg1} // reg${i.arg2}`;
         break;
-      case InstructionType.IMod:
+      case InstructionType.Mod:
         i.debug = `reg${i.arg3} = reg${i.arg1} % reg${i.arg2}`;
         break;
-      case InstructionType.IAt:
+      case InstructionType.At:
         i.debug = `reg${i.arg3} = reg${i.arg1} @ reg${i.arg2}`;
         break;
-      case InstructionType.IShl:
+      case InstructionType.Shl:
         i.debug = `reg${i.arg3} = reg${i.arg1} << reg${i.arg2}`;
         break;
-      case InstructionType.IShr:
+      case InstructionType.Shr:
         i.debug = `reg${i.arg3} = reg${i.arg1} >> reg${i.arg2}`;
         break;
-      case InstructionType.IBinAnd:
+      case InstructionType.BinAnd:
         i.debug = `reg${i.arg3} = reg${i.arg1} & reg${i.arg2}`;
         break;
-      case InstructionType.IBinOr:
+      case InstructionType.BinOr:
         i.debug = `reg${i.arg3} = reg${i.arg1} | reg${i.arg2}`;
         break;
-      case InstructionType.IBinXor:
+      case InstructionType.BinXor:
         i.debug = `reg${i.arg3} = reg${i.arg1} ^ reg${i.arg2}`;
         break;
-      case InstructionType.IBinInv:
+      case InstructionType.BinInv:
         i.debug = `reg${i.arg2} = ~reg${i.arg1}`;
         break;
-      case InstructionType.ILabel:
+      case InstructionType.Label:
         i.debug = `:label${i.arg1}`;
         break;
-      case InstructionType.ICondition:
+      case InstructionType.Condition:
         i.debug = `if reg${i.arg1} is False jump to label${i.arg2}`;
         break;
-      case InstructionType.ILess:
+      case InstructionType.Less:
         i.debug = `reg${i.arg3} = reg${i.arg1} < reg${i.arg2}`;
         break;
-      case InstructionType.IGreater:
+      case InstructionType.Greater:
         i.debug = `reg${i.arg3} = reg${i.arg1} > reg${i.arg2}`;
         break;
-      case InstructionType.ILessEq:
+      case InstructionType.LessEq:
         i.debug = `reg${i.arg3} = reg${i.arg1} <= reg${i.arg2}`;
         break;
-      case InstructionType.IGreaterEq:
+      case InstructionType.GreaterEq:
         i.debug = `reg${i.arg3} = reg${i.arg1} >= reg${i.arg2}`;
         break;
-      case InstructionType.IEqual:
+      case InstructionType.Equal:
         i.debug = `reg${i.arg3} = reg${i.arg1} == reg${i.arg2}`;
         break;
-      case InstructionType.INotEq:
+      case InstructionType.NotEq:
         i.debug = `reg${i.arg3} = reg${i.arg1} != reg${i.arg2}`;
         break;
-      case InstructionType.IRegArg:
+      case InstructionType.RegArg:
         i.debug = `argument${i.arg2} = reg${i.arg1}`;
         break;
-      case InstructionType.IRegArgName:
+      case InstructionType.RegArgName:
         i.debug = `argument '${idToText(i.arg2)}' = reg${i.arg1}`;
         break;
-      case InstructionType.ICallFunc:
+      case InstructionType.CallFunc:
         i.debug = `reg${i.arg2} = reg${i.arg1}(...)`;
         break;
-      case InstructionType.IRet:
+      case InstructionType.Ret:
         i.debug = `i.debug = reg${i.arg1}`;
         break;
-      case InstructionType.IRaise:
+      case InstructionType.Raise:
         if (i.arg1 === -1) {
           i.debug = 're-raise current exception';
         } else {
           i.debug = `raise reg${i.arg1}`;
         }
         break;
-      case InstructionType.IGetBool:
+      case InstructionType.GetBool:
         i.debug = `reg${i.arg2} = bool(reg${i.arg1})`;
         break;
-      case InstructionType.ILogicalNot:
+      case InstructionType.LogicalNot:
         i.debug = `reg${i.arg2} = not reg${i.arg1}`;
         break;
-      case InstructionType.ILogicalAnd:
+      case InstructionType.LogicalAnd:
         i.debug = `if reg${i.arg1} == False: reg${i.arg2} = False else: skip next instruction`;
         break;
-      case InstructionType.ILogicalOr:
+      case InstructionType.LogicalOr:
         i.debug = `if reg${i.arg1} == True reg${i.arg2} = True else: skip next instruction`;
         break;
-      case InstructionType.IInvert:
+      case InstructionType.Invert:
         i.debug = `reg${i.arg2} = -reg${i.arg1}`;
         break;
-      case InstructionType.IList:
+      case InstructionType.List:
         i.debug = `reg${i.arg1} = new list()`;
         break;
-      case InstructionType.IListAdd:
+      case InstructionType.ListAdd:
         i.debug = `list reg${i.arg1}.add(reg${i.arg2})`;
         break;
-      case InstructionType.ITuple:
+      case InstructionType.Tuple:
         i.debug = `reg${i.arg1} = new tuple()`;
         break;
-      case InstructionType.ITupleAdd:
+      case InstructionType.TupleAdd:
         i.debug = `tuple reg${i.arg2}.add(reg${i.arg1})`;
         break;
-      case InstructionType.ISet:
+      case InstructionType.Set:
         i.debug = `reg${i.arg1} = new set()`;
         break;
-      case InstructionType.ISetAdd:
+      case InstructionType.SetAdd:
         i.debug = `set reg${i.arg2}.add(reg${i.arg1})`;
         break;
-      case InstructionType.IDictionary:
+      case InstructionType.Dictionary:
         i.debug = `reg${i.arg1} = new dictionary()`;
         break;
-      case InstructionType.IDictionaryAdd:
+      case InstructionType.DictionaryAdd:
         i.debug = `put value reg${i.arg1} and key '${idToText(i.arg2)}' into dictionary in reg${i.arg3}`;
         break;
-      case InstructionType.IForCycle:
+      case InstructionType.ForCycle:
         if (i.arg2 === -1) {
           i.debug = `start for cycle, exit on label${i.arg1}`;
         } else {
           i.debug = `start for cycle, exit on label${i.arg1}; nobreak: label${i.arg2}`;
         }
         break;
-      case InstructionType.IWhileCycle:
+      case InstructionType.WhileCycle:
         i.debug = `start while cycle, exit on label${i.arg1}`;
         break;
-      case InstructionType.IGoTo:
+      case InstructionType.GoTo:
         i.debug = `jump to label${i.arg1}`;
         break;
-      case InstructionType.IImport:
+      case InstructionType.Import:
         i.debug = `import ${idToText(i.arg1)}`;
         break;
-      case InstructionType.IImportAs:
+      case InstructionType.ImportAs:
         i.debug = `import ${idToText(i.arg1)} as ${idToText(i.arg2)}`;
         break;
-      case InstructionType.IImportFrom:
+      case InstructionType.ImportFrom:
         i.debug = `import function ${idToText(i.arg1)} from module ${idToText(i.arg2)}`;
         break;
-      case InstructionType.IEnterTry:
+      case InstructionType.EnterTry:
         i.debug = `start try section, handlers table is ${i.arg1} instructions forward`;
         break;
-      case InstructionType.IEnterFinally:
+      case InstructionType.EnterFinally:
         i.debug = `enter finally section`;
         break;
-      case InstructionType.IEnterExcept:
+      case InstructionType.EnterExcept:
         if (i.arg1 !== -1) {
           i.debug = `enter except section; ${idToText(i.arg1)} = exception`;
         } else {
           i.debug = `enter except section`;
         }
         break;
-      case InstructionType.IGotoExcept:
+      case InstructionType.GotoExcept:
         if (i.arg1 === -1) {
           i.debug = `start except block for all exceptions from label${i.arg2}`;
         } else {
           i.debug = `start except block for class ${idToText(i.arg1)} from label${i.arg2}`;
         }
         break;
-      case InstructionType.IGotoFinally:
+      case InstructionType.GotoFinally:
         i.debug = `indicate finally block to start on label${i.arg1}`;
         break;
-      case InstructionType.ILeaveTry:
+      case InstructionType.LeaveTry:
         i.debug = `end try section`;
         break;
-      case InstructionType.ILeaveFinally:
+      case InstructionType.LeaveFinally:
         i.debug = `end finally section`;
         break;
-      case InstructionType.ILeaveCycle:
+      case InstructionType.LeaveCycle:
         i.debug = `end cycle (while/for)`;
         break;
-      case InstructionType.IContinue:
+      case InstructionType.Continue:
         i.debug = `continue to next cycle iteration`;
         break;
-      case InstructionType.IBreak:
+      case InstructionType.Break:
         i.debug = `break current cycle`;
         break;
-      case InstructionType.IReadObject:
+      case InstructionType.ReadObject:
         i.debug = `reg${i.arg2} = ${idToText(i.arg1)}`;
         break;
-      case InstructionType.IReadProperty:
+      case InstructionType.ReadProperty:
         i.debug = `reg${i.arg3} = reg${i.arg2}.${idToText(i.arg1)}`;
         break;
-      case InstructionType.IIdentifier:
+      case InstructionType.Identifier:
         i.debug = `reg${i.arg1} = '${idToText(i.arg2)}'`;
         break;
-      case InstructionType.IBool:
+      case InstructionType.Bool:
         i.debug = `reg${i.arg2} = Boolean(${i.arg1 !== 0 ? 'True' : 'False'})`;
         break;
-      case InstructionType.INone:
+      case InstructionType.None:
         i.debug = `reg${i.arg1} = None`;
         break;
-      case InstructionType.IIs:
+      case InstructionType.Is:
         i.debug = `reg${i.arg3} = reg${i.arg1} is reg${i.arg2}`;
         break;
-      case InstructionType.IIsNot:
+      case InstructionType.IsNot:
         i.debug = `reg${i.arg3} = reg${i.arg1} is not reg${i.arg2}`;
         break;
-      case InstructionType.IIn:
+      case InstructionType.In:
         i.debug = `reg${i.arg3} = reg${i.arg1} in reg${i.arg2}`;
         break;
-      case InstructionType.INotIn:
+      case InstructionType.NotIn:
         i.debug = `reg${i.arg3} = reg${i.arg1} not in reg${i.arg2}`;
         break;
-      case InstructionType.IPass:
+      case InstructionType.Pass:
         i.debug = 'pass';
         break;
-      case InstructionType.IDel:
+      case InstructionType.Del:
         i.debug = `delete reg${i.arg1}.${idToText(i.arg2)}`;
         break;
-      case InstructionType.IReadArrayIndex:
+      case InstructionType.ReadArrayIndex:
         i.debug = `reg${i.arg3} = reg${i.arg1}[reg${i.arg2}]`;
         break;
-      case InstructionType.ICallMethod:
+      case InstructionType.CallMethod:
         i.debug = `reg${i.arg3} = reg${i.arg1}.reg${i.arg2}(arg1, arg2, arg3, ...)`;
         break;
       default:
-        i.debug = `unknown instruction ${i.iType}`;
+        i.debug = `unknown instruction ${i.type}`;
         break;
     }
   }
@@ -422,6 +335,6 @@ export class FunctionBody implements PyFunction {
 
     createDebugInformation(this.module, this.code);
 
-    this.debug = this.code.map((c, row) => (c.iType === InstructionType.ILabel ? `${c.debug}` : `    ${row}: ${c.debug}`)).join('\n');
+    this.debug = this.code.map((c, row) => (c.type === InstructionType.Label ? `${c.debug}` : `    ${row}: ${c.debug}`)).join('\n');
   }
 }
