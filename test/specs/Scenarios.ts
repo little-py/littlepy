@@ -322,14 +322,16 @@ const scenarios: TestScenario[] = [
       b = 10
       b.c(100)
     `,
-    expectedException: ExceptionType.ReferenceError,
+    expectedException: ExceptionType.UnknownIdentifier,
+    exceptionArgs: ['c'],
   },
   {
     input: `
       b = 10
       b.c.d(100)
     `,
-    expectedException: ExceptionType.ReferenceError,
+    expectedException: ExceptionType.UnknownIdentifier,
+    exceptionArgs: ['c'],
   },
   {
     input: `
@@ -1532,7 +1534,7 @@ const scenarios: TestScenario[] = [
       b = (5,)
       print(b)
     `,
-    output: ['(5)'],
+    output: ['(5,)'],
   },
   {
     input: `
@@ -2399,49 +2401,65 @@ line2"""
     expectedException: ExceptionType.NotImplementedError,
     exceptionArgs: ['hash'],
   },
-  //   {
-  //     input: `
-  //       print((2, 3) * 3)
-  //     `,
-  //     output: ['(2, 3, 2, 3, 2, 3)'],
-  //   },
-  //   {
-  //     input: `
-  //       s = (1,2,3,4,5)
-  //       print(s[2:3])
-  //       print(s[1:3])
-  //     `,
-  //     output: ['(3,)', '(2, 3)'],
-  //   },
-  //   {
-  //     input: `
-  //       s = (1,2,3,4,5,6,7)
-  //       print(s[2:7:2])
-  //     `,
-  //     output: ['(3, 5, 7)'],
-  //   },
-  //   {
-  //     input: `
-  //       s = (1,2,3)*4
-  //       print(s.index(2, 4, 5)
-  //     `,
-  //     output: ['4'],
-  //   },
-  //   {
-  //     input: `
-  //       s = (1,2,3)*4
-  //       print(s.index(2, 5, 6)
-  //     `,
-  //     expectedException: ExceptionType.ValueError,
-  //   },
-  //   {
-  //     input: `
-  //       lists = [[]]*3
-  //       lists.[0].append(3)
-  //       print(lists)
-  //     `,
-  //     output: ['[[3], [3], [3]]'],
-  //   },
+  {
+    input: `
+      print((2, 3) * 3)
+      print([2, 3] * 3)
+      print('abc' * 3)
+    `,
+    output: ['(2, 3, 2, 3, 2, 3)', '[2, 3, 2, 3, 2, 3]', 'abcabcabc'],
+  },
+  {
+    input: `
+      a = [(x, y) for x in [1,2,3] for y in [3,1,4] if x != y]
+      print(a)
+    `,
+    output: ['[(1, 3), (1, 4), (2, 3), (2, 1), (2, 4), (3, 1), (3, 4)]'],
+  },
+  {
+    input: `
+      s = (1,2,3,4,5)
+      print(s[2:3])
+      print(s[1:3])
+    `,
+    output: ['(3,)', '(2, 3)'],
+  },
+  {
+    input: `
+      s = (1,2,3,4,5,6,7)
+      print(s[2:7:2])
+    `,
+    output: ['(3, 5, 7)'],
+  },
+  {
+    input: `
+      s = [1,2,3]*4
+      print(s.index(2, 4, 5))
+    `,
+    output: ['4'],
+  },
+  {
+    input: `
+      s = (1,2,3)*4
+      print(s.index(2, 4, 5))
+    `,
+    output: ['4'],
+  },
+  {
+    input: `
+      s = (1,2,3)*4
+      print(s.index(2, 5, 6))
+    `,
+    expectedException: ExceptionType.ValueError,
+  },
+  {
+    input: `
+      lists = [[]]*3
+      lists[0].append(3)
+      print(lists)
+    `,
+    output: ['[[3], [3], [3]]'],
+  },
   //   {
   //     input: `
   //       a = 'test'

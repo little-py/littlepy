@@ -1,4 +1,4 @@
-import { KeywordType } from './Keyword';
+import {KeywordType} from './Keyword';
 
 export enum TokenType {
   Invalid = 'Invalid',
@@ -238,6 +238,8 @@ export function isExpressionEnd(token: Token): boolean {
     switch (token.keyword) {
       case KeywordType.Else:
       case KeywordType.As:
+      case KeywordType.If:
+      case KeywordType.For:
         return true;
     }
   }

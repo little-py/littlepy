@@ -5,11 +5,13 @@ export enum InstructionType {
   CreateVarRef = 'CreateVarRef', // creates reference to variable with name identifier1 and puts it into reg2 using scope scope3
   CreateArrayIndexRef = 'CreateArrayIndexRef', // creates reference array item in array reg1[reg2] and puts it in reg3
   CreatePropertyRef = 'CreatePropertyRef', // creates reference to property of object reg1[reg2] and puts it in reg3
+  CreateArrayRangeRef = 'CreateArrayRangeRef', // creates reference to array range in array reg1[reg2:reg3:reg5] and puts it in reg6; reg5 can be -1 then it is assumed to be 1
   CopyValue = 'CopyValue', // copies value of reg1 into reg2; both regs can be references, reads/updates reference value then
   AugmentedCopy = 'AugmentedCopy', // calculates value of reg1 instruction3 reg2 and puts result into reg1; this is for operations like a += 10
   ReadObject = 'ReadObject', // reads variable with identifier1 from scope into reg2
   ReadProperty = 'ReadProperty', // reads property identifier1 from value in reg2 and puts it into reg3
   ReadArrayIndex = 'ReadArrayIndex', // reads value from array in reg1 by index reg2 and puts it into reg3
+  ReadArrayRange = 'ReadArrayRange', // reads value from array reg1[reg2:reg3:reg5] and puts it into reg6
   Add = 'Add', // reg3 = reg1 + reg2
   Sub = 'Sub', // reg3 = reg1 - reg2
   Mul = 'Mul', // reg3 = reg1 * reg2
@@ -64,7 +66,7 @@ export enum InstructionType {
   ImportFrom = 'ImportFrom', // imports function identifier1 from module identifier2
   EnterTry = 'EnterTry', // starts try section, checks list starts with count1 instructions forward
   EnterFinally = 'EnterFinally', // means current finally section should not be taken into account when handling finally/raise cases
-  EnterExcept = 'EnterExcept', // means current except section should not be taken into account when handling finally/raise cases; if reg1 !== -1 declares local variable id1 with exception contents
+  EnterExcept = 'EnterExcept', // means current except section should not be taken into account when handling finally/raise cases; if arg1 !== -1 declares local variable id1 with exception contents
   GotoExcept = 'GotoExcept', // starts except block for class identifier1 from label2; identifier1 can be -1 - in this case all exceptions are caught
   GotoFinally = 'GotoFinally', // indicates finally block to start on label1
   LeaveTry = 'LeaveTry', // ends try section

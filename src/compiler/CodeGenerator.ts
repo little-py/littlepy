@@ -1,17 +1,12 @@
-import { GeneratedCode, Instruction } from '../common/Instructions';
-import { CompilerContext } from './CompilerContext';
-import { OperatorType, Token, TokenPosition, TokenType } from './Token';
-import { KeywordType } from './Keyword';
-import { Literal } from './Literal';
-import { CompilerBlockContext, CompilerBlockType } from './CompilerBlockContext';
-import { InstructionType } from '../common/InstructionType';
-import { PyErrorType } from '../api/ErrorType';
-import { ReferenceScope } from '../common/ReferenceScope';
-
-export class Comprehension {
-  public code: GeneratedCode;
-  public forArgument: Token;
-}
+import {GeneratedCode, Instruction} from '../common/Instructions';
+import {CompilerContext} from './CompilerContext';
+import {OperatorType, Token, TokenPosition, TokenType} from './Token';
+import {KeywordType} from './Keyword';
+import {Literal} from './Literal';
+import {CompilerBlockContext, CompilerBlockType} from './CompilerBlockContext';
+import {InstructionType} from '../common/InstructionType';
+import {PyErrorType} from '../api/ErrorType';
+import {ReferenceScope} from '../common/ReferenceScope';
 
 export class CodeGenerator {
   public static copyCode(code: GeneratedCode): Instruction[] {
@@ -28,12 +23,37 @@ export class CodeGenerator {
     }
   }
 
-  // public static forCycle(variable: string, position: TokenPosition, expression: GeneratedCode, body: GeneratedCode, context: CompilerContext): GeneratedCode {
-  public static forCycle(parts: CompilerBlockContext[], context: CompilerContext): GeneratedCode {
-    const forPart = parts[0];
-    const varId = forPart.arg1;
-    const noBreakPart = parts[1];
+  public static comprehension(expression: GeneratedCode, parts: CompilerBlockContext[], context: CompilerContext): GeneratedCode {
+    let intermediate = new GeneratedCode();
+    CodeGenerator.appendTo(intermediate, expression);
+    intermediate.add(InstructionType.Literal, parts[0].position, 0, -1);
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const part = parts[i];
+      const code = new GeneratedCode();
+      if (part.type === CompilerBlockType.For) {
+        part.blockCode = intermediate;
+        CodeGenerator.forCycleInternal(code, part, null, context);
+      } else {
+        CodeGenerator.appendTo(code, part.arg2);
+        const nextLabel = context.getNewLabel();
+        code.add(InstructionType.GetBool, part.position, 0, 0);
+        code.add(InstructionType.Condition, part.position, 0, nextLabel);
+        CodeGenerator.appendTo(code, intermediate);
+        code.add(InstructionType.Label, null, nextLabel);
+      }
+      intermediate = code;
+    }
     const ret = new GeneratedCode();
+    ret.add(InstructionType.List, parts[0].position, 0);
+    CodeGenerator.appendTo(ret, intermediate, 1);
+    const pos = ret.code.findIndex(c => c.type === InstructionType.Literal && c.arg2 === -1);
+    const reg = ret.code[pos].arg1;
+    ret.code[pos] = new Instruction(InstructionType.ListAdd, parts[parts.length - 1].position, reg, 0);
+    ret.success = true;
+    return ret;
+  }
+
+  private static forCycleInternal(ret: GeneratedCode, forPart: CompilerBlockContext, noBreakPart: CompilerBlockContext, context: CompilerContext) {
     CodeGenerator.appendTo(ret, forPart.arg2);
     ret.add(InstructionType.ReadProperty, forPart.position, context.getIdentifier('__iter__'), 0, 1);
     ret.add(InstructionType.CallMethod, forPart.position, 0, 1, 0);
@@ -41,7 +61,7 @@ export class CodeGenerator {
     const startLabel = context.getNewLabel();
     const noBreakLabel = noBreakPart ? context.getNewLabel() : -1;
     ret.add(InstructionType.ForCycle, forPart.position, endLabel, noBreakLabel);
-    ret.add(InstructionType.CreateVarRef, forPart.position, varId, 1, ReferenceScope.Default);
+    ret.add(InstructionType.CreateVarRef, forPart.position, forPart.arg1, 1, ReferenceScope.Default);
     ret.add(InstructionType.Label, forPart.position, startLabel);
     ret.add(InstructionType.ReadProperty, forPart.position, context.getIdentifier('__next__'), 0, 3);
     ret.add(InstructionType.CallMethod, forPart.position, 0, 3, 2);
@@ -55,6 +75,14 @@ export class CodeGenerator {
     }
 
     ret.add(InstructionType.Label, null, endLabel);
+  }
+
+  // public static forCycle(variable: string, position: TokenPosition, expression: GeneratedCode, body: GeneratedCode, context: CompilerContext): GeneratedCode {
+  public static forCycle(parts: CompilerBlockContext[], context: CompilerContext): GeneratedCode {
+    const forPart = parts[0];
+    const noBreakPart = parts[1];
+    const ret = new GeneratedCode();
+    CodeGenerator.forCycleInternal(ret, forPart, noBreakPart, context);
     ret.success = true;
     return ret;
   }
@@ -504,6 +532,32 @@ export class CodeGenerator {
     code.add(InstructionType.CreateArrayIndexRef, position, objectReg, objectReg + 1, objectReg);
   }
 
+  public static appendArrayRange(
+    code: GeneratedCode,
+    objectReg: number,
+    indexFrom: GeneratedCode,
+    indexTo: GeneratedCode,
+    indexInterval: GeneratedCode,
+    position: TokenPosition,
+    isReference: boolean,
+  ) {
+    CodeGenerator.appendTo(code, indexFrom, objectReg + 1);
+    CodeGenerator.appendTo(code, indexTo, objectReg + 2);
+    if (indexInterval) {
+      CodeGenerator.appendTo(code, indexInterval, objectReg + 3);
+    }
+    code.add(
+      isReference ? InstructionType.CreateArrayRangeRef : InstructionType.ReadArrayRange,
+      position,
+      objectReg,
+      objectReg + 1,
+      objectReg + 2,
+      InstructionType.None,
+      indexInterval ? objectReg + 3 : -1,
+      objectReg,
+    );
+  }
+
   public static createVarReference(identifier: number, scope: ReferenceScope, position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();
     ret.add(InstructionType.CreateVarRef, position, identifier, 0, scope);
@@ -529,14 +583,6 @@ export class CodeGenerator {
     ret.success = true;
     return ret;
   }
-
-  // // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  // public static comprehension(expression: GeneratedCode, parts: Comprehension[], position: TokenPosition): GeneratedCode {
-  //   const ret = new GeneratedCode();
-  //   ret.success = false;
-  //   // TODO: implement comprehension
-  //   return ret;
-  // }
 
   public static tuple(records: GeneratedCode[], position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();

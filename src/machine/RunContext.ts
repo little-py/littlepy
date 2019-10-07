@@ -79,6 +79,8 @@ export class RunContext implements PyMachine {
     return this._unhandledException;
   }
 
+  // public API
+  /* istanbul ignore next */
   public getCurrentScope() {
     return this.getCurrentFunctionStack().scope;
   }
@@ -365,6 +367,7 @@ export class RunContext implements PyMachine {
       if (err instanceof ExceptionObject) {
         this.raiseException(err);
       } else {
+        /* istanbul ignore next */ // safety check
         this.raiseException(new ExceptionObject(ExceptionType.SystemError));
       }
     }
@@ -469,6 +472,15 @@ export class RunContext implements PyMachine {
     functionStack.setReg(current.arg3, ref);
   }
 
+  private stepCreateArrayRangeReference(current: Instruction, functionStack: StackEntry) {
+    const arrayValue = functionStack.getReg(current.arg1, true, this);
+    const indexFrom = functionStack.getReg(current.arg2, true, this);
+    const indexTo = functionStack.getReg(current.arg3, true, this);
+    const indexInterval: BaseObject = current.arg5 === -1 ? null : functionStack.getReg(current.arg5, true, this);
+    const ref = new ReferenceObject(arrayValue, indexFrom, ReferenceType.Range, ReferenceScope.Default, this, indexTo, indexInterval);
+    functionStack.setReg(current.arg6, ref);
+  }
+
   private stepIdentifier(current: Instruction, module: CompiledModule, functionStack: StackEntry) {
     const id = module.identifiers[current.arg2];
     const obj = new StringObject(id);
@@ -516,7 +528,12 @@ export class RunContext implements PyMachine {
       return;
     }
     const id = module.identifiers[current.arg1];
-    functionStack.setReg(current.arg3, object.getAttribute(id));
+    const prop = object.getAttribute(id);
+    if (!prop) {
+      this.raiseUnknownIdentifier(id);
+      return;
+    }
+    functionStack.setReg(current.arg3, prop);
   }
 
   private stepMathOperation(current: Instruction, functionStack: StackEntry) {
@@ -565,6 +582,8 @@ export class RunContext implements PyMachine {
 
   private stepCallFunc(current: Instruction, module: CompiledModule, functionStack: StackEntry) {
     const functionObj = functionStack.getReg(current.arg1, true, this);
+    // safety check
+    /* istanbul ignore next */
     if (!functionObj) {
       return;
     }
@@ -589,6 +608,8 @@ export class RunContext implements PyMachine {
       return;
     }
     const parentObj = functionStack.getReg(current.arg1, true, this);
+    // safety check
+    /* istanbul ignore next */
     if (!parentObj) {
       return;
     }
@@ -638,6 +659,11 @@ export class RunContext implements PyMachine {
     stack.startInstruction = this._currentInstruction;
     stack.noBreakInstruction = current.arg2 === -1 ? -1 : functionStack.findLabel(current.arg2);
     stack.endInstruction = functionStack.findLabel(current.arg1);
+    // safety check
+    /* istanbul ignore next */
+    if (stack.endInstruction === -1) {
+      this.raiseException(new ExceptionObject(ExceptionType.SystemError));
+    }
   }
 
   private stepWhileCycle(current: Instruction, functionStack: StackEntry) {
@@ -653,15 +679,25 @@ export class RunContext implements PyMachine {
   private stepListAdd(current: Instruction, functionStack: StackEntry) {
     const obj = functionStack.getReg(current.arg2, true, this);
     const listObject = obj as ListObject;
-    const listItem = functionStack.getReg(current.arg1, true, this);
+    let listItem = functionStack.getReg(current.arg1, true, this);
     if (!listItem) {
       return;
+    }
+    if (listItem instanceof TupleObject && listItem.items.findIndex(t => t instanceof ReferenceObject) >= 0) {
+      listItem = new TupleObject(listItem.items.map(r => (r instanceof ReferenceObject ? r.getValue(this) : r)));
     }
     listObject.addItem(listItem);
   }
 
   private stepGoTo(current: Instruction, functionStack: StackEntry) {
-    functionStack.instruction = functionStack.findLabel(current.arg1);
+    const next = functionStack.findLabel(current.arg1);
+    // safety check
+    /* istanbul ignore next */
+    if (next === -1) {
+      this.raiseException(new ExceptionObject(ExceptionType.SystemError));
+      return;
+    }
+    functionStack.instruction = next;
   }
 
   private stepEnterTry(current: Instruction, functionStack: StackEntry) {
@@ -714,11 +750,20 @@ export class RunContext implements PyMachine {
 
   private stepCondition(current: Instruction, functionStack: StackEntry) {
     const condition = functionStack.getReg(current.arg1, true, this);
+    // safety check
+    /* istanbul ignore next */
     if (!condition) {
       return;
     }
     if (!condition.toBoolean()) {
-      functionStack.instruction = functionStack.findLabel(current.arg2);
+      const next = functionStack.findLabel(current.arg2);
+      // safety check
+      /* istanbul ignore next */
+      if (next === -1) {
+        this.raiseException(new ExceptionObject(ExceptionType.SystemError));
+        return;
+      }
+      functionStack.instruction = next;
     }
   }
 
@@ -783,6 +828,7 @@ export class RunContext implements PyMachine {
         targetRef.setValue(sourceValue, this);
       }
     } else {
+      /* istanbul ignore next */ // safety check
       if (!(targetObject instanceof ReferenceObject)) {
         this.raiseException(new ExceptionObject(ExceptionType.ExpectedReference));
         return;
@@ -1074,6 +1120,66 @@ export class RunContext implements PyMachine {
     this.raiseTypeConversion();
   }
 
+  private stepReadArrayRange(current: Instruction, functionStack: StackEntry) {
+    const list = functionStack.getReg(current.arg1, true, this);
+    if (!list) {
+      return;
+    }
+
+    const indexFromObject = functionStack.getReg(current.arg2, true, this);
+    const indexToObject = functionStack.getReg(current.arg3, true, this);
+    const indexIntervalObject: BaseObject = current.arg5 === -1 ? null : functionStack.getReg(current.arg5, true, this);
+
+    if (
+      !(list instanceof ContainerObject) ||
+      !(indexFromObject instanceof IntegerObject) ||
+      !(indexToObject instanceof IntegerObject) ||
+      (indexIntervalObject && !(indexIntervalObject instanceof IntegerObject))
+    ) {
+      this.raiseTypeConversion();
+      return;
+    }
+
+    const from = indexFromObject.value;
+    const to = indexToObject.value;
+    const step = indexIntervalObject ? (indexIntervalObject as IntegerObject).value : 1;
+
+    if (step === 0) {
+      this.raiseFunctionArgumentError();
+      return;
+    }
+
+    if (list instanceof TupleObject) {
+      const newTuple = new TupleObject([]);
+
+      if (step > 0) {
+        for (let i = from; i < to; i += step) {
+          newTuple.addItem(list.getItem(i));
+        }
+      } else {
+        for (let i = from; i > to; i += step) {
+          newTuple.addItem(list.getItem(i));
+        }
+      }
+
+      functionStack.setReg(current.arg6, newTuple);
+    } else {
+      const newList = new ListObject();
+
+      if (step > 0) {
+        for (let i = from; i < to; i += step) {
+          newList.addItem(list.getItem(i));
+        }
+      } else {
+        for (let i = from; i > to; i += step) {
+          newList.addItem(list.getItem(i));
+        }
+      }
+
+      functionStack.setReg(current.arg6, newList);
+    }
+  }
+
   private stepInternal(current: Instruction) {
     const functionStack = this.getCurrentFunctionStack();
     const module = functionStack.func.func.module;
@@ -1257,6 +1363,12 @@ export class RunContext implements PyMachine {
         break;
       case InstructionType.ReadArrayIndex:
         this.stepReadArrayIndex(current, functionStack);
+        break;
+      case InstructionType.CreateArrayRangeRef:
+        this.stepCreateArrayRangeReference(current, functionStack);
+        break;
+      case InstructionType.ReadArrayRange:
+        this.stepReadArrayRange(current, functionStack);
         break;
       default:
         this.onRuntimeError();
@@ -1948,6 +2060,33 @@ export class RunContext implements PyMachine {
         }
         break;
       }
+      case InstructionType.Mul:
+        if (leftObj instanceof ListObject && rightObj instanceof IntegerObject) {
+          const newList = new ListObject();
+          for (let i = 0; i < rightObj.value; i++) {
+            for (let j = 0; j < leftObj.getCount(); j++) {
+              newList.addItem(leftObj.getItem(j));
+            }
+          }
+          return newList;
+        }
+        if (leftObj instanceof TupleObject && rightObj instanceof IntegerObject) {
+          const newTuple = new TupleObject([]);
+          for (let i = 0; i < rightObj.value; i++) {
+            for (let j = 0; j < leftObj.getCount(); j++) {
+              newTuple.addItem(leftObj.getItem(j));
+            }
+          }
+          return newTuple;
+        }
+        if (leftObj instanceof StringObject && rightObj instanceof IntegerObject) {
+          let ret = '';
+          for (let i = 0; i < rightObj.value; i++) {
+            ret += leftObj.value;
+          }
+          return new StringObject(ret);
+        }
+        break;
     }
     switch (op) {
       case InstructionType.Equal:

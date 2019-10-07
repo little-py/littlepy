@@ -308,6 +308,23 @@ export function createDebugInformation(module: CompiledModule, instructions: Ins
       case InstructionType.CallMethod:
         i.debug = `reg${i.arg3} = reg${i.arg1}.reg${i.arg2}(arg1, arg2, arg3, ...)`;
         break;
+      case InstructionType.Yield:
+        i.debug = `yield reg${i.arg1}`;
+        break;
+      case InstructionType.CreateArrayRangeRef:
+        if (i.arg5 !== -1) {
+          i.debug = `reg${i.arg6} = *reg${i.arg1}[reg${i.arg2}:reg${i.arg3}:reg${i.arg5}]`;
+        } else {
+          i.debug = `reg${i.arg6} = *reg${i.arg1}[reg${i.arg2}:reg${i.arg3}]`;
+        }
+        break;
+      case InstructionType.ReadArrayRange:
+        if (i.arg5 !== -1) {
+          i.debug = `reg${i.arg6} = reg${i.arg1}[reg${i.arg2}:reg${i.arg3}:reg${i.arg5}]`;
+        } else {
+          i.debug = `reg${i.arg6} = reg${i.arg1}[reg${i.arg2}:reg${i.arg3}]`;
+        }
+        break;
       default:
         i.debug = `unknown instruction ${i.type}`;
         break;

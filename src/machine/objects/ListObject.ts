@@ -54,4 +54,9 @@ export class ListObject extends ContainerObject {
   public native___iter__() {
     return new IteratorObject(this);
   }
+
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  public native_append(element: BaseObject) {
+    this.items.push(element);
+  }
 }

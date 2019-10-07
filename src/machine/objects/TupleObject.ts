@@ -12,7 +12,7 @@ export class TupleObject extends ContainerObject {
     this.items = items;
   }
 
-  private readonly items: BaseObject[];
+  public readonly items: BaseObject[];
 
   public getItem(index: number): BaseObject {
     return this.items[index];
@@ -27,7 +27,7 @@ export class TupleObject extends ContainerObject {
   }
 
   public toString(): string {
-    return `(${this.items
+    const items = `${this.items
       .map(r => {
         if (r instanceof StringObject) {
           return `'${r.toString()}'`;
@@ -35,6 +35,7 @@ export class TupleObject extends ContainerObject {
           return r.toString();
         }
       })
-      .join(', ')})`;
+      .join(', ')}`;
+    return this.items.length === 1 ? `(${items},)` : `(${items})`;
   }
 }

@@ -298,18 +298,12 @@ export class Compiler {
 
   private finishTryBlock() {
     const tryCode = CodeGenerator.tryExcept(this._pendingFinishedBlocks, this._compilerContext);
-    if (!tryCode.success) {
-      return false;
-    }
     CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, tryCode);
     return true;
   }
 
   private finishForBlock() {
     const forCode = CodeGenerator.forCycle(this._pendingFinishedBlocks, this._compilerContext);
-    if (!forCode.success) {
-      return false;
-    }
     CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, forCode);
     return true;
   }

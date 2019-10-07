@@ -7,18 +7,38 @@ import { ObjectScope } from '../ObjectScope';
 import { DictionaryObject } from './DictionaryObject';
 import { IterableObject } from './IterableObject';
 import { ReferenceScope } from '../../common/ReferenceScope';
+import { ContainerObject } from './ContainerObject';
+import {TupleObject} from "./TupleObject";
 
 export enum ReferenceType {
   Index = 'Index',
   Property = 'Property',
   Variable = 'Variable',
+  Range = 'Range',
 }
 
 export class ReferenceObject extends BaseObject {
-  public constructor(parent: BaseObject, indexer: BaseObject, type: ReferenceType, scope: ReferenceScope, runContext: RunContext) {
+  public readonly parent: BaseObject;
+  public readonly indexer: BaseObject;
+  public readonly referenceType: ReferenceType;
+  public readonly scopeType: ReferenceScope;
+  public readonly indexTo: BaseObject;
+  public readonly indexInterval: BaseObject;
+
+  public constructor(
+    parent: BaseObject,
+    indexer: BaseObject,
+    type: ReferenceType,
+    scope: ReferenceScope,
+    runContext: RunContext,
+    inxexTo: BaseObject = null,
+    indexInterval: BaseObject = null,
+  ) {
     super();
     this.parent = parent;
     this.indexer = indexer;
+    this.indexTo = inxexTo;
+    this.indexInterval = indexInterval;
     this.referenceType = type;
     this.scopeType = scope;
     this.validate(runContext);
@@ -43,13 +63,26 @@ export class ReferenceObject extends BaseObject {
           return;
         }
         break;
+      case ReferenceType.Range:
+        if (!(this.parent instanceof ContainerObject)) {
+          runContext.raiseTypeConversion();
+          return;
+        }
+        if (!(this.indexer instanceof IntegerObject)) {
+          runContext.raiseTypeConversion();
+          return;
+        }
+        if (!(this.indexTo instanceof IntegerObject)) {
+          runContext.raiseTypeConversion();
+          return;
+        }
+        if (this.indexInterval && !(this.indexer instanceof IntegerObject)) {
+          runContext.raiseTypeConversion();
+          return;
+        }
+        break;
     }
   }
-
-  public readonly parent: BaseObject;
-  public readonly indexer: BaseObject;
-  public readonly referenceType: ReferenceType;
-  public readonly scopeType: ReferenceScope;
 
   private getTargetScope(runContext: RunContext, name: string): ObjectScope {
     const functionScope = runContext.getCurrentFunctionStack().scope;
@@ -98,6 +131,29 @@ export class ReferenceObject extends BaseObject {
         scope.objects[name.value] = value;
         break;
       }
+      case ReferenceType.Range: {
+        if (!(value instanceof ListObject)) {
+          runContext.raiseTypeConversion();
+          return;
+        }
+        const from = (this.indexer as IntegerObject).value;
+        const to = (this.indexTo as IntegerObject).value;
+        const step = this.indexInterval ? (this.indexInterval as IntegerObject).value : 1;
+        if (step === 0) {
+          runContext.raiseFunctionArgumentError();
+          return;
+        }
+        if (step < 0) {
+          for (let i = from, j = 0; i > to; i += step, j++) {
+            value.setItem(j, (this.parent as ContainerObject).getItem(i));
+          }
+        } else {
+          for (let i = from, j = 0; i < to; i += step, j++) {
+            value.setItem(j, (this.parent as ContainerObject).getItem(i));
+          }
+        }
+        break;
+      }
       default:
         runContext.onRuntimeError();
         break;
@@ -138,6 +194,40 @@ export class ReferenceObject extends BaseObject {
           }
         }
         break;
+      }
+      case ReferenceType.Range: {
+        const from = (this.indexer as IntegerObject).value;
+        const to = (this.indexTo as IntegerObject).value;
+        const step = this.indexInterval ? (this.indexInterval as IntegerObject).value : 1;
+        if (step === 0) {
+          runContext.raiseFunctionArgumentError();
+          return;
+        }
+        if (this.parent instanceof TupleObject) {
+          const value = new TupleObject([]);
+          if (step < 0) {
+            for (let i = from, j = 0; i > to; i -= step, j++) {
+              value.addItem((this.parent as ContainerObject).getItem(i));
+            }
+          } else {
+            for (let i = from, j = 0; i < to; i += step, j++) {
+              value.addItem((this.parent as ContainerObject).getItem(i));
+            }
+          }
+          return value;
+        } else {
+          const value = new ListObject();
+          if (step < 0) {
+            for (let i = from, j = 0; i > to; i -= step, j++) {
+              value.addItem((this.parent as ContainerObject).getItem(i));
+            }
+          } else {
+            for (let i = from, j = 0; i < to; i += step, j++) {
+              value.addItem((this.parent as ContainerObject).getItem(i));
+            }
+          }
+          return value;
+        }
       }
       default:
         runContext.onRuntimeError();

@@ -8,6 +8,8 @@ export class Instruction {
   public arg2: number;
   public arg3: number;
   public arg4: InstructionType;
+  public arg5: number;
+  public arg6: number;
   public readonly row: number;
   public readonly column: number;
   public readonly position: number;
@@ -19,6 +21,8 @@ export class Instruction {
     arg2 = 0,
     arg3 = 0,
     arg4 = InstructionType.None,
+    arg5 = 0,
+    arg6 = 0,
   ) {
     if (position) {
       this.position = position.position;
@@ -34,6 +38,8 @@ export class Instruction {
     this.arg2 = arg2;
     this.arg3 = arg3;
     this.arg4 = arg4;
+    this.arg5 = arg5;
+    this.arg6 = arg6;
   }
 
   public copy(): Instruction {
@@ -48,6 +54,8 @@ export class Instruction {
       this.arg2,
       this.arg3,
       this.arg4,
+      this.arg5,
+      this.arg6,
     );
   }
 
@@ -83,7 +91,6 @@ export class Instruction {
       case InstructionType.Condition:
       case InstructionType.RegArg:
       case InstructionType.RegArgName:
-      case InstructionType.Ret:
       case InstructionType.List:
       case InstructionType.Tuple:
       case InstructionType.Set:
@@ -91,8 +98,14 @@ export class Instruction {
       case InstructionType.Identifier:
       case InstructionType.None:
       case InstructionType.Del:
-      case InstructionType.Raise:
+      case InstructionType.Yield:
         this.arg1 += countReg;
+        break;
+      case InstructionType.Raise:
+      case InstructionType.Ret:
+        if (this.arg1 !== -1) {
+          this.arg1 += countReg;
+        }
         break;
       case InstructionType.DictionaryAdd:
         this.arg1 += countReg;
@@ -174,6 +187,16 @@ export class Instruction {
         this.arg2 += countReg;
         this.arg3 += countReg;
         break;
+      case InstructionType.CreateArrayRangeRef:
+      case InstructionType.ReadArrayRange:
+        this.arg1 += countReg;
+        this.arg2 += countReg;
+        this.arg3 += countReg;
+        if (this.arg5 !== -1) {
+          this.arg5 += countReg;
+        }
+        this.arg6 += countReg;
+        break;
     }
   }
 }
@@ -184,8 +207,9 @@ export class GeneratedCode {
   public success: boolean;
   public nameLiteral: string;
   public position: TokenPosition;
+  public comprehension: boolean;
 
-  public add(t: InstructionType, position: TokenPosition, a1 = 0, a2 = 0, a3 = 0, a4 = InstructionType.None) {
-    this.code.push(new Instruction(t, position, a1, a2, a3, a4));
+  public add(t: InstructionType, position: TokenPosition, a1 = 0, a2 = 0, a3 = 0, a4 = InstructionType.None, a5 = 0, a6 = 0) {
+    this.code.push(new Instruction(t, position, a1, a2, a3, a4, a5, a6));
   }
 }
