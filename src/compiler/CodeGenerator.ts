@@ -1,12 +1,12 @@
-import {GeneratedCode, Instruction} from '../common/Instructions';
-import {CompilerContext} from './CompilerContext';
-import {OperatorType, Token, TokenPosition, TokenType} from './Token';
-import {KeywordType} from './Keyword';
-import {Literal} from './Literal';
-import {CompilerBlockContext, CompilerBlockType} from './CompilerBlockContext';
-import {InstructionType} from '../common/InstructionType';
-import {PyErrorType} from '../api/ErrorType';
-import {ReferenceScope} from '../common/ReferenceScope';
+import { GeneratedCode, Instruction } from '../common/Instructions';
+import { CompilerContext } from './CompilerContext';
+import { OperatorType, Token, TokenPosition, TokenType } from './Token';
+import { KeywordType } from './Keyword';
+import { Literal } from './Literal';
+import { CompilerBlockContext, CompilerBlockType } from './CompilerBlockContext';
+import { InstructionType } from '../common/InstructionType';
+import { PyErrorType } from '../api/ErrorType';
+import { ReferenceScope } from '../common/ReferenceScope';
 
 export class CodeGenerator {
   public static copyCode(code: GeneratedCode): Instruction[] {

@@ -8,7 +8,7 @@ import { DictionaryObject } from './DictionaryObject';
 import { IterableObject } from './IterableObject';
 import { ReferenceScope } from '../../common/ReferenceScope';
 import { ContainerObject } from './ContainerObject';
-import {TupleObject} from "./TupleObject";
+import { TupleObject } from './TupleObject';
 
 export enum ReferenceType {
   Index = 'Index',

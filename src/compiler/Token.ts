@@ -1,4 +1,4 @@
-import {KeywordType} from './Keyword';
+import { KeywordType } from './Keyword';
 
 export enum TokenType {
   Invalid = 'Invalid',
