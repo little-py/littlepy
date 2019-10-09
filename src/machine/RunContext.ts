@@ -37,6 +37,9 @@ import { IterableObject } from './objects/IterableObject';
 import { ContainerObject } from './objects/ContainerObject';
 import { ExceptionType } from '../api/ExceptionType';
 import { ReferenceScope } from '../common/ReferenceScope';
+import { FrozenSetObject } from './objects/FrozenSetObject';
+import { embeddedModules } from './embedded/EmbeddedModules';
+import { stringFormat } from './objects/FormatString';
 
 export class RunContext implements PyMachine {
   private readonly _compiledModules: { [key: string]: CompiledModule };
@@ -367,7 +370,8 @@ export class RunContext implements PyMachine {
       if (err instanceof ExceptionObject) {
         this.raiseException(err);
       } else {
-        /* istanbul ignore next */ // safety check
+        // safety check
+        /* istanbul ignore next */
         this.raiseException(new ExceptionObject(ExceptionType.SystemError));
       }
     }
@@ -944,6 +948,13 @@ export class RunContext implements PyMachine {
       return;
     }
 
+    if (embeddedModules[name]) {
+      const moduleObject = embeddedModules[name]();
+      this._importedModules[name] = moduleObject;
+      onFinished(moduleObject);
+      return;
+    }
+
     const compiledModule = this._compiledModules[name];
     if (!compiledModule) {
       this.raiseUnknownIdentifier(name);
@@ -1053,7 +1064,7 @@ export class RunContext implements PyMachine {
           return;
         }
         if (invert) {
-          ret = new BooleanObject(ret.toBoolean() ? 0 : 1);
+          ret = new BooleanObject(ret.toBoolean());
         }
         stack.callContext.indexedArgs = savedIndexedArgs;
         stack.callContext.namedArgs = savedNamedArgs;
@@ -1064,16 +1075,19 @@ export class RunContext implements PyMachine {
     this.raiseTypeConversion();
   }
 
-  private stepDel(current: Instruction, currentModule: CompiledModule, functionStack: StackEntry) {
-    const obj = functionStack.getReg(current.arg1, true, this);
-    if (!obj) {
+  private stepDel(current: Instruction, functionStack: StackEntry) {
+    const reference = functionStack.getReg(current.arg1, false, this);
+    if (!reference) {
       return;
     }
-    const id = currentModule.identifiers[current.arg2];
-    obj.deleteAttribute(id);
+    if (!(reference instanceof ReferenceObject)) {
+      this.raiseException(new ExceptionObject(ExceptionType.ReferenceError));
+      return;
+    }
+    reference.deleteValue(this);
   }
 
-  private stepYield(current: Instruction, currentModule: CompiledModule, functionStack: StackEntry) {
+  private stepYield(current: Instruction, functionStack: StackEntry) {
     const value = functionStack.getReg(current.arg1, true, this);
     if (!value) {
       return;
@@ -1356,10 +1370,10 @@ export class RunContext implements PyMachine {
         this.stepIn(current, functionStack, current.type === InstructionType.NotIn);
         break;
       case InstructionType.Del:
-        this.stepDel(current, module, functionStack);
+        this.stepDel(current, functionStack);
         break;
       case InstructionType.Yield:
-        this.stepYield(current, module, functionStack);
+        this.stepYield(current, functionStack);
         break;
       case InstructionType.ReadArrayIndex:
         this.stepReadArrayIndex(current, functionStack);
@@ -1556,12 +1570,15 @@ export class RunContext implements PyMachine {
       this.raiseException(new ExceptionObject(ExceptionType.CannotDeriveFromMultipleException));
       return;
     }
+    let ret: ClassInstanceObject;
     if (coreExceptions.length) {
       const exception = coreExceptions[0].object as ExceptionClassObject;
-      return new ExceptionObject(exception.exceptionType, inherits);
+      ret = new ExceptionObject(exception.exceptionType, inherits);
     } else {
-      return new ClassInstanceObject(inherits, context);
+      ret = new ClassInstanceObject(inherits, context);
     }
+    ret.setAttribute('__class__', classObject);
+    return ret;
   }
 
   private expandArgument(arg: IterableObject, callback: (items: BaseObject[]) => void) {
@@ -2090,9 +2107,54 @@ export class RunContext implements PyMachine {
     }
     switch (op) {
       case InstructionType.Equal:
-        return new BooleanObject(leftObj === rightObj ? 1 : 0);
+        return new BooleanObject(leftObj.equals(rightObj));
       case InstructionType.NotEq:
         return new BooleanObject(leftObj !== rightObj ? 1 : 0);
+      case InstructionType.Mod:
+        if (leftObj instanceof StringObject) {
+          return stringFormat(leftObj, rightObj);
+        }
+        break;
+      case InstructionType.Less:
+        if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
+          return new BooleanObject(FrozenSetObject.issubset(leftObj, rightObj) && !FrozenSetObject.issubset(rightObj, leftObj));
+        }
+        break;
+      case InstructionType.LessEq:
+        if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
+          return new BooleanObject(FrozenSetObject.issubset(leftObj, rightObj));
+        }
+        break;
+      case InstructionType.Greater:
+        if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
+          return new BooleanObject(FrozenSetObject.issubset(rightObj, leftObj) && !FrozenSetObject.issubset(leftObj, rightObj));
+        }
+        break;
+      case InstructionType.GreaterEq:
+        if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
+          return new BooleanObject(FrozenSetObject.issubset(rightObj, leftObj));
+        }
+        break;
+      case InstructionType.BinOr:
+        if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
+          return leftObj.native_union(rightObj);
+        }
+        break;
+      case InstructionType.BinAnd:
+        if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
+          return leftObj.native_intersection(rightObj);
+        }
+        break;
+      case InstructionType.Sub:
+        if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
+          return leftObj.native_difference(rightObj);
+        }
+        break;
+      case InstructionType.BinXor:
+        if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
+          return leftObj.native_symmetric_difference(rightObj);
+        }
+        break;
     }
     this.raiseTypeConversion();
     return null;

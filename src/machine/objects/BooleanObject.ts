@@ -1,9 +1,13 @@
 import { BaseObject } from './BaseObject';
 
 export class BooleanObject extends BaseObject {
-  public constructor(value: number) {
+  public constructor(value: number | boolean) {
     super();
-    this.value = value;
+    if (typeof value === 'boolean') {
+      this.value = value ? 1 : 0;
+    } else {
+      this.value = value;
+    }
   }
 
   public toBoolean(): boolean {

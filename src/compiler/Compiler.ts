@@ -23,7 +23,7 @@ import {
 import { ArgumentType, createDebugInformation, FunctionArgument, FunctionBody, FunctionType } from '../common/FunctionBody';
 import { CodeGenerator } from './CodeGenerator';
 import { KeywordType } from './Keyword';
-import { ExpressionCompiler, fillIdentifiers } from './ExpressionCompiler';
+import { ExpressionCompiler } from './ExpressionCompiler';
 import { CompiledModule } from './CompiledModule';
 import { LexicalAnalyzer } from './LexicalAnalyzer';
 import { CompilerBlockContext, CompilerBlockType } from './CompilerBlockContext';
@@ -891,13 +891,17 @@ export class Compiler {
   private parseKeywordAndExpression(): boolean {
     const first = this._line[0];
     let returnCode: GeneratedCode;
-    const isReturn = first.keyword === KeywordType.Return;
     if (this._line.length === 1) {
-      if (isReturn) {
-        returnCode = CodeGenerator.returnEmpty(first.getPosition());
-      } else {
-        this._compilerContext.addError(PyErrorType.ExpectedYieldExpression, first);
-        return false;
+      switch (first.keyword) {
+        case KeywordType.Return:
+          returnCode = CodeGenerator.returnEmpty(first.getPosition());
+          break;
+        case KeywordType.Yield:
+          this._compilerContext.addError(PyErrorType.ExpectedYieldExpression, first);
+          return false;
+        case KeywordType.Del:
+          this._compilerContext.addError(PyErrorType.ExpectedIdentifierForDel, first);
+          return false;
       }
     } else {
       const expression = ExpressionCompiler.compile({
@@ -915,16 +919,28 @@ export class Compiler {
         this._compilerContext.addError(PyErrorType.ReturnOrYieldExpectedEndOfLine, first);
         return false;
       }
-      if (isReturn) {
-        returnCode = CodeGenerator.returnValue(expression, first.getPosition());
-      } else {
-        returnCode = CodeGenerator.yield(expression, first.getPosition());
+      switch (first.keyword) {
+        case KeywordType.Return:
+          returnCode = CodeGenerator.returnValue(expression, first.getPosition());
+          break;
+        case KeywordType.Yield:
+          returnCode = CodeGenerator.yield(expression, first.getPosition());
+          break;
+        case KeywordType.Del:
+          returnCode = CodeGenerator.delete(expression, first.getPosition());
+          break;
       }
     }
-    if (isReturn) {
-      this._compilerContext.setRowType(RowType.Return);
-    } else {
-      this._compilerContext.setRowType(RowType.Yield);
+    switch (first.keyword) {
+      case KeywordType.Return:
+        this._compilerContext.setRowType(RowType.Return);
+        break;
+      case KeywordType.Yield:
+        this._compilerContext.setRowType(RowType.Yield);
+        break;
+      case KeywordType.Del:
+        this._compilerContext.setRowType(RowType.Del);
+        break;
     }
     CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, returnCode);
     return true;
@@ -1155,19 +1171,7 @@ export class Compiler {
   }
 
   private parseDelDefinition(): boolean {
-    const identifiers: string[] = [];
-    const from = fillIdentifiers(this._line, 1, this._line.length, this._compiledModule, identifiers);
-    if (from !== this._line.length) {
-      this._compilerContext.addError(PyErrorType.ExpectedEndOfIdentifierForDel, this._line[0]);
-      return false;
-    }
-    if (identifiers.length < 2) {
-      this._compilerContext.addError(PyErrorType.ExpectedIdentifierForDel, this._line[this._line.length - 1]);
-      return false;
-    }
-    const code = CodeGenerator.deleteProperty(identifiers, this._compilerContext, this._line[0].getPosition());
-    CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, code);
-    return true;
+    return this.parseKeywordAndExpression();
   }
 
   private declareFunction(functionDef: number, position: TokenPosition): boolean {

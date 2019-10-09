@@ -7,6 +7,15 @@ export class IntegerObject extends BaseObject {
     this.value = value;
   }
 
+  public static toInteger(value: BaseObject, name: string): number {
+    if (!(value instanceof IntegerObject)) {
+      BaseObject.throwException(ExceptionType.TypeError, name);
+      /* istanbul ignore next */
+      return;
+    }
+    return value.value;
+  }
+
   public toBoolean(): boolean {
     return this.value !== 0;
   }

@@ -1,9 +1,9 @@
 import { RunContext } from '../RunContext';
 import { CallableContext } from '../CallableContext';
-import { BaseObject } from '../objects/BaseObject';
 import { ReferenceObject } from '../objects/ReferenceObject';
+import { CallableIgnore } from '../objects/CallableObject';
 
-export function print(runContext: RunContext, callContext: CallableContext): BaseObject {
+export function print(runContext: RunContext, callContext: CallableContext) {
   let output = '';
   for (let i = 0; i < callContext.indexedArgs.length; i++) {
     if (i > 0) {
@@ -35,5 +35,5 @@ export function print(runContext: RunContext, callContext: CallableContext): Bas
   } else {
     runContext.writeLine(output);
   }
-  return null;
+  return new CallableIgnore();
 }

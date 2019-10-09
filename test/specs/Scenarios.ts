@@ -1239,7 +1239,6 @@ const scenarios: TestScenario[] = [
   {
     input: 'from a import 10',
     expectedCompilerError: PyErrorType.ImportFromExpectedIdentifier,
-    // onlyThis: true,
   },
   {
     input: `
@@ -1272,7 +1271,8 @@ const scenarios: TestScenario[] = [
   {
     input: `
       def func():
-        return
+        for x in [2]:
+          return
       func()
     `,
     output: [],
@@ -1397,13 +1397,46 @@ const scenarios: TestScenario[] = [
     input: `
       del 10
     `,
-    expectedCompilerError: PyErrorType.ExpectedIdentifierForDel,
+    expectedException: ExceptionType.ReferenceError,
+  },
+  {
+    input: `
+      a = 20
+      del a
+      print(a)
+    `,
+    expectedException: ExceptionType.UnknownIdentifier,
+    exceptionArgs: ['a'],
+  },
+  {
+    input: `
+      a = 20
+      del a
+      del a
+    `,
+    expectedException: ExceptionType.UnknownIdentifier,
+    exceptionArgs: ['a'],
+  },
+  {
+    input: `
+      a = [20]
+      del a['x']
+    `,
+    expectedException: ExceptionType.ReferenceError,
+  },
+  {
+    input: `
+      a = [20]
+      del a[0]
+      print(a)
+    `,
+    output: ['[]'],
   },
   {
     input: `
       del x.10
     `,
-    expectedCompilerError: PyErrorType.ExpectedEndOfIdentifierForDel,
+    expectedCompilerError: PyErrorType.ExpectedBinaryOperator,
   },
   {
     input: `
@@ -2421,8 +2454,9 @@ line2"""
       s = (1,2,3,4,5)
       print(s[2:3])
       print(s[1:3])
+      print(s[1:3][0])
     `,
-    output: ['(3,)', '(2, 3)'],
+    output: ['(3,)', '(2, 3)', '2'],
   },
   {
     input: `
@@ -2430,6 +2464,42 @@ line2"""
       print(s[2:7:2])
     `,
     output: ['(3, 5, 7)'],
+  },
+  {
+    input: `
+      s = (1,2,3,4,5,6,7)
+      print(s[5:2:-2])
+    `,
+    output: ['(6, 4)'],
+  },
+  {
+    input: `
+      s = [1,2,3,4,5,6,7]
+      print(s[5:2:-2])
+    `,
+    output: ['[6, 4]'],
+  },
+  {
+    input: `
+      s = (1,2,3,4,5,6,7)
+      print(s[2:7:0])
+    `,
+    expectedException: ExceptionType.FunctionArgumentError,
+  },
+  {
+    input: `
+      s = [1,2,3,4,5,6,7]
+      print(s[2:7:2])
+    `,
+    output: ['[3, 5, 7]'],
+  },
+  {
+    input: `
+      s = [1,2,3,4,5,6,7]
+      s[2:5] = [8,8,8]
+      print(s)
+    `,
+    output: ['[1, 2, 8, 8, 8, 6, 7]'],
   },
   {
     input: `
@@ -2460,126 +2530,381 @@ line2"""
     `,
     output: ['[[3], [3], [3]]'],
   },
-  //   {
-  //     input: `
-  //       a = 'test'
-  //       print(a.capitalize())
-  //       print(a.center(20, '-'))
-  //       print('abc def def de'.count('de', 6, 13))
-  //       print('abcdef'.endswith('ef'))
-  //       print('abcdefabcdef'.find('cd', 5))
-  //       print('abcdefabcdef'.find('cd', 5, 7))
-  //       print("The sum of 1 + 2 is {0}".format(1+2))
-  //       print('abcdef'.index('cd', 0, 5))
-  //       print('ab10'.isalnum())
-  //       print('ab-10'.isalnum())
-  //       print('ab10'.isalpha())
-  //       print('abc'.isalpha())
-  //       print('abc'.isascii())
-  //       print('你好，世界'.isascii())
-  //       print('123'.isdecimal())
-  //       print('ab12'.isdecimal())
-  //       print('123'.isidentifier())
-  //       print('a123'.isidentifier())
-  //       print('Abc'.islower())
-  //       print('abc'.islower())
-  //       print('123'.isnumeric())
-  //       print('abc'.isprintable())
-  //       print('abc\\ndef'.isprintable())
-  //       print('   '.isspace())
-  //       print(' \t'.isspace())
-  //       print('Title'.istitle())
-  //       print('title'.istitle())
-  //       print('ABC'.isupper())
-  //       print('Abc'.isupper())
-  //       print(':'.join(['abc','def']))
-  //       print('ABC'.ljust(10, '-'))
-  //       print('ABC'.ljust(2, '-'))
-  //       print('Abc'.lower())
-  //       print('www.example.com'.lstrip('cmowz.'))
-  //       print('   spacious   '.lstrip())
-  //       print('abcdefabcdef'.partition('cd'))
-  //       print('abcdefabcdef'.replace('def', '-', 1))
-  //       print('abcdefabcdef'.rfind('d'))
-  //       print('abcdefabcdef'.rindex('d'))
-  //       print('ABC'.rjust(20, '-'))
-  //       print('abcdefabcdef'.rpartition('cd'))
-  //       print('ab cd ef ab cd ef'.rsplit())
-  //       print('ab-cd-ef ab-cd ef'.rsplit('-', 1))
-  //       print('mississippi'.rstrip('ipz'))
-  //       print('1,2,3'.split(',', maxsplit=1))
-  //       print('1,2,,3,'.split(','))
-  //       print('   1   2   3   '.split())
-  //       print('ab c\\n\\nde fg\\rkl\\r\\n'.splitlines())
-  //       print('abcd'.startswith('ab'))
-  //       print('www.example.com'.strip('cmowz.'))
-  //       print('Abc'.swapcase())
-  //       print('Hello world'.title())
-  //       print('Abc'.upper())
-  //       print('-42'.zfill(5))
-  //       print(print('%(language)s has %(number)03d quote types.' % {'language': "Python", "number": 2}))
-  //       print("%s's bowling scores were %s"  % ('Ross', [190, 135]))
-  //     `,
-  //     output: [
-  //       'Test',
-  //       '--------test--------',
-  //       '1',
-  //       'True',
-  //       '8',
-  //       '-1',
-  //       'The sum of 1 + 2 is 3',
-  //       '2',
-  //       'True',
-  //       'False',
-  //       'False',
-  //       'True',
-  //       'True',
-  //       'False',
-  //       'True',
-  //       'False',
-  //       'False',
-  //       'True',
-  //       'False',
-  //       'True',
-  //       'True',
-  //       'True',
-  //       'False',
-  //       'True',
-  //       'True',
-  //       'True',
-  //       'False',
-  //       'True',
-  //       'False',
-  //       'abc:def',
-  //       'ABC-------',
-  //       'ABC',
-  //       'abc',
-  //       'example.com',
-  //       'spacious',
-  //       "('ab', 'cd', 'efabcdef')",
-  //       'abc-abcdef',
-  //       '9',
-  //       '9',
-  //       '-----------------ABC',
-  //       "('abcdefab', 'cd', 'ef')",
-  //       "['ab', 'cd', 'ef', 'ab', 'cd', 'ef']",
-  //       "['ab-cd-ef ab', 'cd ef']",
-  //       'mississ',
-  //       "['1', '2,3']",
-  //       "['1', '2', '', '3', '']",
-  //       "['1', '2', '3']",
-  //       "['ab c', '', 'de fg', 'kl']",
-  //       'True',
-  //       'example',
-  //       'aBC',
-  //       'Hello World',
-  //       'ABC',
-  //       '-0042',
-  //       'Python has 002 quote types.',
-  //       'None',
-  //       "Ross's bowling scores were [190, 135]",
-  //     ],
-  //   },
+  {
+    input: `
+      print('test'.capitalize())
+    `,
+    output: ['Test'],
+  },
+  {
+    input: `
+      print('test'.center(20, '-'))
+    `,
+    output: ['--------test--------'],
+  },
+  {
+    input: `
+      print('test'.center('a', '-'))
+    `,
+    expectedException: ExceptionType.TypeError,
+    exceptionArgs: ['width'],
+  },
+  {
+    input: `
+      print('test'.center(20, 10))
+    `,
+    expectedException: ExceptionType.TypeError,
+    exceptionArgs: ['fillchar'],
+  },
+  {
+    input: `
+      print('abc def def de'.count('de', 6, 13))
+    `,
+    output: ['1'],
+  },
+  {
+    input: `
+      print('abcdef'.endswith('ef'))
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print('abcdefabcdef'.find('cd', 5))
+    `,
+    output: ['8'],
+  },
+  {
+    input: `
+      print('abcdefabcdef'.find('cd', 5, 7))
+    `,
+    output: ['-1'],
+  },
+  {
+    input: `
+      print("The sum of 1 + 2 is {0}".format(1+2))
+    `,
+    output: ['The sum of 1 + 2 is 3'],
+  },
+  {
+    input: `
+      print('abcdef'.index('cd', 0, 5))
+    `,
+    output: ['2'],
+  },
+  {
+    input: `
+      print('ab10'.isalnum())
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print('ab-10'.isalnum())
+    `,
+    output: ['False'],
+  },
+  {
+    input: `
+      print('ab10'.isalpha())
+    `,
+    output: ['False'],
+  },
+  {
+    input: `
+      print('abc'.isalpha())
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print('abc'.isascii())
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print('你好，世界'.isascii())
+    `,
+    output: ['False'],
+  },
+  {
+    input: `
+      print('123'.isdecimal())
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print('ab12'.isdecimal())
+    `,
+    output: ['False'],
+  },
+  {
+    input: `
+      print('123'.isidentifier())
+    `,
+    output: ['False'],
+  },
+  {
+    input: `
+      print('a123'.isidentifier())
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print('Abc'.islower())
+    `,
+    output: ['False'],
+  },
+  {
+    input: `
+      print('abc'.islower())
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print('123'.isnumeric())
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print('abc'.isprintable())
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print('abc\\ndef'.isprintable())
+    `,
+    output: ['False'],
+  },
+  {
+    input: `
+      print('   '.isspace())
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print(' \t'.isspace())
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print('Title'.istitle())
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print('title'.istitle())
+    `,
+    output: ['False'],
+  },
+  {
+    input: `
+      print('ABC'.isupper())
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print('Abc'.isupper())
+    `,
+    output: ['False'],
+  },
+  {
+    input: `
+      print('AB2'.isupper())
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print(':'.join(['abc','def']))
+    `,
+    output: ['abc:def'],
+  },
+  {
+    input: `
+      print('ABC'.ljust(10, '-'))
+    `,
+    output: ['ABC-------'],
+  },
+  {
+    input: `
+      print('ABC'.ljust(2, '-'))
+    `,
+    output: ['ABC'],
+  },
+  {
+    input: `
+      print('Abc'.lower())
+    `,
+    output: ['abc'],
+  },
+  {
+    input: `
+      print('www.example.com'.lstrip('cmowz.'))
+    `,
+    output: ['example.com'],
+  },
+  {
+    input: `
+      print('   spacious   '.lstrip())
+    `,
+    output: ['spacious   '],
+  },
+  {
+    input: `
+      print('abcdefabcdef'.partition('cd'))
+    `,
+    output: ["('ab', 'cd', 'efabcdef')"],
+  },
+  {
+    input: `
+      print('abcdefabcdef'.replace('def', '-', 1))
+    `,
+    output: ['abc-abcdef'],
+  },
+  {
+    input: `
+      print('abcdefabcdef'.rfind('d'))
+    `,
+    output: ['9'],
+  },
+  {
+    input: `
+      print('abcdefabcdef'.rindex('d'))
+    `,
+    output: ['9'],
+  },
+  {
+    input: `
+      print('ABC'.rjust(20, '-'))
+    `,
+    output: ['-----------------ABC'],
+  },
+  {
+    input: `
+      print('abcdefabcdef'.rpartition('cd'))
+    `,
+    output: ["('abcdefab', 'cd', 'ef')"],
+  },
+  {
+    input: `
+      print('ab cd ef ab cd ef'.rsplit())
+    `,
+    output: ["['ab', 'cd', 'ef', 'ab', 'cd', 'ef']"],
+  },
+  {
+    input: `
+      print('ab-cd-ef ab-cd ef'.rsplit('-', 1))
+    `,
+    output: ["['ab-cd-ef ab', 'cd ef']"],
+  },
+  {
+    input: `
+      print('mississippi'.rstrip('ipz'))
+    `,
+    output: ['mississ'],
+  },
+  {
+    input: `
+      print('1,2,3'.split(',', maxsplit=1))
+    `,
+    output: ["['1', '2,3']"],
+  },
+  {
+    input: `
+      print('1,2,,3,'.split(','))
+    `,
+    output: ["['1', '2', '', '3', '']"],
+  },
+  {
+    input: `
+      print('   1   2   3   '.split())
+    `,
+    output: ["['1', '2', '3']"],
+  },
+  {
+    input: `
+      print('ab c\\n\\nde fg\\rkl\\r\\n'.splitlines())
+    `,
+    output: ["['ab c', '', 'de fg', 'kl']"],
+  },
+  {
+    input: `
+      print('abcd'.startswith('ab'))
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print('www.example.com'.strip('cmowz.'))
+    `,
+    output: ['example'],
+  },
+  {
+    input: `
+      print('Abc'.swapcase())
+    `,
+    output: ['aBC'],
+  },
+  {
+    input: `
+      print('Hello world'.title())
+    `,
+    output: ['Hello World'],
+  },
+  {
+    input: `
+      print('Abc'.upper())
+    `,
+    output: ['ABC'],
+  },
+  {
+    input: `
+      print('-42'.zfill(5))
+    `,
+    output: ['-0042'],
+  },
+  {
+    input: `
+      print('%(language)s has %(number)03d quote types.' % {'language': "Python", "number": 2})
+    `,
+    output: ['Python has 002 quote types.'],
+  },
+  {
+    input: `
+      print('%(language)s has %(number)3.2f quote types.' % {'language': "Python", "number": 2.14})
+    `,
+    output: ['Python has 2.14 quote types.'],
+  },
+  {
+    input: `
+      print('%(language)s has %(number)3.4f quote types.' % {'language': "Python", "number": 2.14})
+    `,
+    output: ['Python has 2.1400 quote types.'],
+  },
+  {
+    input: `
+      print('%(language)s has %(number)3.2f quote types.' % {'language': "Python", "number": 2.1415})
+    `,
+    output: ['Python has 2.14 quote types.'],
+  },
+  {
+    input: `
+      print("%s's bowling scores were %s" % ('Ross', [190, 135]))
+    `,
+    output: ["Ross's bowling scores were [190, 135]"],
+  },
+  // Byte operations are not supported
   //   {
   //     input: `
   //       print(b'\\xf0\\xf1\\xf2'.hex())
@@ -2596,179 +2921,709 @@ line2"""
   //       'f0f1f2',
   //     ],
   //   },
-  //   {
-  //     input: `
-  //       print(set([1,2,3]))
-  //       print(set('abc'))
-  //       print(frozenset([1,2,3]))
-  //       print(len({1,2,3}))
-  //       print(10 in {10, 20, 30})
-  //       print({10,20}.isdisjoint({30,40}))
-  //       print({10,20}.isdisjoint({20,30}))
-  //       print({10,20}.issubset({10,20,30}))
-  //       print({10,20} < {10,20,30})
-  //       print({10,20} <= {10,20,30})
-  //       print({10,20} <= {10,20})
-  //       print({10,20,30}.issuperset({10,20}))
-  //       print({10,20,30} > {10,20})
-  //       print({10,20,30} >= {10,20})
-  //       print({10,20} >= {10,20})
-  //       print({10,20}.union({20,30}))
-  //       print({10,20} | {20,30})
-  //       print({10,20}.intersection({20,30}))
-  //       print({10,20} & {20,30})
-  //       print({10,20}.difference({20,30}))
-  //       print({10,20} - {20,30})
-  //       print({10,20}.symmetric_difference({20,30}))
-  //       print({10,20} ^ {20,30})
-  //       print(set([10,20]).issubset([10,20,30]))
-  //       print(set('abc') == frozenset('abc'))
-  //       print({'c','b','a'} == {'c','a','b'})
-  //     `,
-  //     output: [
-  //       '{1, 2, 3}',
-  //       "{'a', 'b', 'c'}",
-  //       'frozenset({1, 2, 3})',
-  //       '3',
-  //       'True',
-  //       'True',
-  //       'False',
-  //       'True',
-  //       'True',
-  //       'True',
-  //       'True',
-  //       'True',
-  //       'True',
-  //       'True',
-  //       'True',
-  //       '{10, 20, 30}',
-  //       '{10, 20, 30}',
-  //       '{20}',
-  //       '{20}',
-  //       '{10}',
-  //       '{10}',
-  //       '{10, 30}',
-  //       '{10, 30}',
-  //       'True',
-  //       'True',
-  //       'True',
-  //     ],
-  //   },
-  //   {
-  //     input: `
-  //           print([10,20] <= [10,20,30])
-  //     `,
-  //     expectedException: ExceptionType.TypeError,
-  //   },
-  //   {
-  //     input: `
-  //       a = {1,2}
-  //       a.add(3)
-  //       print(a)
-  //       a.remove(1)
-  //       print(a)
-  //       a.discard(2)
-  //       a.update({5,6})
-  //       print(a)
-  //       a.clear()
-  //       print(a)
-  //     `,
-  //     output: [
-  //       '{1, 2, 3}', //
-  //       '{2, 3}',
-  //       '{3}',
-  //       '{3, 5, 6}',
-  //       '{}',
-  //     ],
-  //   },
-  //   {
-  //     input: `
-  //       a = dict(one=1, two=2, three=3)
-  //       print(a)
-  //       print(len(a))
-  //       print(a['one'])
-  //       a['four'] = 4
-  //       print(a)
-  //       print('one' in a)
-  //       print('five' in a)
-  //       for b in iter(a):
-  //         print(b)
-  //       a.pop('two')
-  //       for b in iter(a.keys()):
-  //         print(b)
-  //       print(a.get('three'))
-  //       print(a.popitem())
-  //       print(a)
-  //       a.clear()
-  //       print(len(a))
-  //     `,
-  //     output: [
-  //       "{'one': 1, 'two': 2, 'three': 3}",
-  //       '3',
-  //       '1',
-  //       "{'one': 1, 'two': 2, 'three': 3, 'four': 4}",
-  //       'True',
-  //       'False',
-  //       'one',
-  //       'two',
-  //       'three',
-  //       'four',
-  //       'one',
-  //       'three',
-  //       'four',
-  //       '3',
-  //       "('four', 4)",
-  //       "{'one': 1, 'three': 3}",
-  //       '0',
-  //     ],
-  //   },
-  //   {
-  //     input: `
-  //       dishes = {'eggs': 2, 'sausage': 1, 'bacon': 1, 'spam': 500}
-  //       keys = dishes.keys()
-  //       values = dishes.values()
-  //       print(len(values))
-  //       n = 0
-  //       for val in values: n += val
-  //       print(n)
-  //       print(list(keys))
-  //       print(list(values))
-  //       del dishes['eggs']
-  //       del dishes['sausage']
-  //       print(list(keys))
-  //       print(keys & {'eggs', 'bacon', 'salad'})
-  //       print(keys ^ {'sausage', 'juice'})
-  //     `,
-  //     output: [
-  //       '4',
-  //       '504',
-  //       "['eggs', 'sausage', 'bacon', 'spam']",
-  //       '[2, 1, 1, 500]',
-  //       "['bacon', 'spam']",
-  //       "{'bacon'}",
-  //       "{'spam', 'sausage', 'juice', 'bacon'}",
-  //     ],
-  //   },
-  //   {
-  //     input: `
-  //       class Parent: pass
-  //       class Child(Parent): pass
-  //       p = Parent()
-  //       c = Child()
-  //       print(p.__class__ == Parent)
-  //       print(c.__class__ == Child)
-  //       print(p.__class__.__name__)
-  //       def func(): pass
-  //       f = func
-  //       print(f.__name__)
-  //     `,
-  //     output: [
-  //       'True', //
-  //       'True',
-  //       'Parent',
-  //       'func',
-  //     ],
-  //   },
+  {
+    input: `
+      print(set([1,2,3]))
+    `,
+    output: ['{1, 2, 3}'],
+  },
+  {
+    input: `
+      print(set('abc'))
+    `,
+    output: ["{'a', 'b', 'c'}"],
+  },
+  {
+    input: `
+      print(frozenset([1,2,3,'4']))
+    `,
+    output: ["frozenset({1, 2, 3, '4'})"],
+  },
+  {
+    input: `
+      print(len({1,2,3}))
+    `,
+    output: ['3'],
+  },
+  {
+    input: `
+      print(10 in {10, 20, 30})
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print(40 in {10, 20, 30})
+    `,
+    output: ['False'],
+  },
+  {
+    input: `
+      print({10,20}.isdisjoint({30,40}))
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print(frozenset({10,20}).isdisjoint({30,40}))
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print(frozenset({10,20}).isdisjoint(50))
+    `,
+    expectedException: ExceptionType.TypeError,
+  },
+  {
+    input: `
+      print({10,20}.isdisjoint({20,30}))
+    `,
+    output: ['False'],
+  },
+  {
+    input: `
+      print({10,20}.issubset({10,20,30}))
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print({20,40}.issubset({10,20,30}))
+    `,
+    output: ['False'],
+  },
+  {
+    input: `
+      print({10,20} < {10,20,30})
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print({10,20} <= {10,20,30})
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print({10,20} <= {10,20})
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print({10,20,30}.issuperset({10,20}))
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print(frozenset({10,20,30}).issuperset({10,20}))
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print(frozenset({10,20,30}).issuperset(5))
+    `,
+    expectedException: ExceptionType.TypeError,
+  },
+  {
+    input: `
+      print({10,20,30} > {10,20})
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print({10,20,30} >= {10,20})
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print({10,20} >= {10,20})
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print({10,20}.union({20,30}))
+    `,
+    output: ['{10, 20, 30}'],
+  },
+  {
+    input: `
+      print({10,20}.union(1))
+    `,
+    expectedException: ExceptionType.TypeError,
+  },
+  {
+    input: `
+      print(frozenset({10,20}).union({20,30}))
+    `,
+    output: ['frozenset({10, 20, 30})'],
+  },
+  {
+    input: `
+      print(frozenset({10,20}).union(10))
+    `,
+    expectedException: ExceptionType.TypeError,
+  },
+  {
+    input: `
+      print({10,20} | {20,30})
+    `,
+    output: ['{10, 20, 30}'],
+  },
+  {
+    input: `
+      print({10,20}.intersection({20,30}))
+    `,
+    output: ['{20}'],
+  },
+  {
+    input: `
+      print({10,20}.intersection(1))
+    `,
+    expectedException: ExceptionType.TypeError,
+  },
+  {
+    input: `
+      print(frozenset({10,20}).intersection({20,30}))
+    `,
+    output: ['frozenset({20})'],
+  },
+  {
+    input: `
+      print(frozenset({10,20}).intersection(10))
+    `,
+    expectedException: ExceptionType.TypeError,
+  },
+  {
+    input: `
+      print({10,20} & {20,30})
+    `,
+    output: ['{20}'],
+  },
+  {
+    input: `
+      print({10,20}.difference({20,30}))
+    `,
+    output: ['{10}'],
+  },
+  {
+    input: `
+      print({10,20}.difference(1))
+    `,
+    expectedException: ExceptionType.TypeError,
+  },
+  {
+    input: `
+      print(frozenset({10,20}).difference({20,30}))
+    `,
+    output: ['frozenset({10})'],
+  },
+  {
+    input: `
+      print(frozenset({10,20}).difference(1))
+    `,
+    expectedException: ExceptionType.TypeError,
+  },
+  {
+    input: `
+      print({10,20} - {20,30})
+    `,
+    output: ['{10}'],
+  },
+  {
+    input: `
+      print({10,20}.symmetric_difference({20,30}))
+    `,
+    output: ['{10, 30}'],
+  },
+  {
+    input: `
+      print({10,20}.symmetric_difference(1))
+    `,
+    expectedException: ExceptionType.TypeError,
+  },
+  {
+    input: `
+      print(frozenset({10,20}).symmetric_difference({20,30}))
+    `,
+    output: ['frozenset({10, 30})'],
+  },
+  {
+    input: `
+      print(frozenset({10,20}).symmetric_difference(10))
+    `,
+    expectedException: ExceptionType.TypeError,
+  },
+  {
+    input: `
+      print({10,20} ^ {20,30})
+    `,
+    output: ['{10, 30}'],
+  },
+  {
+    input: `
+      print(set([10,20]).issubset([10,20,30]))
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print(frozenset([10,20]).issubset([10,20,30]))
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print(frozenset([10,20]).issubset(19))
+    `,
+    expectedException: ExceptionType.TypeError,
+  },
+  {
+    input: `
+      print(set('abc') == frozenset('abc'))
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print({'c','b','a'} == {'c','a','b'})
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      print([10,20] <= [10,20,30])
+    `,
+    expectedException: ExceptionType.TypeError,
+  },
+  {
+    input: `
+      a = {1,2}
+      a.add(1)
+      print(a)
+      a.add(3)
+      print(a)
+      a.remove(1)
+      print(a)
+      a.discard(2)
+      print(a)
+      a.update({5,6})
+      print(a)
+      a.clear()
+      print(a)
+    `,
+    output: [
+      '{1, 2}', //
+      '{1, 2, 3}',
+      '{2, 3}',
+      '{3}',
+      '{3, 5, 6}',
+      '{}',
+    ],
+  },
+  {
+    input: `
+      iter(10)
+    `,
+    expectedException: ExceptionType.TypeError,
+  },
+  {
+    input: `
+      a = dict(one=1, two=2, three=3)
+      print(a)
+      print(len(a))
+      print(a['one'])
+      a['four'] = 4
+      print(a)
+      print('one' in a)
+      print('five' in a)
+      for b in iter(a):
+        print(b)
+      a.pop('two')
+      for b in iter(a.keys()):
+        print(b)
+      print(a.get('three'))
+      print(a.popitem())
+      print(a)
+      a.clear()
+      print(len(a))
+    `,
+    output: [
+      "{'one': 1, 'two': 2, 'three': 3}",
+      '3',
+      '1',
+      "{'one': 1, 'two': 2, 'three': 3, 'four': 4}",
+      'True',
+      'False',
+      'one',
+      'two',
+      'three',
+      'four',
+      'one',
+      'three',
+      'four',
+      '3',
+      "('four', 4)",
+      "{'one': 1, 'three': 3}",
+      '0',
+    ],
+  },
+  // {
+  //   input: `
+  //   `,
+  //   output: [],
+  // },
+  {
+    input: `
+      dishes = {'eggs': 2, 'sausage': 1, 'bacon': 1, 'spam': 500}
+      keys = dishes.keys()
+      values = dishes.values()
+      print(len(values))
+      n = 0
+      for val in values: n += val
+      print(n)
+      print(list(keys))
+      print(list(values))
+      del dishes['eggs']
+      del dishes['sausage']
+      print(list(keys))
+      print(keys & {'eggs', 'bacon', 'salad'})
+      print(keys ^ {'sausage', 'juice'})
+    `,
+    output: [
+      '4',
+      '504',
+      "['eggs', 'sausage', 'bacon', 'spam']",
+      '[2, 1, 1, 500]',
+      "['bacon', 'spam']",
+      "{'bacon'}",
+      "{'bacon', 'spam', 'sausage', 'juice'}",
+    ],
+  },
+  {
+    input: `
+      class Parent: pass
+      class Child(Parent): pass
+      p = Parent()
+      c = Child()
+      print(p.__class__ == Parent)
+      print(c.__class__ == Child)
+      print(p.__class__.__name__)
+      def func(): pass
+      f = func
+      print(f.__name__)
+    `,
+    output: [
+      'True', //
+      'True',
+      'Parent',
+      'func',
+    ],
+  },
+  {
+    input: `
+      import math
+      print(math.ceil(10.12))
+    `,
+    output: ['11'],
+  },
+  {
+    input: `
+      import math
+      print(math.copysign(5, -7))
+    `,
+    output: ['-5'],
+  },
+  {
+    input: `
+      import math
+      print(math.fabs(10), math.fabs(-5), math.fabs(3.4))
+    `,
+    output: ['10 5 3.4'],
+  },
+  {
+    input: `
+      import math
+      print(math.factorial(10))
+    `,
+    output: ['3628800'],
+  },
+  {
+    input: `
+      import math
+      print(math.floor(10.12))
+    `,
+    output: ['10'],
+  },
+  {
+    input: `
+      import math
+      print(math.fmod(12, 10))
+    `,
+    output: ['2'],
+  },
+  {
+    input: `
+      import math
+      print(math.frexp(12))
+    `,
+    expectedException: ExceptionType.NotImplementedError,
+  },
+  {
+    input: `
+      import math
+      print(math.fsum([0.1,0.2]))
+    `,
+    output: ['0.3'],
+  },
+  {
+    input: `
+      import math
+      print(math.exp(5))
+    `,
+    output: ['148.4131591025766'],
+  },
+  {
+    input: `
+      import math
+      print(math.expm1(5))
+    `,
+    output: ['147.4131591025766'],
+  },
+  {
+    input: `
+      import math
+      print(math.log(5))
+    `,
+    output: ['1.6094379124341003'],
+  },
+  {
+    input: `
+      import math
+      print(math.log1p(5))
+    `,
+    output: ['1.791759469228055'],
+  },
+  {
+    input: `
+      import math
+      print(math.log2(5))
+    `,
+    output: ['2.321928094887362'],
+  },
+  {
+    input: `
+      import math
+      print(math.log10(5))
+    `,
+    output: ['0.6989700043360189'],
+  },
+  {
+    input: `
+      import math
+      print(math.pow(5.1, 10.2))
+    `,
+    output: ['16489815.489690851'],
+  },
+  {
+    input: `
+      import math
+      print(math.pow('x', 10.2))
+    `,
+    expectedException: ExceptionType.TypeError,
+  },
+  {
+    input: `
+      import math
+      print(math.sqrt(3.02))
+    `,
+    output: ['1.7378147196982767'],
+  },
+  {
+    input: `
+      import math
+      print(math.acos(0.24))
+    `,
+    output: ['1.3284304757559333'],
+  },
+  {
+    input: `
+      import math
+      print(math.asin(0.24))
+    `,
+    output: ['0.24236585103896321'],
+  },
+  {
+    input: `
+      import math
+      print(math.atan(0.24))
+    `,
+    output: ['0.23554498072086333'],
+  },
+  {
+    input: `
+      import math
+      print(math.atan2(0.24, 3))
+    `,
+    output: ['0.07982998571223732'],
+  },
+  {
+    input: `
+      import math
+      print(math.cos(0.24))
+    `,
+    output: ['0.9713379748520297'],
+  },
+  {
+    input: `
+      import math
+      print(math.hypot(3.2, 5.09))
+    `,
+    output: ['6.012328999647308'],
+  },
+  {
+    input: `
+      import math
+      print(math.sin(0.24))
+    `,
+    output: ['0.23770262642713458'],
+  },
+  {
+    input: `
+      import math
+      print(math.tan(0.24))
+    `,
+    output: ['0.24471670271446497'],
+  },
+  {
+    input: `
+      import math
+      print(math.degrees(1.22))
+    `,
+    output: ['69.90085100596043'],
+  },
+  {
+    input: `
+      import math
+      print(math.radians(141.3))
+    `,
+    output: ['2.466150233067988'],
+  },
+  {
+    input: `
+      import math
+      print(math.pi)
+    `,
+    output: ['3.141592653589793'],
+  },
+  {
+    input: `
+      import math
+      print(math.e)
+    `,
+    output: ['2.718281828459045'],
+  },
+  {
+    input: `
+      print(abs(-3), abs(-3.2))
+    `,
+    output: ['3 3.2'],
+  },
+  {
+    input: `
+      print(abs('x'))
+    `,
+    expectedException: ExceptionType.TypeError,
+  },
+  {
+    input: `
+      print(all({True, False}))
+      print(all([True, True]))
+      print(all([]))
+    `,
+    output: ['False', 'True', 'True'],
+  },
+  {
+    input: `
+      print(all(10))
+    `,
+    expectedException: ExceptionType.ValueError,
+  },
+  {
+    input: `
+      print(any({True, False}))
+      print(any([False, False]))
+      print(any([]))
+    `,
+    output: ['True', 'False', 'False'],
+  },
+  {
+    input: `
+      print(any(10))
+    `,
+    expectedException: ExceptionType.ValueError,
+  },
+  {
+    input: `
+      print(chr(97))
+    `,
+    output: ['a'],
+  },
+  {
+    input: `
+      print(chr('x'))
+    `,
+    expectedException: ExceptionType.ValueError,
+  },
+  {
+    input: `
+      print(min(40, 100, 20))
+    `,
+    output: ['20'],
+  },
+  {
+    input: `
+      print(min())
+    `,
+    expectedException: ExceptionType.ValueError,
+  },
+  {
+    input: `
+      print(max(40, 100, 20))
+    `,
+    output: ['100'],
+  },
+  {
+    input: `
+      print(max())
+    `,
+    expectedException: ExceptionType.ValueError,
+  },
+  {
+    input: `
+      print(sum(40, 100, 20))
+    `,
+    output: ['160'],
+  },
+  {
+    input: `
+      print(sum())
+    `,
+    expectedException: ExceptionType.ValueError,
+  },
+  {
+    input: `
+      print(pow(1.2, 3.4))
+    `,
+    output: ['1.858729691979481'],
+  },
 ];
 
 export default scenarios;

@@ -5,11 +5,16 @@ import { StringObject } from './StringObject';
 import { ExceptionType } from '../../api/ExceptionType';
 
 export class ListObject extends ContainerObject {
-  public constructor() {
+  public constructor(values: BaseObject[] = []) {
     super();
+    this.items = values;
   }
 
-  private readonly items: BaseObject[] = [];
+  public static initList() {
+    BaseObject.createList = items => new ListObject(items);
+  }
+
+  private readonly items: BaseObject[];
 
   public contains(value: BaseObject): boolean {
     return this.items.findIndex(r => r.equals(value)) >= 0;
@@ -38,6 +43,10 @@ export class ListObject extends ContainerObject {
     return this.items.length > 0;
   }
 
+  public removeItem(index: number) {
+    this.items.splice(index, 1);
+  }
+
   public toString(): string {
     return `[${this.items
       .map(r => {
@@ -60,3 +69,5 @@ export class ListObject extends ContainerObject {
     this.items.push(element);
   }
 }
+
+ListObject.initList();

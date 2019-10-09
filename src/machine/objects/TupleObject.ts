@@ -7,6 +7,10 @@ export class TupleObject extends ContainerObject {
     return this.items.length;
   }
 
+  public static initTuple() {
+    BaseObject.createTuple = items => new TupleObject(items);
+  }
+
   public constructor(items: BaseObject[]) {
     super();
     this.items = items;
@@ -39,3 +43,5 @@ export class TupleObject extends ContainerObject {
     return this.items.length === 1 ? `(${items},)` : `(${items})`;
   }
 }
+
+TupleObject.initTuple();

@@ -49,7 +49,7 @@ export function callNativeFunction(func: Function, runContext: RunContext, callC
   }
   try {
     const ret = func.apply(parent, args);
-    if (!ret) {
+    if (ret === undefined) {
       return ret;
     }
     if (ret instanceof CallableIgnore) {

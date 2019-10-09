@@ -18,26 +18,9 @@ export abstract class IterableObject extends BaseObject {
 
   // eslint-disable-next-line @typescript-eslint/camelcase
   public native_index(element: BaseObject, start: BaseObject, end: BaseObject) {
-    let from: number, to: number;
-    if (!start) {
-      from = 0;
-    } else {
-      if (!start.canBeInteger()) {
-        BaseObject.throwException(ExceptionType.TypeError, 'start');
-        return;
-      }
-      from = start.toInteger();
-    }
-    if (!end) {
-      to = this.getCount();
-    } else {
-      if (!end.canBeInteger()) {
-        BaseObject.throwException(ExceptionType.TypeError, 'end');
-        return;
-      }
-      to = end.toInteger();
-    }
-    for (let i = from; i <= to; i++) {
+    const startValue = start ? IntegerObject.toInteger(start, 'start') : 0;
+    const endValue = end ? IntegerObject.toInteger(end, 'end') : this.getCount();
+    for (let i = startValue; i < endValue; i++) {
       const item = this.getItem(i);
       if (item && item.equals(element)) {
         return new IntegerObject(i);

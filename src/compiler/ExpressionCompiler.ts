@@ -35,19 +35,6 @@ import { ArgumentType, FunctionArgument, FunctionBody, FunctionType } from '../c
 import { ReferenceScope } from '../common/ReferenceScope';
 import { CompilerBlockContext, CompilerBlockType } from './CompilerBlockContext';
 
-export function fillIdentifiers(tokens: Token[], from: number, end: number, compiledCode: CompiledModule, identifiers: string[]): number {
-  let token = tokens[from];
-  identifiers.push(compiledCode.identifiers[token.identifier]);
-  from++;
-  token = tokens[from];
-  while (end - from >= 2 && isPoint(token) && isIdentifier(tokens[from + 1])) {
-    identifiers.push(compiledCode.identifiers[tokens[from + 1].identifier]);
-    from += 2;
-    token = tokens[from];
-  }
-  return from;
-}
-
 export class ExpressionCompiler {
   private _from: number;
   private readonly _tokens: Token[];

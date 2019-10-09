@@ -15,10 +15,10 @@ export class Instruction {
   public readonly position: number;
 
   public constructor(
-    type: InstructionType = InstructionType.Pass,
+    type: InstructionType, //
     position: TokenPosition,
-    arg1 = 0,
-    arg2 = 0,
+    arg1,
+    arg2,
     arg3 = 0,
     arg4 = InstructionType.None,
     arg5 = 0,

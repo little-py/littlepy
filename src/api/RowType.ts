@@ -23,4 +23,5 @@ export enum RowType {
   Break = 'Break',
   Yield = 'Yield',
   With = 'With',
+  Del = 'Del',
 }

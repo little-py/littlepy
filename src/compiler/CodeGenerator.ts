@@ -336,6 +336,14 @@ export class CodeGenerator {
     return ret;
   }
 
+  public static delete(expression: GeneratedCode, position: TokenPosition) {
+    const ret = new GeneratedCode();
+    CodeGenerator.appendTo(ret, expression);
+    ret.add(InstructionType.Del, position, 0);
+    ret.success = true;
+    return ret;
+  }
+
   public static appendFunctionCall(
     code: GeneratedCode,
     args: GeneratedCode[],
@@ -343,16 +351,20 @@ export class CodeGenerator {
     position: TokenPosition,
     parentAt0: boolean,
   ): boolean {
-    let argIndex = 0;
-    const argReg = 1 + (parentAt0 ? 1 : 0);
+    const argStartReg = 1 + (parentAt0 ? 1 : 0);
+    let argReg = argStartReg;
     for (const arg of args) {
-      CodeGenerator.appendTo(code, arg, argReg);
+      CodeGenerator.appendTo(code, arg, argReg++);
+    }
+    let argIndex = 0;
+    argReg = argStartReg;
+    for (const arg of args) {
       if (!arg.nameLiteral) {
-        code.add(InstructionType.RegArg, position, argReg, argIndex);
+        code.add(InstructionType.RegArg, position, argReg++, argIndex);
         argIndex++;
       } else {
         const nameId = compilerContext.getIdentifier(arg.nameLiteral);
-        code.add(InstructionType.RegArgName, position, argReg, nameId);
+        code.add(InstructionType.RegArgName, position, argReg++, nameId);
       }
     }
     if (parentAt0) {
@@ -561,14 +573,6 @@ export class CodeGenerator {
   public static createVarReference(identifier: number, scope: ReferenceScope, position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();
     ret.add(InstructionType.CreateVarRef, position, identifier, 0, scope);
-    ret.success = true;
-    return ret;
-  }
-
-  public static deleteProperty(identifiers: string[], compilerContext: CompilerContext, position: TokenPosition) {
-    const ret = new GeneratedCode();
-    CodeGenerator.prepareReference(ret, identifiers, identifiers.length - 1, compilerContext, position);
-    ret.add(InstructionType.Del, position, 0, compilerContext.getIdentifier(identifiers[identifiers.length - 1]));
     ret.success = true;
     return ret;
   }
