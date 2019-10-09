@@ -16,4 +16,4 @@
 * Playground: https://littlepy.gitlab.io/littlepy-example (source code: https://gitlab.com/littlepy/littlepy-example)
 * Supports external JavaScript code integration
 
-> You can view tests to see which features are covered. It is mostly all Python 3 features except async, comprehensions and complex types.
+> You can view tests to see which features are covered. It is mostly all Python 3 features except async and complex types.

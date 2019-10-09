@@ -2,33 +2,41 @@ import { BaseObject } from '../objects/BaseObject';
 import { print } from './Print';
 import { range } from './Range';
 import { exceptions } from './Exceptions';
-import { FunctionObject } from '../objects/FunctionObject';
 import { sys } from './Sys';
 import { ExceptionType } from '../../api/ExceptionType';
 import { len } from './Len';
-import { ClassObject } from '../objects/ClassObject';
 import { IntegerClassObject } from '../objects/IntegerClassObject';
 import { FloatClassObject } from '../objects/FloatClassObject';
 import { hash } from './Hash';
-
-function getFunctionObject(func: Function, name: string): FunctionObject {
-  const ret = new FunctionObject(null, func);
-  ret.name = name;
-  return ret;
-}
-
-function getClassObject(object: ClassObject, name: string): ClassObject {
-  object.name = name;
-  return object;
-}
+import { setFactory } from './Set';
+import { frozenSetFactory } from './FrozenSet';
+import { dictFactory } from './Dict';
+import { iter } from './Iter';
+import { listFactory } from './List';
+import { exportedFunctions } from './Functions';
+import { pow } from './Math';
+import { getClassObject, getFunctionObject } from './Utils';
 
 const GlobalPropertiesCreators: { [key: string]: () => BaseObject } = {
+  abs: () => getFunctionObject(exportedFunctions.abs, 'abs'),
+  all: () => getFunctionObject(exportedFunctions.all, 'all'),
+  any: () => getFunctionObject(exportedFunctions.any, 'any'),
+  chr: () => getFunctionObject(exportedFunctions.chr, 'chr'),
+  min: () => getFunctionObject(exportedFunctions.min, 'min'),
+  max: () => getFunctionObject(exportedFunctions.max, 'max'),
+  sum: () => getFunctionObject(exportedFunctions.sum, 'sum'),
+  pow: () => getFunctionObject(pow, 'pow'),
   print: () => getFunctionObject(print, 'print'),
   range: () => getFunctionObject(range, 'range'),
   len: () => getFunctionObject(len, 'len'),
   hash: () => getFunctionObject(hash, 'hash'),
+  iter: () => getFunctionObject(iter, 'iter'),
   int: () => getClassObject(new IntegerClassObject(null), 'int'),
   float: () => getClassObject(new FloatClassObject(null), 'float'),
+  set: setFactory,
+  frozenset: frozenSetFactory,
+  dict: dictFactory,
+  list: listFactory,
   __sys__: sys,
   Exception: exceptions(ExceptionType.Base, 'Exception'),
   SystemExit: exceptions(ExceptionType.SystemExit, 'SystemExit'),

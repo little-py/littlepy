@@ -1,7 +1,7 @@
 import { compileModule, runModules } from './Utils';
 
 describe('modules', () => {
-  const math = compileModule(
+  const myth = compileModule(
     `
       import support
       def calculate(arg1, arg2):
@@ -22,12 +22,12 @@ describe('modules', () => {
   function run(code: string, expected: string[]) {
     const main = compileModule(code, 'main');
     expect(main.errors).toHaveLength(0);
-    expect(math.errors).toHaveLength(0);
+    expect(myth.errors).toHaveLength(0);
     expect(support.errors).toHaveLength(0);
     const output = runModules(
       {
         main,
-        math,
+        myth,
         support,
       },
       'main',
@@ -38,9 +38,9 @@ describe('modules', () => {
   it('should load module and its submodule with default syntax', () => {
     run(
       `
-      import math
+      import myth
       import support
-      math.calculate('arg1', 'arg2')
+      myth.calculate('arg1', 'arg2')
     `,
       ['param: arg1', 'arg1 - support', 'arg2'],
     );
@@ -49,8 +49,8 @@ describe('modules', () => {
   it('should load module and change its name', () => {
     run(
       `
-      import math as myth
-      myth.calculate('arg1', 'arg2')
+      import myth as meth
+      meth.calculate('arg1', 'arg2')
     `,
       ['param: arg1', 'arg1 - support', 'arg2'],
     );
@@ -59,7 +59,7 @@ describe('modules', () => {
   it('should import only one function from module', () => {
     run(
       `
-      from math import calculate
+      from myth import calculate
       calculate('arg1', 'arg2')
     `,
       ['param: arg1', 'arg1 - support', 'arg2'],

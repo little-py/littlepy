@@ -23,7 +23,7 @@ import {
 import { ArgumentType, createDebugInformation, FunctionArgument, FunctionBody, FunctionType } from '../common/FunctionBody';
 import { CodeGenerator } from './CodeGenerator';
 import { KeywordType } from './Keyword';
-import { ExpressionCompiler, fillIdentifiers } from './ExpressionCompiler';
+import { ExpressionCompiler } from './ExpressionCompiler';
 import { CompiledModule } from './CompiledModule';
 import { LexicalAnalyzer } from './LexicalAnalyzer';
 import { CompilerBlockContext, CompilerBlockType } from './CompilerBlockContext';
@@ -35,47 +35,47 @@ import { LiteralType } from './Literal';
 import { ReferenceScope } from '../common/ReferenceScope';
 
 function getAssignmentInstruction(assignmentOperator: Token): InstructionType {
-  let opType = InstructionType.IPass;
+  let opType = InstructionType.Pass;
   if (assignmentOperator.type === TokenType.Delimiter) {
     switch (assignmentOperator.delimiter) {
       case DelimiterType.EqualPlus:
-        opType = InstructionType.IAdd;
+        opType = InstructionType.Add;
         break;
       case DelimiterType.EqualMinus:
-        opType = InstructionType.ISub;
+        opType = InstructionType.Sub;
         break;
       case DelimiterType.EqualMultiply:
-        opType = InstructionType.IMul;
+        opType = InstructionType.Mul;
         break;
       case DelimiterType.EqualDivide:
-        opType = InstructionType.IDiv;
+        opType = InstructionType.Div;
         break;
       case DelimiterType.EqualFloorDivide:
-        opType = InstructionType.IFloor;
+        opType = InstructionType.Floor;
         break;
       case DelimiterType.EqualModulus:
-        opType = InstructionType.IMod;
+        opType = InstructionType.Mod;
         break;
       case DelimiterType.EqualAt:
-        opType = InstructionType.IAt;
+        opType = InstructionType.At;
         break;
       case DelimiterType.EqualAnd:
-        opType = InstructionType.IBinAnd;
+        opType = InstructionType.BinAnd;
         break;
       case DelimiterType.EqualOr:
-        opType = InstructionType.IBinOr;
+        opType = InstructionType.BinOr;
         break;
       case DelimiterType.EqualXor:
-        opType = InstructionType.IBinXor;
+        opType = InstructionType.BinXor;
         break;
       case DelimiterType.EqualShiftRight:
-        opType = InstructionType.IShr;
+        opType = InstructionType.Shr;
         break;
       case DelimiterType.EqualShiftLeft:
-        opType = InstructionType.IShl;
+        opType = InstructionType.Shl;
         break;
       case DelimiterType.EqualPower:
-        opType = InstructionType.IPow;
+        opType = InstructionType.Pow;
         break;
     }
   }
@@ -298,18 +298,12 @@ export class Compiler {
 
   private finishTryBlock() {
     const tryCode = CodeGenerator.tryExcept(this._pendingFinishedBlocks, this._compilerContext);
-    if (!tryCode.success) {
-      return false;
-    }
     CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, tryCode);
     return true;
   }
 
   private finishForBlock() {
     const forCode = CodeGenerator.forCycle(this._pendingFinishedBlocks, this._compilerContext);
-    if (!forCode.success) {
-      return false;
-    }
     CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, forCode);
     return true;
   }
@@ -897,13 +891,17 @@ export class Compiler {
   private parseKeywordAndExpression(): boolean {
     const first = this._line[0];
     let returnCode: GeneratedCode;
-    const isReturn = first.keyword === KeywordType.Return;
     if (this._line.length === 1) {
-      if (isReturn) {
-        returnCode = CodeGenerator.returnEmpty(first.getPosition());
-      } else {
-        this._compilerContext.addError(PyErrorType.ExpectedYieldExpression, first);
-        return false;
+      switch (first.keyword) {
+        case KeywordType.Return:
+          returnCode = CodeGenerator.returnEmpty(first.getPosition());
+          break;
+        case KeywordType.Yield:
+          this._compilerContext.addError(PyErrorType.ExpectedYieldExpression, first);
+          return false;
+        case KeywordType.Del:
+          this._compilerContext.addError(PyErrorType.ExpectedIdentifierForDel, first);
+          return false;
       }
     } else {
       const expression = ExpressionCompiler.compile({
@@ -921,16 +919,28 @@ export class Compiler {
         this._compilerContext.addError(PyErrorType.ReturnOrYieldExpectedEndOfLine, first);
         return false;
       }
-      if (isReturn) {
-        returnCode = CodeGenerator.returnValue(expression, first.getPosition());
-      } else {
-        returnCode = CodeGenerator.yield(expression, first.getPosition());
+      switch (first.keyword) {
+        case KeywordType.Return:
+          returnCode = CodeGenerator.returnValue(expression, first.getPosition());
+          break;
+        case KeywordType.Yield:
+          returnCode = CodeGenerator.yield(expression, first.getPosition());
+          break;
+        case KeywordType.Del:
+          returnCode = CodeGenerator.delete(expression, first.getPosition());
+          break;
       }
     }
-    if (isReturn) {
-      this._compilerContext.setRowType(RowType.Return);
-    } else {
-      this._compilerContext.setRowType(RowType.Yield);
+    switch (first.keyword) {
+      case KeywordType.Return:
+        this._compilerContext.setRowType(RowType.Return);
+        break;
+      case KeywordType.Yield:
+        this._compilerContext.setRowType(RowType.Yield);
+        break;
+      case KeywordType.Del:
+        this._compilerContext.setRowType(RowType.Del);
+        break;
     }
     CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, returnCode);
     return true;
@@ -1132,9 +1142,9 @@ export class Compiler {
       const assignment = expressions[i];
       CodeGenerator.appendTo(assignment, result, 1);
       if (isAugmented) {
-        assignment.add(InstructionType.IAugmentedCopy, assignment.position, 1, 0, getAssignmentInstruction(augmentedOperator));
+        assignment.add(InstructionType.AugmentedCopy, assignment.position, 1, 0, 0, getAssignmentInstruction(augmentedOperator));
       } else {
-        assignment.add(InstructionType.ICopyValue, assignment.position, 1, 0);
+        assignment.add(InstructionType.CopyValue, assignment.position, 1, 0);
       }
       result = assignment;
     }
@@ -1161,19 +1171,7 @@ export class Compiler {
   }
 
   private parseDelDefinition(): boolean {
-    const identifiers: string[] = [];
-    const from = fillIdentifiers(this._line, 1, this._line.length, this._compiledModule, identifiers);
-    if (from !== this._line.length) {
-      this._compilerContext.addError(PyErrorType.ExpectedEndOfIdentifierForDel, this._line[0]);
-      return false;
-    }
-    if (identifiers.length < 2) {
-      this._compilerContext.addError(PyErrorType.ExpectedIdentifierForDel, this._line[this._line.length - 1]);
-      return false;
-    }
-    const code = CodeGenerator.deleteProperty(identifiers, this._compilerContext, this._line[0].getPosition());
-    CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, code);
-    return true;
+    return this.parseKeywordAndExpression();
   }
 
   private declareFunction(functionDef: number, position: TokenPosition): boolean {
@@ -1183,7 +1181,7 @@ export class Compiler {
     const code = CodeGenerator.createReference(identifiers, this._compilerContext, position);
     // It is important not to touch registers starting from index 2 because they are used for default values
     CodeGenerator.appendTo(code, createFunction, 1);
-    code.add(InstructionType.ICopyValue, position, 1, 0);
+    code.add(InstructionType.CopyValue, position, 1, 0);
     CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, code);
     return true;
   }
@@ -1203,7 +1201,7 @@ export class Compiler {
     }
     const print = new GeneratedCode();
     const first = this._line[0];
-    print.add(InstructionType.IReadObject, first.getPosition(), this._compilerContext.getIdentifier('print'), 0);
+    print.add(InstructionType.ReadObject, first.getPosition(), this._compilerContext.getIdentifier('print'), 0);
     CodeGenerator.appendFunctionCall(print, [expression], this._compilerContext, this._line[0].getPosition(), false);
     CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, print);
   }

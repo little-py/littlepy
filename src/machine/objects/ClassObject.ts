@@ -12,8 +12,8 @@ export class ClassInheritance {
 }
 
 export class ClassObject extends CallableObject {
-  public constructor(context: FunctionRunContext, inheritsFrom: ClassInheritance[]) {
-    super();
+  public constructor(context: FunctionRunContext, inheritsFrom: ClassInheritance[], nativeConstructor: Function = null) {
+    super(context, nativeConstructor);
     this.inheritsFrom = inheritsFrom;
   }
 

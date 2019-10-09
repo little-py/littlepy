@@ -131,31 +131,25 @@ export class CompilerContext {
       case LiteralType.FormattedString:
       case LiteralType.Bytes:
       case LiteralType.Unicode: {
-        let it = this.stringLiterals[literal.string];
+        const it = this.stringLiterals[literal.string];
         if (it !== undefined) {
+          this.updateRowDescriptor({
+            literals: [literal.string],
+          });
           return it;
         }
-        it = this.compiledCode.literals.length;
-        this.compiledCode.literals.push(literal);
-        this.stringLiterals[literal.string] = it;
-        this.updateRowDescriptor({
-          literals: [literal.string],
-        });
-        return it;
+        return -1;
       }
       default: {
         const array = type === LiteralType.Integer ? this.intLiterals : this.realLiterals;
-        let it = array[literal.integer.toString()];
+        const it = array[literal.integer.toString()];
         if (it !== undefined) {
+          this.updateRowDescriptor({
+            literals: [literal.integer.toString()],
+          });
           return it;
         }
-        it = this.compiledCode.literals.length;
-        this.compiledCode.literals.push(literal);
-        array[literal.integer.toString()] = it;
-        this.updateRowDescriptor({
-          literals: [literal.integer.toString()],
-        });
-        return it;
+        return -1;
       }
     }
   }

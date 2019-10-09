@@ -1,9 +1,20 @@
 import { BaseObject } from './BaseObject';
+import { ExceptionType } from '../../api/ExceptionType';
+import { IntegerObject } from './IntegerObject';
 
 export class RealObject extends BaseObject {
   public constructor(value: number) {
     super();
     this.value = value;
+  }
+
+  public static toReal(value: BaseObject, name = ''): number {
+    if (!(value instanceof RealObject) && !(value instanceof IntegerObject)) {
+      BaseObject.throwException(ExceptionType.TypeError, name);
+      /* istanbul ignore next */
+      return;
+    }
+    return value.value;
   }
 
   public toBoolean(): boolean {

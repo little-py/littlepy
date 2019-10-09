@@ -37,6 +37,9 @@ import { IterableObject } from './objects/IterableObject';
 import { ContainerObject } from './objects/ContainerObject';
 import { ExceptionType } from '../api/ExceptionType';
 import { ReferenceScope } from '../common/ReferenceScope';
+import { FrozenSetObject } from './objects/FrozenSetObject';
+import { embeddedModules } from './embedded/EmbeddedModules';
+import { stringFormat } from './objects/FormatString';
 
 export class RunContext implements PyMachine {
   private readonly _compiledModules: { [key: string]: CompiledModule };
@@ -79,6 +82,8 @@ export class RunContext implements PyMachine {
     return this._unhandledException;
   }
 
+  // public API
+  /* istanbul ignore next */
   public getCurrentScope() {
     return this.getCurrentFunctionStack().scope;
   }
@@ -365,6 +370,8 @@ export class RunContext implements PyMachine {
       if (err instanceof ExceptionObject) {
         this.raiseException(err);
       } else {
+        // safety check
+        /* istanbul ignore next */
         this.raiseException(new ExceptionObject(ExceptionType.SystemError));
       }
     }
@@ -469,6 +476,15 @@ export class RunContext implements PyMachine {
     functionStack.setReg(current.arg3, ref);
   }
 
+  private stepCreateArrayRangeReference(current: Instruction, functionStack: StackEntry) {
+    const arrayValue = functionStack.getReg(current.arg1, true, this);
+    const indexFrom = functionStack.getReg(current.arg2, true, this);
+    const indexTo = functionStack.getReg(current.arg3, true, this);
+    const indexInterval: BaseObject = current.arg5 === -1 ? null : functionStack.getReg(current.arg5, true, this);
+    const ref = new ReferenceObject(arrayValue, indexFrom, ReferenceType.Range, ReferenceScope.Default, this, indexTo, indexInterval);
+    functionStack.setReg(current.arg6, ref);
+  }
+
   private stepIdentifier(current: Instruction, module: CompiledModule, functionStack: StackEntry) {
     const id = module.identifiers[current.arg2];
     const obj = new StringObject(id);
@@ -516,7 +532,12 @@ export class RunContext implements PyMachine {
       return;
     }
     const id = module.identifiers[current.arg1];
-    functionStack.setReg(current.arg3, object.getAttribute(id));
+    const prop = object.getAttribute(id);
+    if (!prop) {
+      this.raiseUnknownIdentifier(id);
+      return;
+    }
+    functionStack.setReg(current.arg3, prop);
   }
 
   private stepMathOperation(current: Instruction, functionStack: StackEntry) {
@@ -540,7 +561,7 @@ export class RunContext implements PyMachine {
     if (!arg) {
       return;
     }
-    const ret = this.unaryOperation(arg, current.iType);
+    const ret = this.unaryOperation(arg, current.type);
     if (!ret) {
       return;
     }
@@ -565,6 +586,8 @@ export class RunContext implements PyMachine {
 
   private stepCallFunc(current: Instruction, module: CompiledModule, functionStack: StackEntry) {
     const functionObj = functionStack.getReg(current.arg1, true, this);
+    // safety check
+    /* istanbul ignore next */
     if (!functionObj) {
       return;
     }
@@ -589,6 +612,8 @@ export class RunContext implements PyMachine {
       return;
     }
     const parentObj = functionStack.getReg(current.arg1, true, this);
+    // safety check
+    /* istanbul ignore next */
     if (!parentObj) {
       return;
     }
@@ -638,6 +663,11 @@ export class RunContext implements PyMachine {
     stack.startInstruction = this._currentInstruction;
     stack.noBreakInstruction = current.arg2 === -1 ? -1 : functionStack.findLabel(current.arg2);
     stack.endInstruction = functionStack.findLabel(current.arg1);
+    // safety check
+    /* istanbul ignore next */
+    if (stack.endInstruction === -1) {
+      this.raiseException(new ExceptionObject(ExceptionType.SystemError));
+    }
   }
 
   private stepWhileCycle(current: Instruction, functionStack: StackEntry) {
@@ -653,15 +683,25 @@ export class RunContext implements PyMachine {
   private stepListAdd(current: Instruction, functionStack: StackEntry) {
     const obj = functionStack.getReg(current.arg2, true, this);
     const listObject = obj as ListObject;
-    const listItem = functionStack.getReg(current.arg1, true, this);
+    let listItem = functionStack.getReg(current.arg1, true, this);
     if (!listItem) {
       return;
+    }
+    if (listItem instanceof TupleObject && listItem.items.findIndex(t => t instanceof ReferenceObject) >= 0) {
+      listItem = new TupleObject(listItem.items.map(r => (r instanceof ReferenceObject ? r.getValue(this) : r)));
     }
     listObject.addItem(listItem);
   }
 
   private stepGoTo(current: Instruction, functionStack: StackEntry) {
-    functionStack.instruction = functionStack.findLabel(current.arg1);
+    const next = functionStack.findLabel(current.arg1);
+    // safety check
+    /* istanbul ignore next */
+    if (next === -1) {
+      this.raiseException(new ExceptionObject(ExceptionType.SystemError));
+      return;
+    }
+    functionStack.instruction = next;
   }
 
   private stepEnterTry(current: Instruction, functionStack: StackEntry) {
@@ -706,7 +746,7 @@ export class RunContext implements PyMachine {
     }
     const context = new ContinueContext();
     context.type = ContinueContextType.Cycle;
-    context.instruction = current.iType === InstructionType.IBreak ? entry.endInstruction : entry.startInstruction;
+    context.instruction = current.type === InstructionType.Break ? entry.endInstruction : entry.startInstruction;
     context.stack = entry;
     this.setContinueContext(context);
     this.runContinueContext();
@@ -714,11 +754,20 @@ export class RunContext implements PyMachine {
 
   private stepCondition(current: Instruction, functionStack: StackEntry) {
     const condition = functionStack.getReg(current.arg1, true, this);
+    // safety check
+    /* istanbul ignore next */
     if (!condition) {
       return;
     }
     if (!condition.toBoolean()) {
-      functionStack.instruction = functionStack.findLabel(current.arg2);
+      const next = functionStack.findLabel(current.arg2);
+      // safety check
+      /* istanbul ignore next */
+      if (next === -1) {
+        this.raiseException(new ExceptionObject(ExceptionType.SystemError));
+        return;
+      }
+      functionStack.instruction = next;
     }
   }
 
@@ -783,6 +832,7 @@ export class RunContext implements PyMachine {
         targetRef.setValue(sourceValue, this);
       }
     } else {
+      /* istanbul ignore next */ // safety check
       if (!(targetObject instanceof ReferenceObject)) {
         this.raiseException(new ExceptionObject(ExceptionType.ExpectedReference));
         return;
@@ -898,6 +948,13 @@ export class RunContext implements PyMachine {
       return;
     }
 
+    if (embeddedModules[name]) {
+      const moduleObject = embeddedModules[name]();
+      this._importedModules[name] = moduleObject;
+      onFinished(moduleObject);
+      return;
+    }
+
     const compiledModule = this._compiledModules[name];
     if (!compiledModule) {
       this.raiseUnknownIdentifier(name);
@@ -1007,7 +1064,7 @@ export class RunContext implements PyMachine {
           return;
         }
         if (invert) {
-          ret = new BooleanObject(ret.toBoolean() ? 0 : 1);
+          ret = new BooleanObject(ret.toBoolean());
         }
         stack.callContext.indexedArgs = savedIndexedArgs;
         stack.callContext.namedArgs = savedNamedArgs;
@@ -1018,16 +1075,19 @@ export class RunContext implements PyMachine {
     this.raiseTypeConversion();
   }
 
-  private stepDel(current: Instruction, currentModule: CompiledModule, functionStack: StackEntry) {
-    const obj = functionStack.getReg(current.arg1, true, this);
-    if (!obj) {
+  private stepDel(current: Instruction, functionStack: StackEntry) {
+    const reference = functionStack.getReg(current.arg1, false, this);
+    if (!reference) {
       return;
     }
-    const id = currentModule.identifiers[current.arg2];
-    obj.deleteAttribute(id);
+    if (!(reference instanceof ReferenceObject)) {
+      this.raiseException(new ExceptionObject(ExceptionType.ReferenceError));
+      return;
+    }
+    reference.deleteValue(this);
   }
 
-  private stepYield(current: Instruction, currentModule: CompiledModule, functionStack: StackEntry) {
+  private stepYield(current: Instruction, functionStack: StackEntry) {
     const value = functionStack.getReg(current.arg1, true, this);
     if (!value) {
       return;
@@ -1074,189 +1134,255 @@ export class RunContext implements PyMachine {
     this.raiseTypeConversion();
   }
 
+  private stepReadArrayRange(current: Instruction, functionStack: StackEntry) {
+    const list = functionStack.getReg(current.arg1, true, this);
+    if (!list) {
+      return;
+    }
+
+    const indexFromObject = functionStack.getReg(current.arg2, true, this);
+    const indexToObject = functionStack.getReg(current.arg3, true, this);
+    const indexIntervalObject: BaseObject = current.arg5 === -1 ? null : functionStack.getReg(current.arg5, true, this);
+
+    if (
+      !(list instanceof ContainerObject) ||
+      !(indexFromObject instanceof IntegerObject) ||
+      !(indexToObject instanceof IntegerObject) ||
+      (indexIntervalObject && !(indexIntervalObject instanceof IntegerObject))
+    ) {
+      this.raiseTypeConversion();
+      return;
+    }
+
+    const from = indexFromObject.value;
+    const to = indexToObject.value;
+    const step = indexIntervalObject ? (indexIntervalObject as IntegerObject).value : 1;
+
+    if (step === 0) {
+      this.raiseFunctionArgumentError();
+      return;
+    }
+
+    if (list instanceof TupleObject) {
+      const newTuple = new TupleObject([]);
+
+      if (step > 0) {
+        for (let i = from; i < to; i += step) {
+          newTuple.addItem(list.getItem(i));
+        }
+      } else {
+        for (let i = from; i > to; i += step) {
+          newTuple.addItem(list.getItem(i));
+        }
+      }
+
+      functionStack.setReg(current.arg6, newTuple);
+    } else {
+      const newList = new ListObject();
+
+      if (step > 0) {
+        for (let i = from; i < to; i += step) {
+          newList.addItem(list.getItem(i));
+        }
+      } else {
+        for (let i = from; i > to; i += step) {
+          newList.addItem(list.getItem(i));
+        }
+      }
+
+      functionStack.setReg(current.arg6, newList);
+    }
+  }
+
   private stepInternal(current: Instruction) {
     const functionStack = this.getCurrentFunctionStack();
     const module = functionStack.func.func.module;
-    switch (current.iType) {
-      case InstructionType.ILeaveCycle:
+    switch (current.type) {
+      case InstructionType.LeaveCycle:
         this.stepLeaveCycle();
         break;
-      case InstructionType.IPass:
+      case InstructionType.Pass:
         break;
-      case InstructionType.ICreateFunc:
+      case InstructionType.CreateFunc:
         this.stepCreateFunc(current, module, functionStack);
         break;
-      case InstructionType.ILiteral:
+      case InstructionType.Literal:
         this.stepLiteral(current, functionStack);
         break;
-      case InstructionType.ICreateArrayIndexRef:
+      case InstructionType.CreateArrayIndexRef:
         this.stepCreateArrayIndexRef(current, functionStack);
         break;
-      case InstructionType.ICreatePropertyRef:
+      case InstructionType.CreatePropertyRef:
         this.stepCreatePropertyRef(current, functionStack);
         break;
-      case InstructionType.IIdentifier:
+      case InstructionType.Identifier:
         this.stepIdentifier(current, module, functionStack);
         break;
-      case InstructionType.IReadObject:
+      case InstructionType.ReadObject:
         this.stepReadObject(current, functionStack);
         break;
-      case InstructionType.IReadProperty:
+      case InstructionType.ReadProperty:
         this.stepReadProperty(current, module, functionStack);
         break;
-      case InstructionType.ICopyValue:
+      case InstructionType.CopyValue:
         this.stepCopyValue(current, functionStack);
         break;
-      case InstructionType.IAugmentedCopy:
+      case InstructionType.AugmentedCopy:
         this.stepAugmentedCopy(current, functionStack);
         break;
-      case InstructionType.IAdd:
-      case InstructionType.ISub:
-      case InstructionType.IMul:
-      case InstructionType.IDiv:
-      case InstructionType.IPow:
-      case InstructionType.IFloor:
-      case InstructionType.IMod:
-      case InstructionType.IAt:
-      case InstructionType.IShl:
-      case InstructionType.IShr:
-      case InstructionType.IBinAnd:
-      case InstructionType.IBinOr:
-      case InstructionType.IBinXor:
-      case InstructionType.ILess:
-      case InstructionType.IGreater:
-      case InstructionType.ILessEq:
-      case InstructionType.IGreaterEq:
-      case InstructionType.IEqual:
-      case InstructionType.INotEq:
-      case InstructionType.IIsNot:
-      case InstructionType.IIs:
+      case InstructionType.Add:
+      case InstructionType.Sub:
+      case InstructionType.Mul:
+      case InstructionType.Div:
+      case InstructionType.Pow:
+      case InstructionType.Floor:
+      case InstructionType.Mod:
+      case InstructionType.At:
+      case InstructionType.Shl:
+      case InstructionType.Shr:
+      case InstructionType.BinAnd:
+      case InstructionType.BinOr:
+      case InstructionType.BinXor:
+      case InstructionType.Less:
+      case InstructionType.Greater:
+      case InstructionType.LessEq:
+      case InstructionType.GreaterEq:
+      case InstructionType.Equal:
+      case InstructionType.NotEq:
+      case InstructionType.IsNot:
+      case InstructionType.Is:
         this.stepMathOperation(current, functionStack);
         break;
-      case InstructionType.IInvert:
+      case InstructionType.Invert:
         this.stepInvert(current, functionStack);
         break;
-      case InstructionType.IBinInv:
+      case InstructionType.BinInv:
         this.stepInvert(current, functionStack);
         break;
-      case InstructionType.IRegArg:
+      case InstructionType.RegArg:
         this.stepRegArg(current, functionStack);
         break;
-      case InstructionType.IRegArgName:
+      case InstructionType.RegArgName:
         this.stepRegArgName(current, module, functionStack);
         break;
-      case InstructionType.ICallFunc:
+      case InstructionType.CallFunc:
         this.stepCallFunc(current, module, functionStack);
         break;
-      case InstructionType.ICallMethod:
+      case InstructionType.CallMethod:
         this.stepCallMethod(current, module, functionStack);
         break;
-      case InstructionType.IRet:
+      case InstructionType.Ret:
         this.stepRet(current, functionStack);
         break;
-      case InstructionType.IRaise:
+      case InstructionType.Raise:
         this.stepRaise(current, functionStack);
         break;
-      case InstructionType.IForCycle:
+      case InstructionType.ForCycle:
         this.stepForCycle(current, module, functionStack);
         break;
-      case InstructionType.IWhileCycle:
+      case InstructionType.WhileCycle:
         this.stepWhileCycle(current, functionStack);
         break;
-      case InstructionType.IList:
+      case InstructionType.List:
         this.stepList(current, functionStack);
         break;
-      case InstructionType.IListAdd:
+      case InstructionType.ListAdd:
         this.stepListAdd(current, functionStack);
         break;
-      case InstructionType.IGoTo:
+      case InstructionType.GoTo:
         this.stepGoTo(current, functionStack);
         break;
-      case InstructionType.ILabel:
+      case InstructionType.Label:
         break;
-      case InstructionType.IEnterTry:
+      case InstructionType.EnterTry:
         this.stepEnterTry(current, functionStack);
         break;
-      case InstructionType.ILeaveTry:
+      case InstructionType.LeaveTry:
         this._currentException = null;
         this.leaveStack(null, false);
         break;
-      case InstructionType.IEnterExcept:
+      case InstructionType.EnterExcept:
         this.stepEnterExcept(current, module, functionStack);
         break;
-      case InstructionType.IEnterFinally:
+      case InstructionType.EnterFinally:
         this.stepEnterFinally();
         break;
-      case InstructionType.ILeaveFinally:
+      case InstructionType.LeaveFinally:
         this.stepLeaveFinally();
         break;
-      case InstructionType.IBreak:
-      case InstructionType.IContinue:
+      case InstructionType.Break:
+      case InstructionType.Continue:
         this.stepBreakContinue(current);
         break;
-      case InstructionType.ICondition:
+      case InstructionType.Condition:
         this.stepCondition(current, functionStack);
         break;
-      case InstructionType.ITuple:
+      case InstructionType.Tuple:
         this.stepTuple(current, functionStack);
         break;
-      case InstructionType.ITupleAdd:
+      case InstructionType.TupleAdd:
         this.stepTupleAdd(current, functionStack);
         break;
-      case InstructionType.ISet:
+      case InstructionType.Set:
         this.stepSet(current, functionStack);
         break;
-      case InstructionType.ISetAdd:
+      case InstructionType.SetAdd:
         this.stepSetAdd(current, functionStack);
         break;
-      case InstructionType.IDictionary:
+      case InstructionType.Dictionary:
         this.stepDictionary(current, functionStack);
         break;
-      case InstructionType.IDictionaryAdd:
+      case InstructionType.DictionaryAdd:
         this.stepDictionaryAdd(current, module, functionStack);
         break;
-      case InstructionType.ICreateVarRef:
+      case InstructionType.CreateVarRef:
         this.stepCreateVarRef(current, module, functionStack);
         break;
-      case InstructionType.ILogicalNot:
+      case InstructionType.LogicalNot:
         this.stepLogicalNot(current, functionStack);
         break;
-      case InstructionType.IImport:
+      case InstructionType.Import:
         this.stepImport(current, module, functionStack);
         break;
-      case InstructionType.IImportAs:
+      case InstructionType.ImportAs:
         this.stepImportAs(current, module, functionStack);
         break;
-      case InstructionType.IImportFrom:
+      case InstructionType.ImportFrom:
         this.stepImportFrom(current, module, functionStack);
         break;
-      case InstructionType.IGetBool:
+      case InstructionType.GetBool:
         this.stepGetBool(current, functionStack);
         break;
-      case InstructionType.ILogicalOr:
+      case InstructionType.LogicalOr:
         this.stepLogicalOr(current, functionStack);
         break;
-      case InstructionType.ILogicalAnd:
+      case InstructionType.LogicalAnd:
         this.stepLogicalAnd(current, functionStack);
         break;
-      case InstructionType.IBool:
+      case InstructionType.Bool:
         this.stepBool(current, functionStack);
         break;
-      case InstructionType.INone:
+      case InstructionType.None:
         this.stepNone(current, functionStack);
         break;
-      case InstructionType.IIn:
-      case InstructionType.INotIn:
-        this.stepIn(current, functionStack, current.iType === InstructionType.INotIn);
+      case InstructionType.In:
+      case InstructionType.NotIn:
+        this.stepIn(current, functionStack, current.type === InstructionType.NotIn);
         break;
-      case InstructionType.IDel:
-        this.stepDel(current, module, functionStack);
+      case InstructionType.Del:
+        this.stepDel(current, functionStack);
         break;
-      case InstructionType.IYield:
-        this.stepYield(current, module, functionStack);
+      case InstructionType.Yield:
+        this.stepYield(current, functionStack);
         break;
-      case InstructionType.IReadArrayIndex:
+      case InstructionType.ReadArrayIndex:
         this.stepReadArrayIndex(current, functionStack);
+        break;
+      case InstructionType.CreateArrayRangeRef:
+        this.stepCreateArrayRangeReference(current, functionStack);
+        break;
+      case InstructionType.ReadArrayRange:
+        this.stepReadArrayRange(current, functionStack);
         break;
       default:
         this.onRuntimeError();
@@ -1444,12 +1570,15 @@ export class RunContext implements PyMachine {
       this.raiseException(new ExceptionObject(ExceptionType.CannotDeriveFromMultipleException));
       return;
     }
+    let ret: ClassInstanceObject;
     if (coreExceptions.length) {
       const exception = coreExceptions[0].object as ExceptionClassObject;
-      return new ExceptionObject(exception.exceptionType, inherits);
+      ret = new ExceptionObject(exception.exceptionType, inherits);
     } else {
-      return new ClassInstanceObject(inherits, context);
+      ret = new ClassInstanceObject(inherits, context);
     }
+    ret.setAttribute('__class__', classObject);
+    return ret;
   }
 
   private expandArgument(arg: IterableObject, callback: (items: BaseObject[]) => void) {
@@ -1694,7 +1823,7 @@ export class RunContext implements PyMachine {
       return false;
     }
     const instruction = functionStack.code[this._currentStack.endInstruction];
-    if (instruction.iType !== InstructionType.IGotoFinally) {
+    if (instruction.type !== InstructionType.GotoFinally) {
       return false;
     }
     this._currentStack.finallyHandled = true;
@@ -1725,11 +1854,11 @@ export class RunContext implements PyMachine {
       const functionStack = entry.functionEntry;
       const code = functionStack.code;
       let from = entry.endInstruction;
-      if (code[from].iType === InstructionType.IGotoFinally) {
+      if (code[from].type === InstructionType.GotoFinally) {
         from++;
       }
       let suitableLabel = -1;
-      while (from < code.length && code[from].iType === InstructionType.IGotoExcept) {
+      while (from < code.length && code[from].type === InstructionType.GotoExcept) {
         const id = code[from].arg1;
         if (id === -1) {
           suitableLabel = code[from].arg2;
@@ -1804,7 +1933,7 @@ export class RunContext implements PyMachine {
 
   private unaryOperation(obj: BaseObject, op: InstructionType): BaseObject {
     switch (op) {
-      case InstructionType.IInvert:
+      case InstructionType.Invert:
         if (obj instanceof IntegerObject) {
           return new IntegerObject(-obj.value);
         }
@@ -1814,7 +1943,7 @@ export class RunContext implements PyMachine {
           return this.realToObject(val);
         }
         break;
-      case InstructionType.IBinInv:
+      case InstructionType.BinInv:
         if (obj.canBeInteger()) {
           let val = obj.toInteger();
           val = ~val;
@@ -1828,65 +1957,65 @@ export class RunContext implements PyMachine {
   }
 
   private mathOperation(leftObj: BaseObject, rightObj: BaseObject, instruction: Instruction): BaseObject {
-    const op = instruction.iType === InstructionType.IAugmentedCopy ? instruction.arg3 : instruction.iType;
+    const op: InstructionType = instruction.type === InstructionType.AugmentedCopy ? instruction.arg4 : instruction.type;
     switch (op) {
-      case InstructionType.IIs:
+      case InstructionType.Is:
         return new BooleanObject(leftObj === rightObj ? 1 : 0);
-      case InstructionType.IIsNot:
+      case InstructionType.IsNot:
         return new BooleanObject(leftObj === rightObj ? 0 : 1);
     }
     if (leftObj.canBeReal() && rightObj.canBeReal()) {
       const left = leftObj.toReal();
       const right = rightObj.toReal();
       switch (op) {
-        case InstructionType.IAdd:
+        case InstructionType.Add:
           return this.realToObject(left + right);
-        case InstructionType.ISub:
+        case InstructionType.Sub:
           return this.realToObject(left - right);
-        case InstructionType.IMul:
+        case InstructionType.Mul:
           return this.realToObject(left * right);
-        case InstructionType.IDiv:
+        case InstructionType.Div:
           if (right === 0) {
             this.raiseException(new ExceptionObject(ExceptionType.ZeroDivisionError));
             return null;
           }
           return this.realToObject(left / right);
-        case InstructionType.IPow:
+        case InstructionType.Pow:
           return this.realToObject(Math.pow(left, right));
-        case InstructionType.IFloor:
+        case InstructionType.Floor:
           if (right === 0) {
             this.raiseException(new ExceptionObject(ExceptionType.ZeroDivisionError));
             return null;
           }
           return this.realToObject(Math.floor(left / right));
-        case InstructionType.IMod:
+        case InstructionType.Mod:
           if (right === 0) {
             this.raiseException(new ExceptionObject(ExceptionType.ZeroDivisionError));
             return null;
           }
           return this.realToObject(left % right);
-        case InstructionType.IShl:
+        case InstructionType.Shl:
           return this.realToObject(left << right);
-        case InstructionType.IShr:
+        case InstructionType.Shr:
           return this.realToObject(left >> right);
-        case InstructionType.IBinAnd:
+        case InstructionType.BinAnd:
           return this.realToObject(left & right);
-        case InstructionType.IBinOr:
+        case InstructionType.BinOr:
           return this.realToObject(left | right);
-        case InstructionType.IBinXor:
+        case InstructionType.BinXor:
           return this.realToObject(left ^ right);
-        case InstructionType.ILess:
+        case InstructionType.Less:
           return new BooleanObject(left < right ? 1 : 0);
-        case InstructionType.IGreater:
+        case InstructionType.Greater:
           return new BooleanObject(left > right ? 1 : 0);
-        case InstructionType.ILessEq:
+        case InstructionType.LessEq:
           return new BooleanObject(left <= right ? 1 : 0);
-        case InstructionType.IGreaterEq:
+        case InstructionType.GreaterEq:
           return new BooleanObject(left >= right ? 1 : 0);
-        case InstructionType.IEqual:
+        case InstructionType.Equal:
           // eslint-disable-next-line eqeqeq
           return new BooleanObject(left == right ? 1 : 0);
-        case InstructionType.INotEq:
+        case InstructionType.NotEq:
           // eslint-disable-next-line eqeqeq
           return new BooleanObject(left != right ? 1 : 0);
         default:
@@ -1897,17 +2026,17 @@ export class RunContext implements PyMachine {
       const left = (leftObj as StringObject).value;
       const right = (rightObj as StringObject).value;
       switch (op) {
-        case InstructionType.IEqual:
+        case InstructionType.Equal:
           return new BooleanObject(left === right ? 1 : 0);
-        case InstructionType.INotEq:
+        case InstructionType.NotEq:
           return new BooleanObject(left !== right ? 1 : 0);
-        case InstructionType.IAdd:
+        case InstructionType.Add:
           return new StringObject(left + right);
       }
     }
     switch (op) {
-      case InstructionType.IEqual:
-      case InstructionType.INotEq: {
+      case InstructionType.Equal:
+      case InstructionType.NotEq: {
         let compare: CallableObject;
         let self: BaseObject;
         let other: BaseObject;
@@ -1917,7 +2046,7 @@ export class RunContext implements PyMachine {
           compare = func;
           self = leftObj;
           other = rightObj;
-          invert = op === InstructionType.INotEq;
+          invert = op === InstructionType.NotEq;
         }
         if (!compare) {
           func = rightObj.getAttribute('__eq__');
@@ -1925,7 +2054,7 @@ export class RunContext implements PyMachine {
             compare = func;
             self = rightObj;
             other = leftObj;
-            invert = op === InstructionType.INotEq;
+            invert = op === InstructionType.NotEq;
           }
         }
         if (compare) {
@@ -1948,12 +2077,84 @@ export class RunContext implements PyMachine {
         }
         break;
       }
+      case InstructionType.Mul:
+        if (leftObj instanceof ListObject && rightObj instanceof IntegerObject) {
+          const newList = new ListObject();
+          for (let i = 0; i < rightObj.value; i++) {
+            for (let j = 0; j < leftObj.getCount(); j++) {
+              newList.addItem(leftObj.getItem(j));
+            }
+          }
+          return newList;
+        }
+        if (leftObj instanceof TupleObject && rightObj instanceof IntegerObject) {
+          const newTuple = new TupleObject([]);
+          for (let i = 0; i < rightObj.value; i++) {
+            for (let j = 0; j < leftObj.getCount(); j++) {
+              newTuple.addItem(leftObj.getItem(j));
+            }
+          }
+          return newTuple;
+        }
+        if (leftObj instanceof StringObject && rightObj instanceof IntegerObject) {
+          let ret = '';
+          for (let i = 0; i < rightObj.value; i++) {
+            ret += leftObj.value;
+          }
+          return new StringObject(ret);
+        }
+        break;
     }
     switch (op) {
-      case InstructionType.IEqual:
-        return new BooleanObject(leftObj === rightObj ? 1 : 0);
-      case InstructionType.INotEq:
+      case InstructionType.Equal:
+        return new BooleanObject(leftObj.equals(rightObj));
+      case InstructionType.NotEq:
         return new BooleanObject(leftObj !== rightObj ? 1 : 0);
+      case InstructionType.Mod:
+        if (leftObj instanceof StringObject) {
+          return stringFormat(leftObj, rightObj);
+        }
+        break;
+      case InstructionType.Less:
+        if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
+          return new BooleanObject(FrozenSetObject.issubset(leftObj, rightObj) && !FrozenSetObject.issubset(rightObj, leftObj));
+        }
+        break;
+      case InstructionType.LessEq:
+        if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
+          return new BooleanObject(FrozenSetObject.issubset(leftObj, rightObj));
+        }
+        break;
+      case InstructionType.Greater:
+        if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
+          return new BooleanObject(FrozenSetObject.issubset(rightObj, leftObj) && !FrozenSetObject.issubset(leftObj, rightObj));
+        }
+        break;
+      case InstructionType.GreaterEq:
+        if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
+          return new BooleanObject(FrozenSetObject.issubset(rightObj, leftObj));
+        }
+        break;
+      case InstructionType.BinOr:
+        if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
+          return leftObj.native_union(rightObj);
+        }
+        break;
+      case InstructionType.BinAnd:
+        if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
+          return leftObj.native_intersection(rightObj);
+        }
+        break;
+      case InstructionType.Sub:
+        if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
+          return leftObj.native_difference(rightObj);
+        }
+        break;
+      case InstructionType.BinXor:
+        if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
+          return leftObj.native_symmetric_difference(rightObj);
+        }
+        break;
     }
     this.raiseTypeConversion();
     return null;

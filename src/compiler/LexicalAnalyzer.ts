@@ -320,6 +320,24 @@ export class LexicalAnalyzer {
         let escapedChar;
         switch (this._currentChar) {
           // @ts-ignore
+          case 'n':
+            escapedChar = '\n';
+            this.nextChar();
+            this._col++;
+            break;
+          // @ts-ignore
+          case 'r':
+            escapedChar = '\r';
+            this.nextChar();
+            this._col++;
+            break;
+          // @ts-ignore
+          case 't':
+            escapedChar = '\t';
+            this.nextChar();
+            this._col++;
+            break;
+          // @ts-ignore
           case "'":
           // @ts-ignore
           case '"':

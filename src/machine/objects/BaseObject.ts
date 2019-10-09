@@ -6,6 +6,8 @@ export class BaseObject implements PyObject {
   private static _nativeMethods: { [name: string]: BaseObject } = {};
   protected static createNativeMethod: (func: Function) => BaseObject;
   protected static throwException: (type: ExceptionType, ...args: string[]) => void;
+  protected static createTuple: (items: BaseObject[]) => BaseObject;
+  protected static createList: (items: BaseObject[]) => BaseObject;
 
   protected attributes: { [key: string]: BaseObject } = {};
   public id: number = BaseObject.idCounter++;
@@ -15,13 +17,14 @@ export class BaseObject implements PyObject {
     return this.constructor.name;
   }
 
-  public equals(to: BaseObject) {
+  public equals(to: BaseObject): boolean {
     if (this === to) {
       return true;
     }
     if (this.canBeReal() && to.canBeReal()) {
       return this.toReal() === to.toReal();
     }
+    return false;
   }
 
   public toBoolean() {

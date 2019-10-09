@@ -42,7 +42,7 @@ export class StackEntry {
 
   public findLabel(label: number): number {
     for (let i = 0; i < this.code.length; i++) {
-      if (this.code[i].iType === InstructionType.ILabel && this.code[i].arg1 === label) {
+      if (this.code[i].type === InstructionType.Label && this.code[i].arg1 === label) {
         return i + 1;
       }
     }
