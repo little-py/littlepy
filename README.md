@@ -6,7 +6,7 @@
 
 * Python 3 Language Compiler and Execution Environment written in TypeScript (JavaScript)
 * Zero external dependencies
-* High code quality: more than 90% of code is covered by tests
+* High code quality: more than 90% of the code is covered by tests
 * Written from scratch, it is not a port of existing implementation
 * LittlePy main purpose is for learning Python, but it can also be used as a safe scripting engine or whatever you need
 * Of course it is free of charge
@@ -15,5 +15,6 @@
 * It is core Python implementation without Python libraries
 * Playground: https://littlepy.gitlab.io/littlepy-example (source code: https://gitlab.com/littlepy/littlepy-example)
 * Supports external JavaScript code integration
+* It is easy to build debug environment based on it (see the example above)
 
 > You can view tests to see which features are covered. It is mostly all Python 3 features except async and complex types.
