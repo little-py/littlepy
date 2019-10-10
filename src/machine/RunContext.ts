@@ -40,8 +40,14 @@ import { ReferenceScope } from '../common/ReferenceScope';
 import { FrozenSetObject } from './objects/FrozenSetObject';
 import { embeddedModules } from './embedded/EmbeddedModules';
 import { stringFormat } from './objects/FormatString';
+import { NativeReturnType, RunContextBase } from './NativeTypes';
 
-export class RunContext implements PyMachine {
+import { setNativeWrapper } from './embedded/NativeFunction';
+import { nativeWrapper } from './embedded/NativeWrapper';
+
+setNativeWrapper(nativeWrapper);
+
+export class RunContext extends RunContextBase implements PyMachine {
   private readonly _compiledModules: { [key: string]: CompiledModule };
   private _breakpoints: { [key: string]: boolean } = {};
   private _functions: { [id: string]: FunctionRunContext } = {};
@@ -89,6 +95,7 @@ export class RunContext implements PyMachine {
   }
 
   public constructor(modules: { [key: string]: CompiledModule } = {}, breakpoints: PyBreakpoint[] = []) {
+    super();
     this._compiledModules = modules;
     this.updateBreakpoints(breakpoints);
     this.initializeFunctions();
@@ -1620,9 +1627,14 @@ export class RunContext implements PyMachine {
       parent = (parent as SuperProxyObject).classInstance;
     }
 
-    if (func.nativeFunction) {
+    if (func.nativeFunction || func.newNativeFunction) {
       currentStack.callContext.onFinish = onFinish;
-      let ret = callNativeFunction(func.nativeFunction, this, currentStack.callContext, parent);
+      let ret: NativeReturnType;
+      if (func.newNativeFunction) {
+        ret = func.newNativeFunction(currentStack.callContext, this);
+      } else {
+        ret = callNativeFunction(func.nativeFunction, this, currentStack.callContext, parent);
+      }
       currentStack.callContext.indexedArgs = [];
       currentStack.callContext.namedArgs = {};
       if (ret === true) {

@@ -13,4 +13,9 @@ export default {
     }),
     process.env.DEBUG === 'false' && terser(),
   ],
+  onwarn(warning, warn) {
+    // this is caused by TS decorators
+    if (warning.code === 'THIS_IS_UNDEFINED') return;
+    warn(warning);
+  },
 };

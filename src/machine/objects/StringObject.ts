@@ -5,6 +5,7 @@ import { IntegerObject } from './IntegerObject';
 import { BooleanObject } from './BooleanObject';
 import { CallableContext } from '../CallableContext';
 import { IterableObject } from './IterableObject';
+import { nativeFunction, param } from '../NativeTypes';
 
 function isSpace(c: string): boolean {
   return c === ' ' || c === '\t' || c === '\r' || c === '\n';
@@ -388,9 +389,8 @@ export class StringObject extends ContainerObject {
   }
 
   // eslint-disable-next-line @typescript-eslint/camelcase
-  public partition(part: BaseObject, left: boolean) {
-    const partVal = StringObject.toString(part, 'part');
-    const pos = left ? this.value.indexOf(partVal) : this.value.lastIndexOf(partVal);
+  public partitionBoth(part: string, left: boolean) {
+    const pos = left ? this.value.indexOf(part) : this.value.lastIndexOf(part);
     if (pos <= 0) {
       if (left) {
         return BaseObject.createTuple([this, new StringObject(''), new StringObject('')]);
@@ -398,17 +398,22 @@ export class StringObject extends ContainerObject {
         return BaseObject.createTuple([new StringObject(''), new StringObject(''), this]);
       }
     }
-    return BaseObject.createTuple([new StringObject(this.value.substr(0, pos)), part, new StringObject(this.value.substr(pos + partVal.length))]);
+    return BaseObject.createTuple([
+      new StringObject(this.value.substr(0, pos)),
+      new StringObject(part),
+      new StringObject(this.value.substr(pos + part.length)),
+    ]);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_partition(part: BaseObject) {
-    return this.partition(part, true);
+  @nativeFunction
+  public partition(@param('part', StringObject) part: string) {
+    return this.partitionBoth(part, true);
   }
 
   // eslint-disable-next-line @typescript-eslint/camelcase
   public native_rpartition(part: BaseObject) {
-    return this.partition(part, false);
+    const partVal = StringObject.toString(part, 'part');
+    return this.partitionBoth(partVal, false);
   }
 
   // eslint-disable-next-line @typescript-eslint/camelcase

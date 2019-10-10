@@ -7,10 +7,8 @@ import { RealObject } from './RealObject';
 import { BooleanObject } from './BooleanObject';
 import { ExceptionObject } from './ExceptionObject';
 import { ExceptionType } from '../../api/ExceptionType';
+import { CallableIgnore, NativeFunction, NativeReturnType } from '../NativeTypes';
 
-export class CallableIgnore {}
-
-export type NativeReturnType = BaseObject | void | boolean;
 export type InternalFunction = (runContext: RunContext, callContext: CallableContext, parent: BaseObject, returnReg: number) => NativeReturnType;
 
 const STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/gm;
@@ -81,12 +79,13 @@ export function callNativeFunction(func: Function, runContext: RunContext, callC
 }
 
 export class CallableObject extends BaseObject {
-  public constructor(context: FunctionRunContext = null, nativeFunction: Function = null) {
+  public constructor(context: FunctionRunContext = null, nativeFunction: Function = null, newNativeFunction: NativeFunction = null) {
     super();
     const doc = new StringObject((context && context.func && context.func.documentation) || '');
     this.setAttribute('__doc__', doc);
     this.context = context;
     this.nativeFunction = nativeFunction;
+    this.newNativeFunction = newNativeFunction;
   }
 
   getAttribute(name: string): BaseObject {
@@ -98,6 +97,7 @@ export class CallableObject extends BaseObject {
 
   public readonly context: FunctionRunContext;
   public readonly nativeFunction: Function;
+  public readonly newNativeFunction: NativeFunction;
   public isCallable(): boolean {
     return true;
   }

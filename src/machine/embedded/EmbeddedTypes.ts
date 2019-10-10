@@ -16,6 +16,7 @@ import { listFactory } from './List';
 import { exportedFunctions } from './Functions';
 import { pow } from './Math';
 import { getClassObject, getFunctionObject } from './Utils';
+import { ObjectScope } from '../ObjectScope';
 
 const GlobalPropertiesCreators: { [key: string]: () => BaseObject } = {
   abs: () => getFunctionObject(exportedFunctions.abs, 'abs'),
@@ -90,10 +91,10 @@ const GlobalPropertiesCreators: { [key: string]: () => BaseObject } = {
   UnicodeTranslateError: exceptions(ExceptionType.UnicodeTranslateError, 'UnicodeTranslateError'),
 };
 
-export function getEmbeddedType(name: string): BaseObject {
+export const getEmbeddedType = (name: string): BaseObject => {
   const def = GlobalPropertiesCreators[name];
   if (!def) {
     return;
   }
   return def();
-}
+};

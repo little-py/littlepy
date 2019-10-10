@@ -7,7 +7,8 @@
     "declarationDir": "build/types",
     "outDir": "build",
     "types": ["jest"],
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "experimentalDecorators": true
   },
   "include": ["src/**/*", "types/global.d.ts"]
 }

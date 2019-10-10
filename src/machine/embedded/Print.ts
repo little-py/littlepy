@@ -1,7 +1,7 @@
 import { RunContext } from '../RunContext';
 import { CallableContext } from '../CallableContext';
 import { ReferenceObject } from '../objects/ReferenceObject';
-import { CallableIgnore } from '../objects/CallableObject';
+import { CallableIgnore } from '../NativeTypes';
 
 export function print(runContext: RunContext, callContext: CallableContext) {
   let output = '';

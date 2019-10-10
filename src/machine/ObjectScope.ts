@@ -1,6 +1,6 @@
 import { BaseObject } from './objects/BaseObject';
-import { getEmbeddedType } from './embedded/EmbeddedTypes';
 import { PyScope } from '../api/Scope';
+import { getEmbeddedType } from './embedded/EmbeddedTypes';
 
 export class ObjectScope implements PyScope {
   private static idGen = 1;

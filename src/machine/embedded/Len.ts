@@ -1,7 +1,8 @@
 import { ContainerObject } from '../objects/ContainerObject';
-import { CallableIgnore, CallableObject } from '../objects/CallableObject';
+import { CallableObject } from '../objects/CallableObject';
 import { RunContext } from '../RunContext';
 import { CallableContext } from '../CallableContext';
+import { CallableIgnore } from '../NativeTypes';
 
 export function len(runContext: RunContext, callContext: CallableContext) {
   if (callContext.indexedArgs.length !== 1) {
