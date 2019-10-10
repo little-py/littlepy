@@ -7,8 +7,7 @@
     "lint": "eslint . --ext .ts --ignore-pattern node_modules/ --ignore-pattern /lib --max-warnings 0 --fix",
     "lint:publish": "eslint . --ext .ts --ignore-pattern node_modules/ --ignore-pattern /lib --max-warnings 0",
     "test:watch": "jest --watch",
-    "build:publish": "yarn clean && yarn lint:publish && yarn test && yarn build",
-    "postinstall": "ln -s `pwd`/config/pre-commit .git/hooks"
+    "build:publish": "yarn clean && yarn lint:publish && yarn test && yarn build"
   },
   "repository": {
     "url": "https://gitlab.com/littlepy/littlepy"
