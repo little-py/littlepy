@@ -7,6 +7,7 @@ export function getClassObject(object: ClassObject, name: string): ClassObject {
   return object;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createNativeModule(object: any, name: string): ModuleObject {
   const ret = new ModuleObject();
   ret.name = name;

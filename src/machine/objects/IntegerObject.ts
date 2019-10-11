@@ -50,7 +50,7 @@ export class IntegerObject extends BaseObject {
   }
 
   @nativeFunction
-  // eslint-disable-next-line @typescript-eslint/camelcase
+  // eslint-disable-next-line @typescript-eslint/camelcase,@typescript-eslint/no-unused-vars
   public to_bytes(@param('bytes', BaseObject) bytes: BaseObject) {
     BaseObject.throwException(ExceptionType.NotImplementedError, 'to_bytes');
   }

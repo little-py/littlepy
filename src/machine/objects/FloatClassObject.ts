@@ -10,6 +10,7 @@ export class FloatClassObject extends ClassObject {
   }
 
   @nativeFunction
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public fromhex(@param('bytes', BaseObject) bytes: BaseObject) {
     BaseObject.throwException(ExceptionType.NotImplementedError, 'fromhex');
   }

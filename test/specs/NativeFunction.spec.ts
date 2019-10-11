@@ -65,11 +65,13 @@ describe('Native function', () => {
     }
 
     @nativeFunction
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public testWithList(@param('param1', ListObject) param1: ListObject) {
       return new CallableIgnore();
     }
 
     @nativeFunction
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public testWithDictionary(@param('dictionaryParam', DictionaryObject) param1: TupleObject) {
       return new CallableIgnore();
     }
@@ -80,11 +82,13 @@ describe('Native function', () => {
     }
 
     @nativeFunction
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public testWithTuple(@param('tupleParam', TupleObject) param1: TupleObject) {
       return new CallableIgnore();
     }
 
     @nativeFunction
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public testWithIterable(@param('iterable', IterableObject) param1: IterableObject) {
       return new CallableIgnore();
     }

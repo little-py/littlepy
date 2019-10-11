@@ -12,6 +12,7 @@ import { DictionaryObject } from '../objects/DictionaryObject';
 import { TupleObject } from '../objects/TupleObject';
 import { IterableObject } from '../objects/IterableObject';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function nativeWrapper(instance: any, member: MemberWithMetadata) {
   return function(callContext: CallableContext, runContext: RunContextBase) {
     let ignoreParams = false;

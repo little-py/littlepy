@@ -1,6 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { MemberWithMetadata } from '../NativeTypes';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function paramImpl(name: string, type: any, defaultValue: any, callback, args, kwargs) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (target: any, propertyKey: string, parameterIndex: number) => {
@@ -17,6 +18,7 @@ export function paramImpl(name: string, type: any, defaultValue: any, callback, 
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let nativeWrapper: (instance: any, member: MemberWithMetadata) => any;
 
 export function setNativeWrapper(wrapper) {

@@ -188,6 +188,7 @@ export class StringObject extends ContainerObject {
   }
 
   @nativeFunction
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public index(@param('sub', StringObject) sub: any, @param('start', IntegerObject, 0) start: number, @param('end', IntegerObject, -1) end: number) {
     if (end === -1) {
       end = this.value.length;
