@@ -4,6 +4,7 @@ import { ExceptionType } from '../../api/ExceptionType';
 export class BaseObject implements PyObject {
   private static idCounter = 1;
   private _nativeMethods: { [name: string]: BaseObject } = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected static createNativeMethod: (func: Function, instance: any, name: string) => BaseObject;
   protected static throwException: (type: ExceptionType, ...args: string[]) => void;
   protected static createTuple: (items: BaseObject[]) => BaseObject;

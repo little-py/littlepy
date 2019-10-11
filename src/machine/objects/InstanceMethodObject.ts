@@ -8,6 +8,7 @@ export class InstanceMethodObject extends CallableObject {
     super(context, nativeFunction, newNativeFunction);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static createNativeMethod(func: Function, instance: any, name: string): BaseObject {
     if (!func) {
       return null;
