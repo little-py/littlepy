@@ -8,18 +8,21 @@ export class InstanceMethodObject extends CallableObject {
     super(context, nativeFunction, newNativeFunction);
   }
 
+  public static createNativeMethod(func: Function, instance: any, name: string): BaseObject {
+    if (!func) {
+      return null;
+    }
+    const method = func as MemberWithMetadata;
+    if (!method.pythonWrapper) {
+      return null;
+    }
+    const ret = new InstanceMethodObject(null, null, method.pythonWrapper().bind(instance));
+    ret.name = name;
+    return ret;
+  }
+
   public static setCreateNativeMethod() {
-    BaseObject.createNativeMethod = (func: Function): BaseObject => new InstanceMethodObject(null, func);
-    BaseObject.createNewNativeMethod = (func: Function, instance: any): BaseObject => {
-      if (!func) {
-        return null;
-      }
-      const method = func as MemberWithMetadata;
-      if (!method.pythonWrapper) {
-        return null;
-      }
-      return new InstanceMethodObject(null, null, method.pythonWrapper().bind(instance));
-    };
+    BaseObject.createNativeMethod = InstanceMethodObject.createNativeMethod;
   }
 }
 

@@ -10,6 +10,7 @@ import { BooleanObject } from '../objects/BooleanObject';
 import { ListObject } from '../objects/ListObject';
 import { DictionaryObject } from '../objects/DictionaryObject';
 import { TupleObject } from '../objects/TupleObject';
+import { IterableObject } from '../objects/IterableObject';
 
 export function nativeWrapper(instance: any, member: MemberWithMetadata) {
   return function(callContext: CallableContext, runContext: RunContextBase) {
@@ -32,6 +33,7 @@ export function nativeWrapper(instance: any, member: MemberWithMetadata) {
           return callContext.onFinish;
         }
         if (args) {
+          ignoreParams = true;
           return callContext.indexedArgs.map(a => a.object);
         }
         if (kwargs) {
@@ -81,8 +83,11 @@ export function nativeWrapper(instance: any, member: MemberWithMetadata) {
           }
         } else if (type === TupleObject) {
           if (!(sourceArg instanceof TupleObject)) {
-            runContext.raiseException(new ExceptionObject(ExceptionType.TypeError, [], name));
-            return true;
+            throw new ExceptionObject(ExceptionType.TypeError, [], name);
+          }
+        } else if (type === IterableObject) {
+          if (!(sourceArg instanceof IterableObject)) {
+            throw new ExceptionObject(ExceptionType.TypeError, [], name);
           }
         }
         return sourceArg;

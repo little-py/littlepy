@@ -445,6 +445,8 @@ export class CodeGenerator {
         case OperatorType.Modulus:
           opType = InstructionType.Mod;
           break;
+        // not implemented yet
+        /* istanbul ignore next */
         case OperatorType.At:
           opType = InstructionType.At;
           break;
@@ -498,6 +500,8 @@ export class CodeGenerator {
           break;
       }
     }
+    // safety check
+    /* istanbul ignore next */
     if (opType === InstructionType.Pass) {
       ret.success = false;
       compilerContext.addError(PyErrorType.UnknownBinaryOperator, op);
@@ -508,28 +512,9 @@ export class CodeGenerator {
     return ret;
   }
 
-  private static prepareReference(
-    code: GeneratedCode,
-    identifiers: string[],
-    length: number,
-    compilerContext: CompilerContext,
-    position: TokenPosition,
-  ) {
-    code.add(InstructionType.ReadObject, position, compilerContext.getIdentifier(identifiers[0]), 0);
-    for (let i = 1; i < length; i++) {
-      code.add(InstructionType.ReadProperty, position, compilerContext.getIdentifier(identifiers[i]), 0, 0);
-    }
-  }
-
   public static createReference(identifiers: string[], compilerContext: CompilerContext, position: TokenPosition) {
     const ret = new GeneratedCode();
-    if (identifiers.length > 1) {
-      CodeGenerator.prepareReference(ret, identifiers, identifiers.length - 1, compilerContext, position);
-      ret.add(InstructionType.Identifier, position, 1, compilerContext.getIdentifier(identifiers[identifiers.length - 1]));
-      ret.add(InstructionType.CreatePropertyRef, position, 0, 1, 0);
-    } else {
-      ret.add(InstructionType.CreateVarRef, position, compilerContext.getIdentifier(identifiers[0]), 0, ReferenceScope.Default);
-    }
+    ret.add(InstructionType.CreateVarRef, position, compilerContext.getIdentifier(identifiers[0]), 0, ReferenceScope.Default);
     ret.success = true;
     return ret;
   }

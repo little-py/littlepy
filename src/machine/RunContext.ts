@@ -1392,7 +1392,10 @@ export class RunContext extends RunContextBase implements PyMachine {
         this.stepReadArrayRange(current, functionStack);
         break;
       default:
+        // safety check
+        /* istanbul ignore next */
         this.onRuntimeError();
+        /* istanbul ignore next */
         break;
     }
   }
@@ -1633,15 +1636,12 @@ export class RunContext extends RunContextBase implements PyMachine {
       if (func.newNativeFunction) {
         ret = func.newNativeFunction(currentStack.callContext, this);
       } else {
-        ret = callNativeFunction(func.nativeFunction, this, currentStack.callContext, parent);
+        ret = callNativeFunction(func.nativeFunction, parent);
       }
       currentStack.callContext.indexedArgs = [];
       currentStack.callContext.namedArgs = {};
       if (ret === true) {
         return;
-      }
-      if (!ret) {
-        ret = this.getNoneObject();
       }
       onFinish(ret, null);
       return;
@@ -2149,22 +2149,22 @@ export class RunContext extends RunContextBase implements PyMachine {
         break;
       case InstructionType.BinOr:
         if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
-          return leftObj.native_union(rightObj);
+          return leftObj.union(rightObj);
         }
         break;
       case InstructionType.BinAnd:
         if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
-          return leftObj.native_intersection(rightObj);
+          return leftObj.intersection(rightObj);
         }
         break;
       case InstructionType.Sub:
         if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
-          return leftObj.native_difference(rightObj);
+          return leftObj.difference(rightObj);
         }
         break;
       case InstructionType.BinXor:
         if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
-          return leftObj.native_symmetric_difference(rightObj);
+          return leftObj.symmetric_difference(rightObj);
         }
         break;
     }
@@ -2187,11 +2187,6 @@ export class RunContext extends RunContextBase implements PyMachine {
 
   private realToObject(value: number): BaseObject {
     return new RealObject(value);
-  }
-
-  public raiseNullException() {
-    const exception = new ExceptionObject(ExceptionType.ReferenceError);
-    this.raiseException(exception);
   }
 
   public raiseUnknownIdentifier(identifier: string) {
@@ -2221,11 +2216,6 @@ export class RunContext extends RunContextBase implements PyMachine {
 
   public raiseFunctionDuplicateArgumentError() {
     const exception = new ExceptionObject(ExceptionType.FunctionDuplicateArgumentError);
-    this.raiseException(exception);
-  }
-
-  public raiseFunctionArgumentCountMismatch() {
-    const exception = new ExceptionObject(ExceptionType.FunctionArgumentCountMismatch);
     this.raiseException(exception);
   }
 

@@ -2,6 +2,8 @@ import { BaseObject } from './BaseObject';
 import { RunContext } from '../RunContext';
 import { StackEntry } from './StackEntry';
 import { CallableContext } from '../CallableContext';
+import { CallableIgnore, nativeFunction, param, RunContextBase } from '../NativeTypes';
+import { ExceptionType } from '../../api/ExceptionType';
 
 export class GeneratorObject extends BaseObject {
   public constructor(stackHead: StackEntry, stackTail: StackEntry) {
@@ -15,16 +17,17 @@ export class GeneratorObject extends BaseObject {
   public pendingValue: BaseObject;
   public finished = false;
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native___iter__() {
+  @nativeFunction
+  public __iter__() {
     return this;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native___next__(runContext: RunContext, callContext: CallableContext) {
+  @nativeFunction
+  public __next__(@param('', RunContextBase) runContext: RunContext, @param('', CallableContext) callContext: CallableContext) {
     if (this.finished) {
-      runContext.raiseStopIteration();
-      return true;
+      BaseObject.throwException(ExceptionType.StopIteration);
+      /* istanbul ignore next */
+      return;
     }
     if (this.pendingValue) {
       const ret = this.pendingValue;
@@ -34,6 +37,6 @@ export class GeneratorObject extends BaseObject {
     this.stackHead.parent = runContext.getStackEntry();
     this.stackHead.onFinish = ret => callContext.onFinish(ret, null);
     runContext.setStackEntry(this.stackTail);
-    return true;
+    return new CallableIgnore();
   }
 }

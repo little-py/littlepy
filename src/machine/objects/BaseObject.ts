@@ -3,9 +3,8 @@ import { ExceptionType } from '../../api/ExceptionType';
 
 export class BaseObject implements PyObject {
   private static idCounter = 1;
-  private static _nativeMethods: { [name: string]: BaseObject } = {};
-  protected static createNativeMethod: (func: Function) => BaseObject;
-  protected static createNewNativeMethod: (func: Function, instance: any) => BaseObject;
+  private _nativeMethods: { [name: string]: BaseObject } = {};
+  protected static createNativeMethod: (func: Function, instance: any, name: string) => BaseObject;
   protected static throwException: (type: ExceptionType, ...args: string[]) => void;
   protected static createTuple: (items: BaseObject[]) => BaseObject;
   protected static createList: (items: BaseObject[]) => BaseObject;
@@ -67,18 +66,12 @@ export class BaseObject implements PyObject {
 
   private getNativeMethod(name: string): BaseObject {
     const fullName = `${this.getClassName()}.${name}`;
-    if (!BaseObject._nativeMethods[fullName]) {
-      const newNativeMethod = BaseObject.createNewNativeMethod(this[name], this);
+    if (!this._nativeMethods[fullName]) {
+      const newNativeMethod = BaseObject.createNativeMethod(this[name], this, name);
       if (newNativeMethod) {
-        BaseObject._nativeMethods[fullName] = newNativeMethod;
-      } else {
-        const func = this['native_' + name];
-        if (!func) {
-          return null;
-        }
-        BaseObject._nativeMethods[fullName] = BaseObject.createNativeMethod(func);
+        this._nativeMethods[fullName] = newNativeMethod;
       }
     }
-    return BaseObject._nativeMethods[fullName];
+    return this._nativeMethods[fullName];
   }
 }

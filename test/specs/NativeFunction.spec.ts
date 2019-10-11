@@ -25,6 +25,7 @@ import { FrozenSetObject } from '../../src/machine/objects/FrozenSetObject';
 import { NoneObject } from '../../src/machine/objects/NoneObject';
 import { setNativeWrapper } from '../../src/machine/embedded/NativeFunction';
 import { nativeWrapper } from '../../src/machine/embedded/NativeWrapper';
+import {IterableObject} from "../../src/machine/objects/IterableObject";
 
 setNativeWrapper(nativeWrapper);
 
@@ -80,6 +81,11 @@ describe('Native function', () => {
 
     @nativeFunction
     public testWithTuple(@param('tupleParam', TupleObject) param1: TupleObject) {
+      return new CallableIgnore();
+    }
+
+    @nativeFunction
+    public testWithIterable(@param('iterable', IterableObject) param1: IterableObject) {
       return new CallableIgnore();
     }
 
@@ -427,7 +433,7 @@ describe('Native function', () => {
     expect(raisedException.exceptionType).toEqual(ExceptionType.TypeError);
   });
 
-  it('should throw exception on non-bool argument', () => {
+  it('should throw exception on non-dictionary argument', () => {
     const test = new NativeTest();
     const method = (test.testWithDictionary as unknown) as MemberWithMetadata;
     let raisedException: ExceptionObject;
@@ -448,7 +454,7 @@ describe('Native function', () => {
     expect(raisedException.exceptionType).toEqual(ExceptionType.TypeError);
   });
 
-  it('should throw exception on non-bool argument', () => {
+  it('should throw exception on non-tuple argument', () => {
     const test = new NativeTest();
     const method = (test.testWithTuple as unknown) as MemberWithMetadata;
     let raisedException: ExceptionObject;
@@ -468,6 +474,28 @@ describe('Native function', () => {
     );
     expect(raisedException.exceptionType).toEqual(ExceptionType.TypeError);
     expect(raisedException.params).toEqual(['tupleParam']);
+  });
+
+  it('should throw exception on non-iterable argument', () => {
+    const test = new NativeTest();
+    const method = (test.testWithIterable as unknown) as MemberWithMetadata;
+    let raisedException: ExceptionObject;
+    method.pythonWrapper()(
+      {
+        indexedArgs: [
+          {
+            object: new IntegerObject(20),
+          },
+        ],
+      },
+      {
+        raiseException: exception => {
+          raisedException = exception;
+        },
+      },
+    );
+    expect(raisedException.exceptionType).toEqual(ExceptionType.TypeError);
+    expect(raisedException.params).toEqual(['iterable']);
   });
 
   it('should return any other argument', () => {

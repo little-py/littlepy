@@ -1,15 +1,16 @@
-import { BaseObject } from './BaseObject';
-import { RunContext } from '../RunContext';
-import { ListObject } from './ListObject';
-import { IntegerObject } from './IntegerObject';
-import { StringObject } from './StringObject';
-import { ObjectScope } from '../ObjectScope';
-import { DictionaryObject } from './DictionaryObject';
-import { IterableObject } from './IterableObject';
-import { ReferenceScope } from '../../common/ReferenceScope';
-import { ContainerObject } from './ContainerObject';
-import { TupleObject } from './TupleObject';
-import { ExceptionType } from '../../api/ExceptionType';
+import {BaseObject} from './BaseObject';
+import {RunContext} from '../RunContext';
+import {ListObject} from './ListObject';
+import {IntegerObject} from './IntegerObject';
+import {StringObject} from './StringObject';
+import {ObjectScope} from '../ObjectScope';
+import {DictionaryObject} from './DictionaryObject';
+import {IterableObject} from './IterableObject';
+import {ReferenceScope} from '../../common/ReferenceScope';
+import {ContainerObject} from './ContainerObject';
+import {TupleObject} from './TupleObject';
+import {ExceptionType} from '../../api/ExceptionType';
+import {ExceptionObject} from "./ExceptionObject";
 
 export enum ReferenceType {
   Index = 'Index',
@@ -223,12 +224,24 @@ export class ReferenceObject extends BaseObject {
         if (this.parent instanceof ListObject && this.indexer instanceof IntegerObject) {
           const list = this.parent as ListObject;
           const indexer = this.indexer as IntegerObject;
-          return list.getItem(indexer.value);
+          const ret = list.getItem(indexer.value);
+          if (!ret) {
+            throw new ExceptionObject(ExceptionType.IndexError, [], this.indexer.value.toString());
+          }
+          return ret;
         } else {
           if (this.parent instanceof IterableObject && this.indexer instanceof StringObject) {
-            return this.parent.getItem(this.indexer.value);
+            const ret = this.parent.getItem(this.indexer.value);
+            if (!ret) {
+              runContext.raiseUnknownIdentifier(this.indexer.value);
+            }
+            return ret;
           } else if (this.parent instanceof IterableObject && this.indexer instanceof IntegerObject) {
-            return this.parent.getItem(this.indexer.value);
+            const ret = this.parent.getItem(this.indexer.value);
+            if (!ret) {
+              throw new ExceptionObject(ExceptionType.IndexError, [], this.indexer.value.toString());
+            }
+            return ret;
           }
         }
         break;

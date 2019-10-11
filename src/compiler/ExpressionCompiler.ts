@@ -228,10 +228,13 @@ export class ExpressionCompiler {
         return failedResult;
       }
 
+      // safety check - should never happen - should be ExpectedExpressionValue instead
+      /* istanbul ignore next */
       if (values.length === operators.length) {
         this._compilerContext.addError(PyErrorType.ExpectedRightOperand, operators[operators.length - 1]);
         return failedResult;
       }
+
       let compiledPart = this.compileOperators(values, operators);
       if (!compiledPart.success) {
         return compiledPart;
