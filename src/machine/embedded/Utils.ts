@@ -1,13 +1,25 @@
-import { FunctionObject } from '../objects/FunctionObject';
 import { ClassObject } from '../objects/ClassObject';
-
-export function getFunctionObject(func: Function, name: string): FunctionObject {
-  const ret = new FunctionObject(null, func);
-  ret.name = name;
-  return ret;
-}
+import { ModuleObject } from '../objects/ModuleObject';
+import { InstanceMethodObject } from '../objects/InstanceMethodObject';
 
 export function getClassObject(object: ClassObject, name: string): ClassObject {
   object.name = name;
   return object;
+}
+
+export function createNativeModule(object: any, name: string): ModuleObject {
+  const ret = new ModuleObject();
+  ret.name = name;
+
+  const keys = Object.getOwnPropertyNames(Object.getPrototypeOf(object));
+
+  for (const key of keys) {
+    const func = object[key];
+    const newMethod = InstanceMethodObject.createNativeMethod(func, object, key);
+    if (newMethod) {
+      ret.setAttribute(key, newMethod);
+    }
+  }
+
+  return ret;
 }

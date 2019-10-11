@@ -2,9 +2,9 @@ import { ContainerObject } from './ContainerObject';
 import { BaseObject } from './BaseObject';
 import { StringObject } from './StringObject';
 import { IteratorObject } from './IteratorObject';
-import { ExceptionType } from '../../api/ExceptionType';
 import { BooleanObject } from './BooleanObject';
 import { IterableObject } from './IterableObject';
+import { nativeFunction, param } from '../NativeTypes';
 
 export class FrozenSetObject extends ContainerObject {
   public constructor(items: BaseObject[] = []) {
@@ -26,8 +26,8 @@ export class FrozenSetObject extends ContainerObject {
     return `frozenset({${this.items.map(o => (o instanceof StringObject ? `'${o.toString()}'` : o.toString())).join(', ')}})`;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native___iter__() {
+  @nativeFunction
+  public __iter__() {
     return new IteratorObject(this);
   }
 
@@ -35,13 +35,8 @@ export class FrozenSetObject extends ContainerObject {
     return this.items.length;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_isdisjoint(other: BaseObject) {
-    if (!(other instanceof IterableObject)) {
-      BaseObject.throwException(ExceptionType.TypeError);
-      /* istanbul ignore next */
-      return;
-    }
+  @nativeFunction
+  public isdisjoint(@param('other', IterableObject) other: IterableObject) {
     let found = false;
     for (const item of this.items) {
       for (let i = 0; i < other.getCount(); i++) {
@@ -74,27 +69,17 @@ export class FrozenSetObject extends ContainerObject {
     return true;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_issubset(other: BaseObject) {
-    if (!(other instanceof IterableObject)) {
-      BaseObject.throwException(ExceptionType.TypeError);
-      /* istanbul ignore next */
-      return;
-    }
+  @nativeFunction
+  public issubset(@param('other', IterableObject) other: IterableObject) {
     return new BooleanObject(FrozenSetObject.issubset(this, other));
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  native_issuperset(other: BaseObject) {
-    if (!(other instanceof IterableObject)) {
-      BaseObject.throwException(ExceptionType.TypeError);
-      /* istanbul ignore next */
-      return;
-    }
+  @nativeFunction
+  issuperset(@param('other', IterableObject) other: IterableObject) {
     return new BooleanObject(FrozenSetObject.issubset(other, this));
   }
 
-  public union(ret: FrozenSetObject, other: IterableObject) {
+  protected unionBase(ret: FrozenSetObject, other: IterableObject) {
     for (const item of this.items) {
       ret.items.push(item);
     }
@@ -107,18 +92,12 @@ export class FrozenSetObject extends ContainerObject {
     return ret;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_union(other: BaseObject) {
-    if (!(other instanceof IterableObject)) {
-      BaseObject.throwException(ExceptionType.TypeError);
-      /* istanbul ignore next */
-      return;
-    }
-    const ret = new FrozenSetObject();
-    return this.union(ret, other);
+  @nativeFunction
+  public union(@param('other', IterableObject) other: IterableObject) {
+    return this.unionBase(new FrozenSetObject(), other);
   }
 
-  public intersection(ret: FrozenSetObject, other: IterableObject) {
+  protected intersectionBase(ret: FrozenSetObject, other: IterableObject) {
     for (let i = 0; i < other.getCount(); i++) {
       const item = other.getItem(i);
       if (this.contains(item)) {
@@ -128,18 +107,12 @@ export class FrozenSetObject extends ContainerObject {
     return ret;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_intersection(other: BaseObject) {
-    if (!(other instanceof IterableObject)) {
-      BaseObject.throwException(ExceptionType.TypeError);
-      /* istanbul ignore next */
-      return;
-    }
-    const ret = new FrozenSetObject();
-    return this.intersection(ret, other);
+  @nativeFunction
+  public intersection(@param('other', IterableObject) other: IterableObject) {
+    return this.intersectionBase(new FrozenSetObject(), other);
   }
 
-  public difference(ret: FrozenSetObject, other: IterableObject) {
+  protected differenceBase(ret: FrozenSetObject, other: IterableObject) {
     for (const item of this.items) {
       let found = false;
       for (let i = 0; i < other.getCount(); i++) {
@@ -155,19 +128,13 @@ export class FrozenSetObject extends ContainerObject {
     return ret;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_difference(other: BaseObject) {
-    if (!(other instanceof IterableObject)) {
-      BaseObject.throwException(ExceptionType.TypeError);
-      /* istanbul ignore next */
-      return;
-    }
-    const ret = new FrozenSetObject();
-    return this.difference(ret, other);
+  @nativeFunction
+  public difference(@param('other', IterableObject) other: IterableObject) {
+    return this.differenceBase(new FrozenSetObject(), other);
   }
 
-  public symmetricDifference(ret: FrozenSetObject, other: IterableObject) {
-    this.difference(ret, other);
+  protected symmetricDifferenceBase(ret: FrozenSetObject, other: IterableObject) {
+    this.differenceBase(ret, other);
     for (let i = 0; i < other.getCount(); i++) {
       const item = other.getItem(i);
       if (!this.contains(item)) {
@@ -177,15 +144,10 @@ export class FrozenSetObject extends ContainerObject {
     return ret;
   }
 
+  @nativeFunction
   // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_symmetric_difference(other: BaseObject) {
-    if (!(other instanceof IterableObject)) {
-      BaseObject.throwException(ExceptionType.TypeError);
-      /* istanbul ignore next */
-      return;
-    }
-    const ret = new FrozenSetObject();
-    return this.symmetricDifference(ret, other);
+  public symmetric_difference(@param('other', IterableObject) other: IterableObject) {
+    return this.symmetricDifferenceBase(new FrozenSetObject(), other);
   }
 
   public equals(to: BaseObject): boolean {

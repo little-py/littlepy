@@ -1,5 +1,6 @@
 import { BaseObject } from './BaseObject';
 import { ExceptionType } from '../../api/ExceptionType';
+import { nativeFunction, param } from '../NativeTypes';
 
 export class IntegerObject extends BaseObject {
   public constructor(value: number) {
@@ -42,13 +43,15 @@ export class IntegerObject extends BaseObject {
 
   public readonly value: number;
 
+  @nativeFunction
   // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_bit_length() {
+  public bit_length() {
     BaseObject.throwException(ExceptionType.NotImplementedError, 'bit_length');
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase,@typescript-eslint/no-unused-vars
-  public native_to_bytes(bytes: BaseObject) {
+  @nativeFunction
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  public to_bytes(@param('bytes', BaseObject) bytes: BaseObject) {
     BaseObject.throwException(ExceptionType.NotImplementedError, 'to_bytes');
   }
 }

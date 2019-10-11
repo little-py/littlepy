@@ -40,8 +40,14 @@ import { ReferenceScope } from '../common/ReferenceScope';
 import { FrozenSetObject } from './objects/FrozenSetObject';
 import { embeddedModules } from './embedded/EmbeddedModules';
 import { stringFormat } from './objects/FormatString';
+import { NativeReturnType, RunContextBase } from './NativeTypes';
 
-export class RunContext implements PyMachine {
+import { setNativeWrapper } from './embedded/NativeFunction';
+import { nativeWrapper } from './embedded/NativeWrapper';
+
+setNativeWrapper(nativeWrapper);
+
+export class RunContext extends RunContextBase implements PyMachine {
   private readonly _compiledModules: { [key: string]: CompiledModule };
   private _breakpoints: { [key: string]: boolean } = {};
   private _functions: { [id: string]: FunctionRunContext } = {};
@@ -89,6 +95,7 @@ export class RunContext implements PyMachine {
   }
 
   public constructor(modules: { [key: string]: CompiledModule } = {}, breakpoints: PyBreakpoint[] = []) {
+    super();
     this._compiledModules = modules;
     this.updateBreakpoints(breakpoints);
     this.initializeFunctions();
@@ -1385,7 +1392,10 @@ export class RunContext implements PyMachine {
         this.stepReadArrayRange(current, functionStack);
         break;
       default:
+        // safety check
+        /* istanbul ignore next */
         this.onRuntimeError();
+        /* istanbul ignore next */
         break;
     }
   }
@@ -1620,16 +1630,18 @@ export class RunContext implements PyMachine {
       parent = (parent as SuperProxyObject).classInstance;
     }
 
-    if (func.nativeFunction) {
+    if (func.nativeFunction || func.newNativeFunction) {
       currentStack.callContext.onFinish = onFinish;
-      let ret = callNativeFunction(func.nativeFunction, this, currentStack.callContext, parent);
+      let ret: NativeReturnType;
+      if (func.newNativeFunction) {
+        ret = func.newNativeFunction(currentStack.callContext, this);
+      } else {
+        ret = callNativeFunction(func.nativeFunction, parent);
+      }
       currentStack.callContext.indexedArgs = [];
       currentStack.callContext.namedArgs = {};
       if (ret === true) {
         return;
-      }
-      if (!ret) {
-        ret = this.getNoneObject();
       }
       onFinish(ret, null);
       return;
@@ -2137,22 +2149,22 @@ export class RunContext implements PyMachine {
         break;
       case InstructionType.BinOr:
         if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
-          return leftObj.native_union(rightObj);
+          return leftObj.union(rightObj);
         }
         break;
       case InstructionType.BinAnd:
         if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
-          return leftObj.native_intersection(rightObj);
+          return leftObj.intersection(rightObj);
         }
         break;
       case InstructionType.Sub:
         if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
-          return leftObj.native_difference(rightObj);
+          return leftObj.difference(rightObj);
         }
         break;
       case InstructionType.BinXor:
         if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
-          return leftObj.native_symmetric_difference(rightObj);
+          return leftObj.symmetric_difference(rightObj);
         }
         break;
     }
@@ -2175,11 +2187,6 @@ export class RunContext implements PyMachine {
 
   private realToObject(value: number): BaseObject {
     return new RealObject(value);
-  }
-
-  public raiseNullException() {
-    const exception = new ExceptionObject(ExceptionType.ReferenceError);
-    this.raiseException(exception);
   }
 
   public raiseUnknownIdentifier(identifier: string) {
@@ -2209,11 +2216,6 @@ export class RunContext implements PyMachine {
 
   public raiseFunctionDuplicateArgumentError() {
     const exception = new ExceptionObject(ExceptionType.FunctionDuplicateArgumentError);
-    this.raiseException(exception);
-  }
-
-  public raiseFunctionArgumentCountMismatch() {
-    const exception = new ExceptionObject(ExceptionType.FunctionArgumentCountMismatch);
     this.raiseException(exception);
   }
 

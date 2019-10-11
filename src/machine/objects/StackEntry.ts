@@ -8,6 +8,7 @@ import { RunContext } from '../RunContext';
 import { ReferenceObject } from './ReferenceObject';
 import { GeneratorObject } from './GeneratorObject';
 import { ExceptionObject } from './ExceptionObject';
+import { ExceptionType } from '../../api/ExceptionType';
 
 export enum StackEntryType {
   WhileCycle = 'While',
@@ -31,8 +32,9 @@ export class StackEntry {
   public getReg(num: number, extractRef: boolean, runContext: RunContext): BaseObject {
     let reg = this.regs[num];
     if (!reg) {
-      runContext.raiseNullException();
-      return;
+      // safety check
+      /* istanbul ignore next */
+      throw new ExceptionObject(ExceptionType.ReferenceError);
     }
     if (extractRef && reg instanceof ReferenceObject) {
       reg = reg.getValue(runContext);
@@ -46,7 +48,9 @@ export class StackEntry {
         return i + 1;
       }
     }
-    return -1;
+    // safety check
+    /* istanbul ignore next */
+    throw new ExceptionObject(ExceptionType.SystemError);
   }
 
   public name: string;

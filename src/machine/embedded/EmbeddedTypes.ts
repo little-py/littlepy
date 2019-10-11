@@ -1,42 +1,18 @@
 import { BaseObject } from '../objects/BaseObject';
-import { print } from './Print';
-import { range } from './Range';
 import { exceptions } from './Exceptions';
 import { sys } from './Sys';
 import { ExceptionType } from '../../api/ExceptionType';
-import { len } from './Len';
 import { IntegerClassObject } from '../objects/IntegerClassObject';
 import { FloatClassObject } from '../objects/FloatClassObject';
-import { hash } from './Hash';
-import { setFactory } from './Set';
-import { frozenSetFactory } from './FrozenSet';
-import { dictFactory } from './Dict';
-import { iter } from './Iter';
-import { listFactory } from './List';
 import { exportedFunctions } from './Functions';
-import { pow } from './Math';
-import { getClassObject, getFunctionObject } from './Utils';
+import { getClassObject } from './Utils';
+import { InstanceMethodObject } from '../objects/InstanceMethodObject';
+import { mathFunctions } from './Math';
 
 const GlobalPropertiesCreators: { [key: string]: () => BaseObject } = {
-  abs: () => getFunctionObject(exportedFunctions.abs, 'abs'),
-  all: () => getFunctionObject(exportedFunctions.all, 'all'),
-  any: () => getFunctionObject(exportedFunctions.any, 'any'),
-  chr: () => getFunctionObject(exportedFunctions.chr, 'chr'),
-  min: () => getFunctionObject(exportedFunctions.min, 'min'),
-  max: () => getFunctionObject(exportedFunctions.max, 'max'),
-  sum: () => getFunctionObject(exportedFunctions.sum, 'sum'),
-  pow: () => getFunctionObject(pow, 'pow'),
-  print: () => getFunctionObject(print, 'print'),
-  range: () => getFunctionObject(range, 'range'),
-  len: () => getFunctionObject(len, 'len'),
-  hash: () => getFunctionObject(hash, 'hash'),
-  iter: () => getFunctionObject(iter, 'iter'),
+  pow: () => InstanceMethodObject.createNativeMethod(mathFunctions.pow, mathFunctions, 'pow'),
   int: () => getClassObject(new IntegerClassObject(null), 'int'),
   float: () => getClassObject(new FloatClassObject(null), 'float'),
-  set: setFactory,
-  frozenset: frozenSetFactory,
-  dict: dictFactory,
-  list: listFactory,
   __sys__: sys,
   Exception: exceptions(ExceptionType.Base, 'Exception'),
   SystemExit: exceptions(ExceptionType.SystemExit, 'SystemExit'),
@@ -90,10 +66,14 @@ const GlobalPropertiesCreators: { [key: string]: () => BaseObject } = {
   UnicodeTranslateError: exceptions(ExceptionType.UnicodeTranslateError, 'UnicodeTranslateError'),
 };
 
-export function getEmbeddedType(name: string): BaseObject {
+for (const name of Object.getOwnPropertyNames(Object.getPrototypeOf(exportedFunctions))) {
+  GlobalPropertiesCreators[name] = () => InstanceMethodObject.createNativeMethod(exportedFunctions[name], exportedFunctions, name);
+}
+
+export const getEmbeddedType = (name: string): BaseObject => {
   const def = GlobalPropertiesCreators[name];
   if (!def) {
     return;
   }
   return def();
-}
+};

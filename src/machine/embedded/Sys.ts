@@ -1,25 +1,27 @@
 import { BaseObject } from '../objects/BaseObject';
-import { FunctionObject } from '../objects/FunctionObject';
 import { RunContext } from '../RunContext';
 import { TupleObject } from '../objects/TupleObject';
 import { ExceptionClassObject } from '../objects/ExceptionClassObject';
+import { nativeFunction, param, RunContextBase } from '../NativeTypes';
+import { createNativeModule } from './Utils';
 
-function sysExceptionInfo(runContext: RunContext): TupleObject {
-  const exception = runContext.getCurrentException();
-  let items: BaseObject[];
-  if (exception) {
-    items = [new ExceptionClassObject(null, exception.exceptionType), exception, new BaseObject()];
-  } else {
-    items = [runContext.getNoneObject(), runContext.getNoneObject(), runContext.getNoneObject()];
+class PythonSys {
+  @nativeFunction
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  public exc_info(@param('', RunContextBase) runContext: RunContext): TupleObject {
+    const exception = runContext.getCurrentException();
+    let items: BaseObject[];
+    if (exception) {
+      items = [new ExceptionClassObject(null, exception.exceptionType), exception, new BaseObject()];
+    } else {
+      items = [runContext.getNoneObject(), runContext.getNoneObject(), runContext.getNoneObject()];
+    }
+    return new TupleObject(items);
   }
-  return new TupleObject(items);
 }
 
-export const exceptionInfo = new FunctionObject(null, sysExceptionInfo);
+const sysInstance = new PythonSys();
 
 export const sys = () => {
-  const instance = new BaseObject();
-  instance.name = 'sys';
-  instance.setAttribute('exc_info', exceptionInfo);
-  return instance;
+  return createNativeModule(sysInstance, 'sys');
 };

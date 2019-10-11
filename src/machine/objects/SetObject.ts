@@ -3,7 +3,7 @@ import { StringObject } from './StringObject';
 import { FrozenSetObject } from './FrozenSetObject';
 import { IterableObject } from './IterableObject';
 import { ExceptionType } from '../../api/ExceptionType';
-import { CallableContext } from '../CallableContext';
+import { nativeFunction, param, paramArgs } from '../NativeTypes';
 
 export class SetObject extends FrozenSetObject {
   public constructor(items: BaseObject[] = []) {
@@ -20,57 +20,34 @@ export class SetObject extends FrozenSetObject {
     return `{${this.items.map(o => (o instanceof StringObject ? `'${o.toString()}'` : o.toString())).join(', ')}}`;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_union(other: BaseObject) {
-    if (!(other instanceof IterableObject)) {
-      BaseObject.throwException(ExceptionType.TypeError);
-      /* istanbul ignore next */
-      return;
-    }
-    const ret = new SetObject();
-    return this.union(ret, other);
+  @nativeFunction
+  public union(@param('other', IterableObject) other: IterableObject) {
+    return this.unionBase(new SetObject(), other);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_intersection(other: BaseObject) {
-    if (!(other instanceof IterableObject)) {
-      BaseObject.throwException(ExceptionType.TypeError);
-      /* istanbul ignore next */
-      return;
-    }
-    const ret = new SetObject();
-    return this.intersection(ret, other);
+  @nativeFunction
+  public intersection(@param('other', IterableObject) other: IterableObject) {
+    return this.intersectionBase(new SetObject(), other);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_difference(other: BaseObject) {
-    if (!(other instanceof IterableObject)) {
-      BaseObject.throwException(ExceptionType.TypeError);
-      /* istanbul ignore next */
-      return;
-    }
-    const ret = new SetObject();
-    return this.difference(ret, other);
+  @nativeFunction
+  public difference(@param('other', IterableObject) other: IterableObject) {
+    return this.differenceBase(new SetObject(), other);
   }
 
+  @nativeFunction
   // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_symmetric_difference(other: BaseObject) {
-    if (!(other instanceof IterableObject)) {
-      BaseObject.throwException(ExceptionType.TypeError);
-      /* istanbul ignore next */
-      return;
-    }
-    const ret = new SetObject();
-    return this.symmetricDifference(ret, other);
+  public symmetric_difference(@param('other', IterableObject) other: IterableObject) {
+    return this.symmetricDifferenceBase(new SetObject(), other);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_add(obj: BaseObject) {
+  @nativeFunction
+  public add(@param('obj', BaseObject) obj: BaseObject) {
     this.addItem(obj);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_remove(obj: BaseObject) {
+  @nativeFunction
+  public remove(@param('obj', BaseObject) obj: BaseObject) {
     const pos = this.items.findIndex(r => r.equals(obj));
     if (pos >= 0) {
       this.items.splice(pos, 1);
@@ -79,29 +56,29 @@ export class SetObject extends FrozenSetObject {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_discard(obj: BaseObject) {
+  @nativeFunction
+  public discard(@param('obj', BaseObject) obj: BaseObject) {
     const pos = this.items.findIndex(r => r.equals(obj));
     if (pos >= 0) {
       this.items.splice(pos, 1);
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_update(callContext: CallableContext) {
-    for (const item of callContext.indexedArgs) {
-      if (item.object instanceof IterableObject) {
-        for (let i = 0; i < item.object.getCount(); i++) {
-          this.native_add(item.object.getItem(i));
+  @nativeFunction
+  public update(@paramArgs args: BaseObject[]) {
+    for (const item of args) {
+      if (item instanceof IterableObject) {
+        for (let i = 0; i < item.getCount(); i++) {
+          this.add(item.getItem(i));
         }
       } else {
-        this.native_add(item.object);
+        this.add(item);
       }
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_clear() {
+  @nativeFunction
+  public clear() {
     this.items.splice(0, this.items.length);
   }
 }

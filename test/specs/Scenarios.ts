@@ -1401,6 +1401,36 @@ const scenarios: TestScenario[] = [
   },
   {
     input: `
+      del
+    `,
+    expectedCompilerError: PyErrorType.ExpectedIdentifierForDel,
+  },
+  {
+    input: `
+      with 1
+    `,
+    expectedCompilerError: PyErrorType.WithExpectedAs,
+  },
+  {
+    input: `
+      with
+    `,
+    expectedCompilerError: PyErrorType.ExpectedExpressionValue,
+  },
+  {
+    input: `
+      nonlocal
+    `,
+    expectedCompilerError: PyErrorType.ExpectedOnlyIdentifier,
+  },
+  {
+    input: `
+      a =
+    `,
+    expectedCompilerError: PyErrorType.ExpectedExpressionValue,
+  },
+  {
+    input: `
       a = 20
       del a
       print(a)
@@ -2455,8 +2485,62 @@ line2"""
       print(s[2:3])
       print(s[1:3])
       print(s[1:3][0])
+      print(s[3:2:-1][0])
     `,
-    output: ['(3,)', '(2, 3)', '2'],
+    output: ['(3,)', '(2, 3)', '2', '4'],
+  },
+  {
+    input: `
+      s = [1,2,3,4,5]
+      print(s[2:3])
+      print(s[1:3])
+      print(s[1:3][0])
+      print(s[3:2:-1][0])
+    `,
+    output: ['[3]', '[2, 3]', '2', '4'],
+  },
+  {
+    input: `
+      s = (1,2,3,4,5)
+      print(s['a'])
+    `,
+    expectedException: ExceptionType.UnknownIdentifier,
+    exceptionArgs: ['a'],
+  },
+  {
+    input: `
+      s = (1,2,3,4,5)
+      print(s['a'][0])
+    `,
+    expectedException: ExceptionType.TypeError,
+  },
+  {
+    input: `
+      s = [1,2,3,4,5]
+      print(s['a'][0])
+    `,
+    expectedException: ExceptionType.TypeError,
+  },
+  {
+    input: `
+      s = { 'first': 10, 'second': 20 }
+      print(s[10][0])
+    `,
+    expectedException: ExceptionType.TypeError,
+  },
+  {
+    input: `
+      s = (1,2,3,4,5)
+      print(s[1:3:0][0])
+    `,
+    expectedException: ExceptionType.FunctionArgumentError,
+  },
+  {
+    input: `
+      s = (1,2,3,4,5)
+      print(s['a':3:0][0])
+    `,
+    expectedException: ExceptionType.TypeError,
   },
   {
     input: `
@@ -3554,7 +3638,7 @@ line2"""
     input: `
       print(all(10))
     `,
-    expectedException: ExceptionType.ValueError,
+    expectedException: ExceptionType.TypeError,
   },
   {
     input: `
@@ -3568,7 +3652,7 @@ line2"""
     input: `
       print(any(10))
     `,
-    expectedException: ExceptionType.ValueError,
+    expectedException: ExceptionType.TypeError,
   },
   {
     input: `
@@ -3580,7 +3664,7 @@ line2"""
     input: `
       print(chr('x'))
     `,
-    expectedException: ExceptionType.ValueError,
+    expectedException: ExceptionType.TypeError,
   },
   {
     input: `

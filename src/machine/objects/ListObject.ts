@@ -3,6 +3,7 @@ import { IteratorObject } from './IteratorObject';
 import { ContainerObject } from './ContainerObject';
 import { StringObject } from './StringObject';
 import { ExceptionType } from '../../api/ExceptionType';
+import { nativeFunction, param } from '../NativeTypes';
 
 export class ListObject extends ContainerObject {
   public constructor(values: BaseObject[] = []) {
@@ -59,13 +60,13 @@ export class ListObject extends ContainerObject {
       .join(', ')}]`;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native___iter__() {
+  @nativeFunction
+  public __iter__() {
     return new IteratorObject(this);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_append(element: BaseObject) {
+  @nativeFunction
+  public append(@param('element', BaseObject) element: BaseObject) {
     this.items.push(element);
   }
 }

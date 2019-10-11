@@ -56,6 +56,8 @@ function getAssignmentInstruction(assignmentOperator: Token): InstructionType {
       case DelimiterType.EqualModulus:
         opType = InstructionType.Mod;
         break;
+      // not implemented yet
+      /* istanbul ignore next */
       case DelimiterType.EqualAt:
         opType = InstructionType.At;
         break;
@@ -244,6 +246,8 @@ export class Compiler {
       if (block.type === CompilerBlockType.Module) {
         return true;
       }
+      // safety check -- should never happen
+      /* istanbul ignore next */
       this._compilerContext.addError(PyErrorType.UnexpectedBlockEnd, token);
       return false;
     }

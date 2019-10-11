@@ -2,9 +2,8 @@ import { BaseObject } from './BaseObject';
 import { ContainerObject } from './ContainerObject';
 import { ExceptionType } from '../../api/ExceptionType';
 import { IntegerObject } from './IntegerObject';
-import { BooleanObject } from './BooleanObject';
-import { CallableContext } from '../CallableContext';
 import { IterableObject } from './IterableObject';
+import { nativeFunction, param, paramArgs, paramKwargs } from '../NativeTypes';
 
 function isSpace(c: string): boolean {
   return c === ' ' || c === '\t' || c === '\r' || c === '\n';
@@ -58,76 +57,82 @@ export class StringObject extends ContainerObject {
     return this.value.indexOf(substr) >= 0;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_capitalize(): StringObject {
-    const val = this.value ? this.value[0].toUpperCase() + this.value.substr(1) : '';
-    return new StringObject(val);
+  @nativeFunction
+  public capitalize(): string {
+    return this.value ? this.value[0].toUpperCase() + this.value.substr(1) : '';
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_center(width: BaseObject, fillchar: BaseObject) {
-    const count: number = IntegerObject.toInteger(width, 'width');
-    const chr = fillchar ? StringObject.toString(fillchar, 'fillchar') : ' ';
-    if (this.value.length >= count) {
-      return this;
+  @nativeFunction
+  public center(
+    @param('width', IntegerObject) width: number, //
+    @param('fillchar', StringObject, ' ') fillchar: string,
+  ): string {
+    if (this.value.length >= width) {
+      return this.value;
     }
-    const left = Math.floor((count - this.value.length) / 2);
-    return new StringObject(chr.repeat(left) + this.value + chr.repeat(count - left - this.value.length));
+    const left = Math.floor((width - this.value.length) / 2);
+    return fillchar.repeat(left) + this.value + fillchar.repeat(width - left - this.value.length);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_count(sub: BaseObject, start: BaseObject, end: BaseObject) {
-    const subValue = StringObject.toString(sub, 'sub');
-    const fromValue = start ? IntegerObject.toInteger(start, 'start') : 0;
-    const toValue = (end ? IntegerObject.toInteger(end, 'end') : this.value.length) - subValue.length;
+  @nativeFunction
+  public count(
+    @param('sub', StringObject) sub: string,
+    @param('start', IntegerObject, 0) start: number,
+    @param('end', IntegerObject, -1) end: number,
+  ): number {
+    const from = start;
+    const to = (end < 0 ? this.value.length : end) - sub.length;
     let count = 0;
-    for (let i = fromValue; i < toValue; i++) {
-      if (this.value.substr(i, subValue.length) === subValue) {
+    for (let i = from; i < to; i++) {
+      if (this.value.substr(i, sub.length) === sub) {
         count++;
       }
     }
-    return new IntegerObject(count);
+    return count;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_endswith(sub: BaseObject) {
-    const subValue = StringObject.toString(sub, 'sub');
-    return new BooleanObject(this.value.substr(this.value.length - subValue.length) === subValue);
+  @nativeFunction
+  public endswith(@param('sub', StringObject) sub: string): boolean {
+    return this.value.substr(this.value.length - sub.length) === sub;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_startswith(sub: BaseObject) {
-    const subValue = StringObject.toString(sub, 'sub');
-    return new BooleanObject(this.value.substr(0, subValue.length) === subValue);
+  @nativeFunction
+  public startswith(@param('sub', StringObject) sub: string): boolean {
+    return this.value.substr(0, sub.length) === sub;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_find(sub: BaseObject, start: BaseObject, end: BaseObject) {
-    const subValue = StringObject.toString(sub, 'sub');
-    const startValue = start ? IntegerObject.toInteger(start, 'start') : 0;
-    const endValue = (end ? IntegerObject.toInteger(end, 'end') : this.value.length) - subValue.length;
-    const ret = this.value.indexOf(subValue, startValue);
-    if (ret < startValue || ret > endValue) {
-      return new IntegerObject(-1);
+  @nativeFunction
+  public find(
+    @param('sub', StringObject) sub: string,
+    @param('start', IntegerObject, 0) start: number,
+    @param('end', IntegerObject, -1) end: number,
+  ): number {
+    if (end === -1) {
+      end = this.value.length;
+    }
+    end -= sub.length;
+    const ret = this.value.indexOf(sub, start);
+    if (ret < start || ret > end) {
+      return -1;
     } else {
-      return new IntegerObject(ret);
+      return ret;
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_format(callContext: CallableContext) {
-    const ret = StringObject.applyFormat(
+  @nativeFunction
+  public format(@paramArgs indexed: BaseObject[], @paramKwargs named: { [key: string]: BaseObject }): string {
+    return StringObject.applyFormat(
       this.value,
       i => {
-        const v = callContext.indexedArgs[i];
+        const v = indexed[i];
         if (!v) {
           BaseObject.throwException(ExceptionType.FunctionArgumentError);
         } else {
-          return v.object;
+          return v;
         }
       },
       key => {
-        const v = callContext.namedArgs[key];
+        const v = named[key];
         if (!v) {
           BaseObject.throwException(ExceptionType.FunctionArgumentError);
         } else {
@@ -135,7 +140,6 @@ export class StringObject extends ContainerObject {
         }
       },
     );
-    return new StringObject(ret);
   }
 
   public static applyFormat(format: string, index: (i: number) => BaseObject, key: (k: string) => BaseObject): string {
@@ -183,86 +187,87 @@ export class StringObject extends ContainerObject {
     return ret;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_index(sub: BaseObject, start: BaseObject, end: BaseObject) {
-    const subValue = StringObject.toString(sub, 'sub');
-    const startValue = start ? IntegerObject.toInteger(start, 'start') : 0;
-    const endValue = end ? IntegerObject.toInteger(end, 'end') : this.getCount() - subValue.length;
-    const pos = this.value.indexOf(subValue, startValue);
-    if (pos >= startValue && pos <= endValue) {
-      return new IntegerObject(pos);
+  @nativeFunction
+  public index(@param('sub', StringObject) sub: any, @param('start', IntegerObject, 0) start: number, @param('end', IntegerObject, -1) end: number) {
+    if (end === -1) {
+      end = this.value.length;
+    }
+    end -= sub.length;
+    const pos = this.value.indexOf(sub, start);
+    if (pos >= start && pos <= end) {
+      return pos;
     }
     BaseObject.throwException(ExceptionType.ValueError, 'cannot find element');
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_isalnum() {
-    return new BooleanObject(/^[A-Za-z0-9]+$/.test(this.value));
+  @nativeFunction
+  public isalnum(): boolean {
+    return /^[A-Za-z0-9]+$/.test(this.value);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_isalpha() {
-    return new BooleanObject(/^[A-Za-z]+$/.test(this.value));
+  @nativeFunction
+  public isalpha(): boolean {
+    return /^[A-Za-z]+$/.test(this.value);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_isascii() {
+  @nativeFunction
+  public isascii(): boolean {
     if (!this.value) {
-      return new BooleanObject(false);
+      return false;
     }
     for (let i = 0; i < this.value.length; i++) {
       if (this.value.charCodeAt(i) > 127) {
-        return new BooleanObject(false);
+        return false;
       }
     }
-    return new BooleanObject(true);
+    return true;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_isdecimal() {
-    return new BooleanObject(/^[0-9]+$/.test(this.value));
+  @nativeFunction
+  public isdecimal(): boolean {
+    return /^[0-9]+$/.test(this.value);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_isidentifier() {
-    return new BooleanObject(/^[A-Za-z_][A-Za-z_0-9]*$/.test(this.value));
+  @nativeFunction
+  public isidentifier(): boolean {
+    return /^[A-Za-z_][A-Za-z_0-9]*$/.test(this.value);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_lower() {
-    return new StringObject(this.value.toLowerCase());
+  @nativeFunction
+  public lower(): string {
+    return this.value.toLowerCase();
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_islower() {
+  @nativeFunction
+  public islower(): boolean {
     if (!this.value) {
-      return new BooleanObject(false);
+      return false;
     }
-    return new BooleanObject(this.value === this.value.toLowerCase());
+    return this.value === this.value.toLowerCase();
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_isnumeric() {
-    return new BooleanObject(/^[0-9]+$/.test(this.value));
+  @nativeFunction
+  public isnumeric(): boolean {
+    return /^[0-9]+$/.test(this.value);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_isprintable() {
+  @nativeFunction
+  public isprintable(): boolean {
     if (!this.value) {
-      return new BooleanObject(false);
+      return false;
     }
     for (let i = 0; i < this.value.length; i++) {
       if (this.value.charCodeAt(i) < 20) {
-        return new BooleanObject(false);
+        return false;
       }
     }
-    return new BooleanObject(true);
+    return true;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_isspace() {
+  @nativeFunction
+  public isspace(): boolean {
     if (!this.value) {
-      return new BooleanObject(false);
+      return false;
     }
     for (let i = 0; i < this.value.length; i++) {
       switch (this.value[i]) {
@@ -273,13 +278,13 @@ export class StringObject extends ContainerObject {
           return false;
       }
     }
-    return new BooleanObject(true);
+    return true;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_istitle() {
+  @nativeFunction
+  public istitle(): boolean {
     if (!this.value) {
-      return new BooleanObject(false);
+      return false;
     }
     let waitUpper = true;
     for (let i = 0; i < this.value.length; i++) {
@@ -295,69 +300,63 @@ export class StringObject extends ContainerObject {
       if (waitUpper) {
         const upper = c.toUpperCase() === c;
         if (!upper) {
-          return new BooleanObject(false);
+          return false;
         }
         waitUpper = false;
       } else {
         const lower = c.toLowerCase() === c;
         if (!lower) {
-          return new BooleanObject(false);
+          return false;
         }
       }
     }
-    return new BooleanObject(true);
+    return true;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_isupper() {
+  @nativeFunction
+  public isupper() {
     for (let i = 0; i < this.value.length; i++) {
       const c = this.value[i];
       if (c.toUpperCase() !== c) {
-        return new BooleanObject(false);
+        return false;
       }
     }
-    return new BooleanObject(true);
+    return true;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_join(list: BaseObject) {
-    if (!(list instanceof IterableObject)) {
-      BaseObject.throwException(ExceptionType.TypeError, 'list');
-      return;
-    }
+  @nativeFunction
+  public join(@param('list', IterableObject) list: IterableObject): string {
     if (list.getCount() === 0) {
-      return new StringObject('');
+      return '';
     }
     let ret = list.getItem(0).toString();
     for (let i = 1; i < list.getCount(); i++) {
       ret += this.value + list.getItem(i).toString();
     }
-    return new StringObject(ret);
+    return ret;
   }
 
-  private justify(width: BaseObject, separator: BaseObject, left: boolean) {
-    const widthVal = IntegerObject.toInteger(width, 'width');
-    const sepVal = separator ? StringObject.toString(separator, 'separator') : ' ';
-    const repeat = sepVal.repeat(Math.max(0, widthVal - this.value.length));
-    return new StringObject(left ? this.value + repeat : repeat + this.value);
+  private justifyAny(width: number, separator: string, left: boolean) {
+    const repeat = separator.repeat(Math.max(0, width - this.value.length));
+    return left ? this.value + repeat : repeat + this.value;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_ljust(width: BaseObject, separator: BaseObject) {
-    return this.justify(width, separator, true);
+  @nativeFunction
+  public ljust(@param('width', IntegerObject) width: number, @param('separator', StringObject, ' ') separator: string) {
+    return this.justifyAny(width, separator, true);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_rjust(width: BaseObject, separator: BaseObject) {
-    return this.justify(width, separator, false);
+  @nativeFunction
+  public rjust(@param('width', IntegerObject) width: number, @param('separator', StringObject, ' ') separator: string) {
+    return this.justifyAny(width, separator, false);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_upper() {
-    return new StringObject(this.value.toUpperCase());
+  @nativeFunction
+  public upper(): string {
+    return this.value.toUpperCase();
   }
 
-  private strip(value: string, sep: string, left: boolean) {
+  private stripAny(value: string, sep: string, left: boolean) {
     let ret = value;
     while (ret.length > 0) {
       const c = left ? ret[0] : ret[ret.length - 1];
@@ -369,28 +368,24 @@ export class StringObject extends ContainerObject {
     return ret;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_lstrip(sep: BaseObject) {
-    const sepVal = sep ? StringObject.toString(sep, 'sep') : ' \t\r\n';
-    return new StringObject(this.strip(this.value, sepVal, true));
+  @nativeFunction
+  public lstrip(@param('sep', StringObject, ' \t\r\n') sep: string) {
+    return this.stripAny(this.value, sep, true);
+  }
+
+  @nativeFunction
+  public rstrip(@param('sep', StringObject, ' \t\r\n') sep: string) {
+    return this.stripAny(this.value, sep, false);
+  }
+
+  @nativeFunction
+  public strip(@param('sep', StringObject, ' \t\r\n') sep: string) {
+    return this.stripAny(this.stripAny(this.value, sep, false), sep, true);
   }
 
   // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_rstrip(sep: BaseObject) {
-    const sepVal = sep ? StringObject.toString(sep, 'sep') : ' \t\r\n';
-    return new StringObject(this.strip(this.value, sepVal, false));
-  }
-
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_strip(sep: BaseObject) {
-    const sepVal = sep ? StringObject.toString(sep, 'sep') : ' \t\r\n';
-    return new StringObject(this.strip(this.strip(this.value, sepVal, false), sepVal, true));
-  }
-
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public partition(part: BaseObject, left: boolean) {
-    const partVal = StringObject.toString(part, 'part');
-    const pos = left ? this.value.indexOf(partVal) : this.value.lastIndexOf(partVal);
+  public partitionAny(part: string, left: boolean) {
+    const pos = left ? this.value.indexOf(part) : this.value.lastIndexOf(part);
     if (pos <= 0) {
       if (left) {
         return BaseObject.createTuple([this, new StringObject(''), new StringObject('')]);
@@ -398,66 +393,74 @@ export class StringObject extends ContainerObject {
         return BaseObject.createTuple([new StringObject(''), new StringObject(''), this]);
       }
     }
-    return BaseObject.createTuple([new StringObject(this.value.substr(0, pos)), part, new StringObject(this.value.substr(pos + partVal.length))]);
+    return BaseObject.createTuple([
+      new StringObject(this.value.substr(0, pos)),
+      new StringObject(part),
+      new StringObject(this.value.substr(pos + part.length)),
+    ]);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_partition(part: BaseObject) {
-    return this.partition(part, true);
+  @nativeFunction
+  public partition(@param('part', StringObject) part: string) {
+    return this.partitionAny(part, true);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_rpartition(part: BaseObject) {
-    return this.partition(part, false);
+  @nativeFunction
+  public rpartition(@param('part', StringObject) part: string) {
+    return this.partitionAny(part, false);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_replace(from: BaseObject, to: BaseObject, count: BaseObject) {
-    const fromVal = StringObject.toString(from, 'from');
-    const toVal = StringObject.toString(to, 'to');
-    const countVal = count ? IntegerObject.toInteger(count, 'count') : 1;
+  @nativeFunction
+  public replace(
+    @param('from', StringObject) from: string,
+    @param('to', StringObject) to: string,
+    @param('count', IntegerObject, 1) count: number,
+  ): string {
     let newValue = this.value;
     let replaced = 0;
     for (let pos = 0; pos < newValue.length; ) {
-      const next = newValue.indexOf(fromVal, pos);
+      const next = newValue.indexOf(from, pos);
       if (next < 0) {
         break;
       }
-      newValue = newValue.substr(0, next) + toVal + newValue.substr(next + fromVal.length);
-      pos = next + toVal.length;
+      newValue = newValue.substr(0, next) + to + newValue.substr(next + from.length);
+      pos = next + to.length;
       replaced++;
-      if (replaced >= countVal) {
+      if (replaced >= count) {
         break;
       }
     }
-    return new StringObject(newValue);
+    return newValue;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_rfind(sub: BaseObject, start: BaseObject, end: BaseObject): IntegerObject {
-    const subVal = StringObject.toString(sub, 'sub');
-    const startVal = start ? IntegerObject.toInteger(start, 'start') : 0;
-    const endVal = (end ? IntegerObject.toInteger(end, 'end') : this.value.length) - subVal.length;
-    const newPos = this.value.lastIndexOf(subVal, endVal);
-    if (newPos < 0 || newPos < startVal) {
-      return new IntegerObject(-1);
+  @nativeFunction
+  public rfind(
+    @param('sub', StringObject) sub: string,
+    @param('start', IntegerObject, 0) start: number,
+    @param('end', IntegerObject, -1) end: number,
+  ): number {
+    end = (end === -1 ? this.value.length : end) - sub.length;
+    const newPos = this.value.lastIndexOf(sub, end);
+    if (newPos < 0 || newPos < start) {
+      return -1;
     }
-    return new IntegerObject(newPos);
+    return newPos;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_rindex(sub: BaseObject, start: BaseObject, end: BaseObject) {
-    const pos = this.native_rfind(sub, start, end);
-    if (pos.value === -1) {
+  @nativeFunction
+  public rindex(
+    @param('sub', StringObject) sub: string,
+    @param('start', IntegerObject, 0) start: number,
+    @param('end', IntegerObject, -1) end: number,
+  ): number {
+    const pos = this.rfind(sub, start, end);
+    if (pos === -1) {
       BaseObject.throwException(ExceptionType.ValueError);
     }
     return pos;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  private split(sep: BaseObject, maxsplit: BaseObject, left: boolean) {
-    const sepVal = sep ? StringObject.toString(sep, 'sep') : '';
-    const maxCount = maxsplit ? IntegerObject.toInteger(maxsplit, 'maxsplit') : -1;
+  private splitAny(sep: string, maxCount: number, left: boolean) {
     let last = left ? 0 : this.value.length;
     const values: string[] = [];
     for (let count = 0; ; count++) {
@@ -465,14 +468,14 @@ export class StringObject extends ContainerObject {
       if (maxCount > 0 && count >= maxCount) {
         from = -1;
       } else {
-        if (sepVal) {
+        if (sep) {
           if (left) {
-            from = this.value.indexOf(sepVal, last);
+            from = this.value.indexOf(sep, last);
           } else {
-            from = this.value.lastIndexOf(sepVal, last);
+            from = this.value.lastIndexOf(sep, last);
           }
           if (from >= 0) {
-            to = from + sepVal.length;
+            to = from + sep.length;
           }
         } else {
           if (left) {
@@ -512,11 +515,11 @@ export class StringObject extends ContainerObject {
 
       if (from < 0) {
         if (left) {
-          if (last < (sepVal ? this.value.length + 1 : this.value.length)) {
+          if (last < (sep ? this.value.length + 1 : this.value.length)) {
             values.push(this.value.substr(last));
           }
         } else {
-          if (last > (sepVal ? -1 : 0)) {
+          if (last > (sep ? -1 : 0)) {
             values.unshift(this.value.substr(0, last));
           }
         }
@@ -524,12 +527,12 @@ export class StringObject extends ContainerObject {
       }
 
       if (left) {
-        if (sepVal || from !== last) {
+        if (sep || from !== last) {
           values.push(this.value.substr(last, from - last));
         }
         last = to;
       } else {
-        if (sepVal || from !== last) {
+        if (sep || from !== last) {
           values.unshift(this.value.substr(to, last - to));
         }
         last = from;
@@ -539,18 +542,18 @@ export class StringObject extends ContainerObject {
     return BaseObject.createList(values.map(v => new StringObject(v)));
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_split(sep: BaseObject, maxsplit: BaseObject) {
-    return this.split(sep, maxsplit, true);
+  @nativeFunction
+  public split(@param('sep', StringObject, '') sep: string, @param('maxsplit', IntegerObject, -1) maxsplit: number) {
+    return this.splitAny(sep, maxsplit, true);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_rsplit(sep: BaseObject, maxsplit: BaseObject) {
-    return this.split(sep, maxsplit, false);
+  @nativeFunction
+  public rsplit(@param('sep', StringObject, '') sep: string, @param('maxsplit', IntegerObject, -1) maxsplit: number) {
+    return this.splitAny(sep, maxsplit, false);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_splitlines() {
+  @nativeFunction
+  public splitlines() {
     const ret: StringObject[] = [];
     let last = 0;
     for (let i = 0; ; ) {
@@ -576,8 +579,8 @@ export class StringObject extends ContainerObject {
     return BaseObject.createList(ret);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_swapcase() {
+  @nativeFunction
+  public swapcase() {
     const lower = this.value.toLowerCase();
     const upper = this.value.toUpperCase();
     let ret = '';
@@ -594,8 +597,8 @@ export class StringObject extends ContainerObject {
     return new StringObject(ret);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_title() {
+  @nativeFunction
+  public title() {
     let ret = '';
     let upper = true;
     for (let i = 0; i < this.value.length; i++) {
@@ -615,17 +618,15 @@ export class StringObject extends ContainerObject {
     return new StringObject(ret);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_zfill(width: BaseObject) {
-    const widthVal = IntegerObject.toInteger(width, 'width');
-    if (widthVal <= this.value.length) {
-      return this;
+  @nativeFunction
+  public zfill(@param('width', IntegerObject) width: number): string {
+    if (width <= this.value.length) {
+      return this.value;
     }
     let pos = 0;
     if (this.value[0] === '-' || this.value[0] === '+') {
       pos = 1;
     }
-    const ret = this.value.substr(0, pos) + '0'.repeat(widthVal - this.value.length) + this.value.substr(pos);
-    return new StringObject(ret);
+    return this.value.substr(0, pos) + '0'.repeat(width - this.value.length) + this.value.substr(pos);
   }
 }

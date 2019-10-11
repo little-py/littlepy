@@ -4,118 +4,117 @@ import { StringObject } from './StringObject';
 import { ExceptionType } from '../../api/ExceptionType';
 import { TupleObject } from './TupleObject';
 import { SetObject } from './SetObject';
+import { nativeFunction, param } from '../NativeTypes';
 
 export class DictionaryObject extends ContainerObject {
   public constructor() {
     super();
   }
 
-  private readonly keys: StringObject[] = [];
-  private readonly values: BaseObject[] = [];
+  private readonly _keys: StringObject[] = [];
+  private readonly _values: BaseObject[] = [];
 
   public getCount(): number {
-    return this.keys.length;
+    return this._keys.length;
   }
 
   public getItem(index: string): BaseObject {
     if (typeof index === 'number') {
-      return this.keys[index];
+      return this._keys[index];
     }
-    const pos = this.keys.findIndex(k => k.value === index);
+    const pos = this._keys.findIndex(k => k.value === index);
     if (pos < 0) {
       BaseObject.throwException(ExceptionType.IndexError);
     }
-    return this.values[pos];
+    return this._values[pos];
   }
 
   public contains(value: BaseObject): boolean {
     const name = value.toString();
-    return this.keys.findIndex(n => n.value === name) >= 0;
+    return this._keys.findIndex(n => n.value === name) >= 0;
   }
 
   public setItem(key: string, value: BaseObject) {
-    const pos = this.keys.findIndex(k => k.value === key);
+    const pos = this._keys.findIndex(k => k.value === key);
     if (pos < 0) {
-      this.keys.push(new StringObject(key));
-      this.values.push(value);
+      this._keys.push(new StringObject(key));
+      this._values.push(value);
     } else {
-      this.values[pos] = value;
+      this._values[pos] = value;
     }
   }
 
   public toString(): string {
-    return `{${this.keys
+    return `{${this._keys
       .map((key, index) => {
-        const value = this.values[index];
+        const value = this._values[index];
         return `'${key.value}': ${value instanceof StringObject ? `'${value.toString()}'` : value.toString()}`;
       })
       .join(', ')}}`;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_pop(key: BaseObject, def: BaseObject) {
-    const keyValue = StringObject.toString(key, 'key');
-    const pos = this.keys.findIndex(k => k.value === keyValue);
+  @nativeFunction
+  public pop(@param('key', StringObject) key: string, @param('def', BaseObject, null) def: BaseObject) {
+    const pos = this._keys.findIndex(k => k.value === key);
     if (pos < 0) {
       if (def) {
         return def;
       }
       BaseObject.throwException(ExceptionType.KeyError);
     }
-    const ret = this.values[pos];
-    this.keys.splice(pos, 1);
-    this.values.splice(pos, 1);
+    const ret = this._values[pos];
+    this._keys.splice(pos, 1);
+    this._values.splice(pos, 1);
     return ret;
   }
 
   public removeItem(key: string) {
-    const pos = this.keys.findIndex(k => k.value === key);
+    const pos = this._keys.findIndex(k => k.value === key);
     if (pos < 0) {
       BaseObject.throwException(ExceptionType.KeyError);
     }
-    this.keys.splice(pos, 1);
-    this.values.splice(pos, 1);
+    this._keys.splice(pos, 1);
+    this._values.splice(pos, 1);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_keys() {
-    return new SetObject(this.keys);
+  @nativeFunction
+  public keys() {
+    return new SetObject(this._keys);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_values() {
-    return new SetObject(this.values);
+  @nativeFunction
+  public values() {
+    return new SetObject(this._values);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_get(key: BaseObject, def: BaseObject) {
-    const keyValue = StringObject.toString(key, 'key');
-    const pos = this.keys.findIndex(k => k.value === keyValue);
+  @nativeFunction
+  public get(@param('key', StringObject) key: string, @param('default', BaseObject, null) def: BaseObject) {
+    const pos = this._keys.findIndex(k => k.value === key);
     if (pos < 0) {
       if (def) {
         return def;
       }
       BaseObject.throwException(ExceptionType.KeyError);
     }
-    return this.values[pos];
+    return this._values[pos];
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_clear() {
-    this.keys.splice(0, this.keys.length);
-    this.values.splice(0, this.values.length);
+  @nativeFunction
+  public clear() {
+    this._keys.splice(0, this._keys.length);
+    this._values.splice(0, this._values.length);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native_popitem() {
-    const pos = this.keys.length - 1;
-    const key = this.keys[pos];
+  @nativeFunction
+  public popitem() {
+    const pos = this._keys.length - 1;
+    const key = this._keys[pos];
     if (!key) {
       BaseObject.throwException(ExceptionType.KeyError);
     }
-    const value = this.values[pos];
-    this.keys.splice(pos, 1);
-    this.values.splice(pos, 1);
+    const value = this._values[pos];
+    this._keys.splice(pos, 1);
+    this._values.splice(pos, 1);
     return new TupleObject([key, value]);
   }
 }

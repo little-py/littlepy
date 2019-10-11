@@ -1,6 +1,7 @@
 import { BaseObject } from './BaseObject';
-import { RunContext } from '../RunContext';
 import { IterableObject } from './IterableObject';
+import { nativeFunction } from '../NativeTypes';
+import { ExceptionType } from '../../api/ExceptionType';
 
 export class IteratorObject extends BaseObject {
   private index = 0;
@@ -10,15 +11,16 @@ export class IteratorObject extends BaseObject {
     this.iterableObject = iterableObject;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native___iter__() {
+  @nativeFunction
+  public __iter__() {
     return this;
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public native___next__(runContext: RunContext) {
+  @nativeFunction
+  public __next__() {
     if (this.index >= this.iterableObject.getCount()) {
-      runContext.raiseStopIteration();
+      BaseObject.throwException(ExceptionType.StopIteration);
+      /* istanbul ignore next */
       return;
     }
     return this.iterableObject.getItem(this.index++);
