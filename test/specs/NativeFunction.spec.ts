@@ -25,7 +25,7 @@ import { FrozenSetObject } from '../../src/machine/objects/FrozenSetObject';
 import { NoneObject } from '../../src/machine/objects/NoneObject';
 import { setNativeWrapper } from '../../src/machine/embedded/NativeFunction';
 import { nativeWrapper } from '../../src/machine/embedded/NativeWrapper';
-import {IterableObject} from "../../src/machine/objects/IterableObject";
+import { IterableObject } from '../../src/machine/objects/IterableObject';
 
 setNativeWrapper(nativeWrapper);
 

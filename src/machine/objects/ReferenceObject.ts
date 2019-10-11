@@ -1,16 +1,16 @@
-import {BaseObject} from './BaseObject';
-import {RunContext} from '../RunContext';
-import {ListObject} from './ListObject';
-import {IntegerObject} from './IntegerObject';
-import {StringObject} from './StringObject';
-import {ObjectScope} from '../ObjectScope';
-import {DictionaryObject} from './DictionaryObject';
-import {IterableObject} from './IterableObject';
-import {ReferenceScope} from '../../common/ReferenceScope';
-import {ContainerObject} from './ContainerObject';
-import {TupleObject} from './TupleObject';
-import {ExceptionType} from '../../api/ExceptionType';
-import {ExceptionObject} from "./ExceptionObject";
+import { BaseObject } from './BaseObject';
+import { RunContext } from '../RunContext';
+import { ListObject } from './ListObject';
+import { IntegerObject } from './IntegerObject';
+import { StringObject } from './StringObject';
+import { ObjectScope } from '../ObjectScope';
+import { DictionaryObject } from './DictionaryObject';
+import { IterableObject } from './IterableObject';
+import { ReferenceScope } from '../../common/ReferenceScope';
+import { ContainerObject } from './ContainerObject';
+import { TupleObject } from './TupleObject';
+import { ExceptionType } from '../../api/ExceptionType';
+import { ExceptionObject } from './ExceptionObject';
 
 export enum ReferenceType {
   Index = 'Index',

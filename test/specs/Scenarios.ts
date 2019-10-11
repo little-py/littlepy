@@ -1,5 +1,5 @@
-import {PyErrorType} from '../../src/api/ErrorType';
-import {ExceptionType} from '../../src/api/ExceptionType';
+import { PyErrorType } from '../../src/api/ErrorType';
+import { ExceptionType } from '../../src/api/ExceptionType';
 
 export interface TestScenario {
   input: string;
