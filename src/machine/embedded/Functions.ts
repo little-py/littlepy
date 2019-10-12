@@ -177,7 +177,11 @@ class ExportedFunctions {
   }
 
   @pyFunction
-  len(@pyParam('object') obj: PyObject, @pyParam('', CallableContext) callContext: CallableContext, @pyParam('', RunContextBase) runContext: RunContext) {
+  len(
+    @pyParam('object') obj: PyObject,
+    @pyParam('', CallableContext) callContext: CallableContext,
+    @pyParam('', RunContextBase) runContext: RunContext,
+  ) {
     if (obj instanceof IterableObject) {
       return obj.getCount();
     }

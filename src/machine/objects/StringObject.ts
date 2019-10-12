@@ -189,8 +189,8 @@ export class StringObject extends ContainerObject {
   }
 
   @pyFunction
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public index(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     @pyParam('sub', StringObject) sub: any,
     @pyParam('start', NumberObject, 0) start: number,
     @pyParam('end', NumberObject, -1) end: number,

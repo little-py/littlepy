@@ -1,5 +1,6 @@
 import { MemberWithMetadata } from '../machine/NativeTypes';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function pyParam(name: string, type: any = undefined, defaultValue: any = undefined, callback = false, args = false, kwargs = false) {
   // eslint-disable-next-line
   return (target: any, propertyKey: string, parameterIndex: number) => {
@@ -16,6 +17,7 @@ export function pyParam(name: string, type: any = undefined, defaultValue: any =
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function pyFunction(target: any, propertyKey: string) {
   const member = target[propertyKey] as MemberWithMetadata;
   member.pythonMethod = {
