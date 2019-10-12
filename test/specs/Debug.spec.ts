@@ -1,6 +1,6 @@
 import { compileAndStartModule, compileModule } from './Utils';
 import { RunContext } from '../../src/machine/RunContext';
-import { IntegerObject } from '../../src/machine/objects/IntegerObject';
+import { NumberObject } from '../../src/machine/objects/NumberObject';
 
 describe('Debug flow', () => {
   it('should step from first to second line and initialize two variables', () => {
@@ -138,7 +138,7 @@ describe('Debug flow', () => {
     });
     runContext.startCallModule('main');
     runContext.run();
-    runContext.startCallFunction('main', 'funcToCall', [new IntegerObject(100)]);
+    runContext.startCallFunction('main', 'funcToCall', [new NumberObject(100)]);
     expect(runContext.getUnhandledException()).toBeUndefined();
     expect(runContext.getPosition().row).toEqual(2);
     let errorThrown = false;

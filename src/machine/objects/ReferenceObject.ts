@@ -1,7 +1,5 @@
-import { BaseObject } from './BaseObject';
 import { RunContext } from '../RunContext';
 import { ListObject } from './ListObject';
-import { IntegerObject } from './IntegerObject';
 import { StringObject } from './StringObject';
 import { ObjectScope } from '../ObjectScope';
 import { DictionaryObject } from './DictionaryObject';
@@ -11,6 +9,9 @@ import { ContainerObject } from './ContainerObject';
 import { TupleObject } from './TupleObject';
 import { ExceptionType } from '../../api/ExceptionType';
 import { ExceptionObject } from './ExceptionObject';
+import { PyObject } from '../../api/Object';
+import { getObjectUtils } from '../../api/ObjectUtils';
+import { NumberObject } from './NumberObject';
 
 export enum ReferenceType {
   Index = 'Index',
@@ -19,22 +20,22 @@ export enum ReferenceType {
   Range = 'Range',
 }
 
-export class ReferenceObject extends BaseObject {
-  public readonly parent: BaseObject;
-  public readonly indexer: BaseObject;
+export class ReferenceObject extends PyObject {
+  public readonly parent: PyObject;
+  public readonly indexer: PyObject;
   public readonly referenceType: ReferenceType;
   public readonly scopeType: ReferenceScope;
-  public readonly indexTo: BaseObject;
-  public readonly indexInterval: BaseObject;
+  public readonly indexTo: PyObject;
+  public readonly indexInterval: PyObject;
 
   public constructor(
-    parent: BaseObject,
-    indexer: BaseObject,
+    parent: PyObject,
+    indexer: PyObject,
     type: ReferenceType,
     scope: ReferenceScope,
     runContext: RunContext,
-    inxexTo: BaseObject = null,
-    indexInterval: BaseObject = null,
+    inxexTo: PyObject = null,
+    indexInterval: PyObject = null,
   ) {
     super();
     this.parent = parent;
@@ -70,15 +71,15 @@ export class ReferenceObject extends BaseObject {
           runContext.raiseTypeConversion();
           return;
         }
-        if (!(this.indexer instanceof IntegerObject)) {
+        if (!(this.indexer instanceof NumberObject)) {
           runContext.raiseTypeConversion();
           return;
         }
-        if (!(this.indexTo instanceof IntegerObject)) {
+        if (!(this.indexTo instanceof NumberObject)) {
           runContext.raiseTypeConversion();
           return;
         }
-        if (this.indexInterval && !(this.indexer instanceof IntegerObject)) {
+        if (this.indexInterval && !(this.indexer instanceof NumberObject)) {
           runContext.raiseTypeConversion();
           return;
         }
@@ -119,7 +120,7 @@ export class ReferenceObject extends BaseObject {
         return;
       }
       case ReferenceType.Index: {
-        if (this.indexer instanceof IntegerObject) {
+        if (this.indexer instanceof NumberObject) {
           if (this.parent instanceof ListObject) {
             this.parent.removeItem(this.indexer.value);
             return;
@@ -132,16 +133,14 @@ export class ReferenceObject extends BaseObject {
         }
       }
     }
-    BaseObject.throwException(ExceptionType.ReferenceError);
+    getObjectUtils().throwException(ExceptionType.ReferenceError);
   }
 
-  public setValue(value: BaseObject, runContext: RunContext) {
+  public setValue(value: PyObject, runContext: RunContext) {
     switch (this.referenceType) {
       case ReferenceType.Index: {
-        if (this.parent instanceof ListObject && this.indexer instanceof IntegerObject) {
-          const list = this.parent as ListObject;
-          const indexer = this.indexer as IntegerObject;
-          list.setItem(indexer.value, value);
+        if (this.parent instanceof ListObject && this.indexer instanceof NumberObject) {
+          this.parent.setItem(this.indexer.value, value);
         } else {
           const indexer = this.indexer as StringObject;
           if (this.parent instanceof DictionaryObject) {
@@ -172,9 +171,9 @@ export class ReferenceObject extends BaseObject {
           runContext.raiseTypeConversion();
           return;
         }
-        const from = IntegerObject.toInteger(this.indexer, 'from');
-        const to = IntegerObject.toInteger(this.indexTo, 'to');
-        const step = this.indexInterval ? (this.indexInterval as IntegerObject).value : 1;
+        const from = NumberObject.toNumber(this.indexer, 'from');
+        const to = NumberObject.toNumber(this.indexTo, 'to');
+        const step = this.indexInterval ? (this.indexInterval as NumberObject).value : 1;
         if (step === 0) {
           runContext.raiseFunctionArgumentError();
           return;
@@ -199,7 +198,7 @@ export class ReferenceObject extends BaseObject {
     }
   }
 
-  public getValue(runContext: RunContext): BaseObject {
+  public getValue(runContext: RunContext): PyObject {
     switch (this.referenceType) {
       case ReferenceType.Variable: {
         const name = this.parent as StringObject;
@@ -221,9 +220,9 @@ export class ReferenceObject extends BaseObject {
         return ret;
       }
       case ReferenceType.Index: {
-        if (this.parent instanceof ListObject && this.indexer instanceof IntegerObject) {
+        if (this.parent instanceof ListObject && this.indexer instanceof NumberObject) {
           const list = this.parent as ListObject;
-          const indexer = this.indexer as IntegerObject;
+          const indexer = this.indexer as NumberObject;
           const ret = list.getItem(indexer.value);
           if (!ret) {
             throw new ExceptionObject(ExceptionType.IndexError, [], this.indexer.value.toString());
@@ -236,7 +235,7 @@ export class ReferenceObject extends BaseObject {
               runContext.raiseUnknownIdentifier(this.indexer.value);
             }
             return ret;
-          } else if (this.parent instanceof IterableObject && this.indexer instanceof IntegerObject) {
+          } else if (this.parent instanceof IterableObject && this.indexer instanceof NumberObject) {
             const ret = this.parent.getItem(this.indexer.value);
             if (!ret) {
               throw new ExceptionObject(ExceptionType.IndexError, [], this.indexer.value.toString());
@@ -247,9 +246,9 @@ export class ReferenceObject extends BaseObject {
         break;
       }
       case ReferenceType.Range: {
-        const from = (this.indexer as IntegerObject).value;
-        const to = (this.indexTo as IntegerObject).value;
-        const step = this.indexInterval ? (this.indexInterval as IntegerObject).value : 1;
+        const from = (this.indexer as NumberObject).value;
+        const to = (this.indexTo as NumberObject).value;
+        const step = this.indexInterval ? (this.indexInterval as NumberObject).value : 1;
         if (step === 0) {
           runContext.raiseFunctionArgumentError();
           return;

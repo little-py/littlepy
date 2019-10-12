@@ -1,11 +1,13 @@
-import { BaseObject } from './BaseObject';
 import { RunContext } from '../RunContext';
-import { StackEntry } from './StackEntry';
+import { StackEntry } from '../StackEntry';
 import { CallableContext } from '../CallableContext';
-import { CallableIgnore, nativeFunction, param, RunContextBase } from '../NativeTypes';
+import { CallableIgnore, RunContextBase } from '../NativeTypes';
 import { ExceptionType } from '../../api/ExceptionType';
+import { PyObject } from '../../api/Object';
+import { getObjectUtils } from '../../api/ObjectUtils';
+import { pyFunction, pyParam } from '../../api/Decorators';
 
-export class GeneratorObject extends BaseObject {
+export class GeneratorObject extends PyObject {
   public constructor(stackHead: StackEntry, stackTail: StackEntry) {
     super();
     this.stackHead = stackHead;
@@ -14,18 +16,18 @@ export class GeneratorObject extends BaseObject {
 
   public readonly stackTail: StackEntry;
   public readonly stackHead: StackEntry;
-  public pendingValue: BaseObject;
+  public pendingValue: PyObject;
   public finished = false;
 
-  @nativeFunction
+  @pyFunction
   public __iter__() {
     return this;
   }
 
-  @nativeFunction
-  public __next__(@param('', RunContextBase) runContext: RunContext, @param('', CallableContext) callContext: CallableContext) {
+  @pyFunction
+  public __next__(@pyParam('', RunContextBase) runContext: RunContext, @pyParam('', CallableContext) callContext: CallableContext) {
     if (this.finished) {
-      BaseObject.throwException(ExceptionType.StopIteration);
+      getObjectUtils().throwException(ExceptionType.StopIteration);
       /* istanbul ignore next */
       return;
     }

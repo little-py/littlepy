@@ -1,9 +1,11 @@
 import { PyError } from './Error';
 import { PyFunction } from './Function';
+import { Token } from './Token';
 
-export interface PyModule {
+export abstract class PyModule {
   readonly name: string;
-  readonly id: string;
+  id: string;
   readonly errors: PyError[];
   readonly functions: PyFunction[];
+  readonly tokens: Token[];
 }

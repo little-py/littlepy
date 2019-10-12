@@ -1,4 +1,3 @@
-import { BaseObject } from '../objects/BaseObject';
 import { exceptions } from './Exceptions';
 import { sys } from './Sys';
 import { ExceptionType } from '../../api/ExceptionType';
@@ -6,11 +5,12 @@ import { IntegerClassObject } from '../objects/IntegerClassObject';
 import { FloatClassObject } from '../objects/FloatClassObject';
 import { exportedFunctions } from './Functions';
 import { getClassObject } from './Utils';
-import { InstanceMethodObject } from '../objects/InstanceMethodObject';
 import { mathFunctions } from './Math';
+import { PyObject } from '../../api/Object';
+import { getObjectUtils } from '../../api/ObjectUtils';
 
-const GlobalPropertiesCreators: { [key: string]: () => BaseObject } = {
-  pow: () => InstanceMethodObject.createNativeMethod(mathFunctions.pow, mathFunctions, 'pow'),
+const GlobalPropertiesCreators: { [key: string]: () => PyObject } = {
+  pow: () => getObjectUtils().createNativeMethod(mathFunctions.pow, mathFunctions, 'pow'),
   int: () => getClassObject(new IntegerClassObject(null), 'int'),
   float: () => getClassObject(new FloatClassObject(null), 'float'),
   __sys__: sys,
@@ -67,10 +67,10 @@ const GlobalPropertiesCreators: { [key: string]: () => BaseObject } = {
 };
 
 for (const name of Object.getOwnPropertyNames(Object.getPrototypeOf(exportedFunctions))) {
-  GlobalPropertiesCreators[name] = () => InstanceMethodObject.createNativeMethod(exportedFunctions[name], exportedFunctions, name);
+  GlobalPropertiesCreators[name] = () => getObjectUtils().createNativeMethod(exportedFunctions[name], exportedFunctions, name);
 }
 
-export const getEmbeddedType = (name: string): BaseObject => {
+export const getEmbeddedType = (name: string): PyObject => {
   const def = GlobalPropertiesCreators[name];
   if (!def) {
     return;

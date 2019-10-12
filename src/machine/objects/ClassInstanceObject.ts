@@ -1,11 +1,11 @@
-import { BaseObject } from './BaseObject';
 import { ClassInheritance } from './ClassObject';
 import { FunctionRunContext } from '../FunctionRunContext';
+import { PyObject } from '../../api/Object';
 
-export class ClassInstanceObject extends BaseObject {
+export class ClassInstanceObject extends PyObject {
   public readonly classInheritance: ClassInheritance[];
 
-  public getAttribute(name: string): BaseObject {
+  public getAttribute(name: string): PyObject {
     let ret = this.attributes[name];
     if (ret) {
       return ret;
@@ -21,6 +21,8 @@ export class ClassInstanceObject extends BaseObject {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public constructor(classInheritance: ClassInheritance[], context: FunctionRunContext) {
     super();
-    this.classInheritance = classInheritance;
+    if (classInheritance.length) {
+      this.classInheritance = classInheritance;
+    }
   }
 }

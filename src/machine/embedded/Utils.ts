@@ -1,6 +1,6 @@
 import { ClassObject } from '../objects/ClassObject';
 import { ModuleObject } from '../objects/ModuleObject';
-import { InstanceMethodObject } from '../objects/InstanceMethodObject';
+import { getObjectUtils } from '../../api/ObjectUtils';
 
 export function getClassObject(object: ClassObject, name: string): ClassObject {
   object.name = name;
@@ -16,7 +16,7 @@ export function createNativeModule(object: any, name: string): ModuleObject {
 
   for (const key of keys) {
     const func = object[key];
-    const newMethod = InstanceMethodObject.createNativeMethod(func, object, key);
+    const newMethod = getObjectUtils().createNativeMethod(func, object, key);
     if (newMethod) {
       ret.setAttribute(key, newMethod);
     }

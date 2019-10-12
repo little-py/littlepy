@@ -1,6 +1,6 @@
 import { IterableObject } from './IterableObject';
-import { BaseObject } from './BaseObject';
+import { PyObject } from '../../api/Object';
 
 export abstract class ContainerObject extends IterableObject {
-  abstract contains(value: BaseObject): boolean;
+  abstract contains(value: PyObject): boolean;
 }

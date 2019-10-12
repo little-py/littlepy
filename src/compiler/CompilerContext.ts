@@ -1,4 +1,4 @@
-import { Token, TokenPosition } from './Token';
+import { Token, TokenPosition } from '../api/Token';
 import { CompiledModule } from './CompiledModule';
 import { Literal, LiteralType } from './Literal';
 import { CompilerBlockContext } from './CompilerBlockContext';

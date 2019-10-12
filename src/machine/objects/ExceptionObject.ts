@@ -2,9 +2,9 @@ import { ClassInstanceObject } from './ClassInstanceObject';
 import { ClassInheritance } from './ClassObject';
 import { ExceptionClassObject } from './ExceptionClassObject';
 import { StringObject } from './StringObject';
-import { BaseObject } from './BaseObject';
 import { ExceptionType } from '../../api/ExceptionType';
 import { PyException } from '../../api/Exception';
+import { PyObject } from '../../api/Object';
 
 const MAP_PUBLIC_EXCEPTION_NAME_TO_CODE = {
   BaseException: ExceptionType.Base,
@@ -141,10 +141,12 @@ export class ExceptionObject extends ClassInstanceObject implements PyException 
     super(inherits || [], null);
     this.exceptionType = t;
     this.message = EXCEPTION_DESCRIPTION[this.exceptionType] || '';
-    this.params = params;
+    if (params.length) {
+      this.params = params;
+    }
   }
 
-  getAttribute(name: string): BaseObject {
+  getAttribute(name: string): PyObject {
     switch (name) {
       case 'message':
         return new StringObject(this.message);
@@ -237,12 +239,4 @@ export class ExceptionObject extends ClassInstanceObject implements PyException 
   public readonly exceptionType: ExceptionType;
   public readonly message: string;
   public readonly params: string[];
-
-  public static setThrowExceptionHandler() {
-    BaseObject.throwException = (type: ExceptionType, ...args: string[]) => {
-      throw new ExceptionObject(type, [], ...args);
-    };
-  }
 }
-
-ExceptionObject.setThrowExceptionHandler();

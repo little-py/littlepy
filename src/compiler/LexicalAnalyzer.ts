@@ -1,6 +1,6 @@
 import { LexicalContext } from './LexicalContext';
-import { DelimiterType, OperatorType, Token, TokenType } from './Token';
-import { Keyword, KeywordType } from './Keyword';
+import { DelimiterType, OperatorType, Token, TokenType } from '../api/Token';
+import { Keyword, KeywordType } from '../api/Keyword';
 import { isDigit, isFirstIdentifierChar, isIdentifierChar, isStringMarkerChar } from './Characters';
 import { Literal, LiteralType } from './Literal';
 import { CompiledModule } from './CompiledModule';

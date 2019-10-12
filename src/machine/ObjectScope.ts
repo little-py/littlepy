@@ -1,6 +1,6 @@
-import { BaseObject } from './objects/BaseObject';
 import { PyScope } from '../api/Scope';
 import { getEmbeddedType } from './embedded/EmbeddedTypes';
+import { PyObject } from '../api/Object';
 
 export class ObjectScope implements PyScope {
   private static idGen = 1;
@@ -11,13 +11,13 @@ export class ObjectScope implements PyScope {
   }
 
   public readonly parent: ObjectScope;
-  public readonly objects: { [key: string]: BaseObject } = {};
+  public readonly objects: { [key: string]: PyObject } = {};
   public readonly id: number;
   public readonly name: string;
 
-  public getObjectHook: (name: string) => BaseObject;
+  public getObjectHook: (name: string) => PyObject;
 
-  public getObject(name: string): BaseObject {
+  public getObject(name: string): PyObject {
     if (this.getObjectHook) {
       const ret = this.getObjectHook(name);
       if (ret) {
@@ -45,7 +45,7 @@ export class ObjectScope implements PyScope {
 }
 
 export class GlobalScope extends ObjectScope {
-  public getObject(name: string): BaseObject {
+  public getObject(name: string): PyObject {
     let ret = super.getObject(name);
     if (!ret) {
       ret = getEmbeddedType(name);

@@ -1,7 +1,7 @@
 import { GeneratedCode, Instruction } from '../common/Instructions';
 import { CompilerContext } from './CompilerContext';
-import { OperatorType, Token, TokenPosition, TokenType } from './Token';
-import { KeywordType } from './Keyword';
+import { OperatorType, Token, TokenPosition, TokenType } from '../api/Token';
+import { KeywordType } from '../api/Keyword';
 import { Literal } from './Literal';
 import { CompilerBlockContext, CompilerBlockType } from './CompilerBlockContext';
 import { InstructionType } from '../common/InstructionType';

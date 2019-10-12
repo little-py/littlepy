@@ -1,7 +1,7 @@
 import { PyModule } from './Module';
 import { PyFunction } from './Function';
 
-export interface PyMachinePosition {
+export class PyMachinePosition {
   module: PyModule;
   func: PyFunction;
   column: number;

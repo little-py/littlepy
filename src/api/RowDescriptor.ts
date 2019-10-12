@@ -1,6 +1,6 @@
 import { RowType } from './RowType';
 
-export interface RowDescriptor {
+export class RowDescriptor {
   type: RowType;
   usesVariables?: boolean;
   isInline?: boolean;

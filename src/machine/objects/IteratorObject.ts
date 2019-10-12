@@ -1,9 +1,10 @@
-import { BaseObject } from './BaseObject';
 import { IterableObject } from './IterableObject';
-import { nativeFunction } from '../NativeTypes';
 import { ExceptionType } from '../../api/ExceptionType';
+import { PyObject } from '../../api/Object';
+import { getObjectUtils } from '../../api/ObjectUtils';
+import { pyFunction } from '../../api/Decorators';
 
-export class IteratorObject extends BaseObject {
+export class IteratorObject extends PyObject {
   private index = 0;
   private iterableObject: IterableObject;
   public constructor(iterableObject: IterableObject) {
@@ -11,15 +12,15 @@ export class IteratorObject extends BaseObject {
     this.iterableObject = iterableObject;
   }
 
-  @nativeFunction
+  @pyFunction
   public __iter__() {
     return this;
   }
 
-  @nativeFunction
+  @pyFunction
   public __next__() {
     if (this.index >= this.iterableObject.getCount()) {
-      BaseObject.throwException(ExceptionType.StopIteration);
+      getObjectUtils().throwException(ExceptionType.StopIteration);
       /* istanbul ignore next */
       return;
     }

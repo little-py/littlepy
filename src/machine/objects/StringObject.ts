@@ -1,9 +1,10 @@
-import { BaseObject } from './BaseObject';
 import { ContainerObject } from './ContainerObject';
 import { ExceptionType } from '../../api/ExceptionType';
-import { IntegerObject } from './IntegerObject';
 import { IterableObject } from './IterableObject';
-import { nativeFunction, param, paramArgs, paramKwargs } from '../NativeTypes';
+import { PyObject } from '../../api/Object';
+import { getObjectUtils } from '../../api/ObjectUtils';
+import { NumberObject } from './NumberObject';
+import { pyFunction, pyParam, pyParamArgs, pyParamKwargs } from '../../api/Decorators';
 
 function isSpace(c: string): boolean {
   return c === ' ' || c === '\t' || c === '\r' || c === '\n';
@@ -12,9 +13,9 @@ function isSpace(c: string): boolean {
 export class StringObject extends ContainerObject {
   public readonly value: string;
 
-  public static toString(value: BaseObject, name = ''): string {
+  public static toString(value: PyObject, name = ''): string {
     if (!(value instanceof StringObject)) {
-      BaseObject.throwException(ExceptionType.TypeError, name);
+      getObjectUtils().throwException(ExceptionType.TypeError, name);
       /* istanbul ignore next */
       return;
     }
@@ -30,9 +31,9 @@ export class StringObject extends ContainerObject {
     return this.value.length;
   }
 
-  getItem(index: number | string): BaseObject {
+  getItem(index: number | string): PyObject {
     if (typeof index !== 'number') {
-      BaseObject.throwException(ExceptionType.TypeError, 'index');
+      getObjectUtils().throwException(ExceptionType.TypeError, 'index');
     }
     return new StringObject(this.value[index]);
   }
@@ -45,27 +46,27 @@ export class StringObject extends ContainerObject {
     return this.value;
   }
 
-  public equals(to: BaseObject): boolean | boolean {
+  public equals(to: PyObject): boolean | boolean {
     if (to instanceof StringObject) {
       return this.value === to.value;
     }
     return super.equals(to);
   }
 
-  public contains(value: BaseObject): boolean {
+  public contains(value: PyObject): boolean {
     const substr = value.toString();
     return this.value.indexOf(substr) >= 0;
   }
 
-  @nativeFunction
+  @pyFunction
   public capitalize(): string {
     return this.value ? this.value[0].toUpperCase() + this.value.substr(1) : '';
   }
 
-  @nativeFunction
+  @pyFunction
   public center(
-    @param('width', IntegerObject) width: number, //
-    @param('fillchar', StringObject, ' ') fillchar: string,
+    @pyParam('width', NumberObject) width: number, //
+    @pyParam('fillchar', StringObject, ' ') fillchar: string,
   ): string {
     if (this.value.length >= width) {
       return this.value;
@@ -74,11 +75,11 @@ export class StringObject extends ContainerObject {
     return fillchar.repeat(left) + this.value + fillchar.repeat(width - left - this.value.length);
   }
 
-  @nativeFunction
+  @pyFunction
   public count(
-    @param('sub', StringObject) sub: string,
-    @param('start', IntegerObject, 0) start: number,
-    @param('end', IntegerObject, -1) end: number,
+    @pyParam('sub', StringObject) sub: string,
+    @pyParam('start', NumberObject, 0) start: number,
+    @pyParam('end', NumberObject, -1) end: number,
   ): number {
     const from = start;
     const to = (end < 0 ? this.value.length : end) - sub.length;
@@ -91,21 +92,21 @@ export class StringObject extends ContainerObject {
     return count;
   }
 
-  @nativeFunction
-  public endswith(@param('sub', StringObject) sub: string): boolean {
+  @pyFunction
+  public endswith(@pyParam('sub', StringObject) sub: string): boolean {
     return this.value.substr(this.value.length - sub.length) === sub;
   }
 
-  @nativeFunction
-  public startswith(@param('sub', StringObject) sub: string): boolean {
+  @pyFunction
+  public startswith(@pyParam('sub', StringObject) sub: string): boolean {
     return this.value.substr(0, sub.length) === sub;
   }
 
-  @nativeFunction
+  @pyFunction
   public find(
-    @param('sub', StringObject) sub: string,
-    @param('start', IntegerObject, 0) start: number,
-    @param('end', IntegerObject, -1) end: number,
+    @pyParam('sub', StringObject) sub: string,
+    @pyParam('start', NumberObject, 0) start: number,
+    @pyParam('end', NumberObject, -1) end: number,
   ): number {
     if (end === -1) {
       end = this.value.length;
@@ -119,14 +120,14 @@ export class StringObject extends ContainerObject {
     }
   }
 
-  @nativeFunction
-  public format(@paramArgs indexed: BaseObject[], @paramKwargs named: { [key: string]: BaseObject }): string {
+  @pyFunction
+  public format(@pyParamArgs indexed: PyObject[], @pyParamKwargs named: { [key: string]: PyObject }): string {
     return StringObject.applyFormat(
       this.value,
       i => {
         const v = indexed[i];
         if (!v) {
-          BaseObject.throwException(ExceptionType.FunctionArgumentError);
+          getObjectUtils().throwException(ExceptionType.FunctionArgumentError);
         } else {
           return v;
         }
@@ -134,7 +135,7 @@ export class StringObject extends ContainerObject {
       key => {
         const v = named[key];
         if (!v) {
-          BaseObject.throwException(ExceptionType.FunctionArgumentError);
+          getObjectUtils().throwException(ExceptionType.FunctionArgumentError);
         } else {
           return v;
         }
@@ -142,7 +143,7 @@ export class StringObject extends ContainerObject {
     );
   }
 
-  public static applyFormat(format: string, index: (i: number) => BaseObject, key: (k: string) => BaseObject): string {
+  public static applyFormat(format: string, index: (i: number) => PyObject, key: (k: string) => PyObject): string {
     let ret = '';
     let pos = 0;
     let defaultIndex = 0;
@@ -168,7 +169,7 @@ export class StringObject extends ContainerObject {
         continue;
       }
       const id = format.substr(open + 1, close - open - 1);
-      let obj: BaseObject;
+      let obj: PyObject;
       if (!id) {
         obj = index(defaultIndex++);
       } else if (id.match(/^[0-9]+$/)) {
@@ -187,9 +188,13 @@ export class StringObject extends ContainerObject {
     return ret;
   }
 
-  @nativeFunction
+  @pyFunction
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public index(@param('sub', StringObject) sub: any, @param('start', IntegerObject, 0) start: number, @param('end', IntegerObject, -1) end: number) {
+  public index(
+    @pyParam('sub', StringObject) sub: any,
+    @pyParam('start', NumberObject, 0) start: number,
+    @pyParam('end', NumberObject, -1) end: number,
+  ) {
     if (end === -1) {
       end = this.value.length;
     }
@@ -198,20 +203,20 @@ export class StringObject extends ContainerObject {
     if (pos >= start && pos <= end) {
       return pos;
     }
-    BaseObject.throwException(ExceptionType.ValueError, 'cannot find element');
+    getObjectUtils().throwException(ExceptionType.ValueError, 'cannot find element');
   }
 
-  @nativeFunction
+  @pyFunction
   public isalnum(): boolean {
     return /^[A-Za-z0-9]+$/.test(this.value);
   }
 
-  @nativeFunction
+  @pyFunction
   public isalpha(): boolean {
     return /^[A-Za-z]+$/.test(this.value);
   }
 
-  @nativeFunction
+  @pyFunction
   public isascii(): boolean {
     if (!this.value) {
       return false;
@@ -224,22 +229,22 @@ export class StringObject extends ContainerObject {
     return true;
   }
 
-  @nativeFunction
+  @pyFunction
   public isdecimal(): boolean {
     return /^[0-9]+$/.test(this.value);
   }
 
-  @nativeFunction
+  @pyFunction
   public isidentifier(): boolean {
     return /^[A-Za-z_][A-Za-z_0-9]*$/.test(this.value);
   }
 
-  @nativeFunction
+  @pyFunction
   public lower(): string {
     return this.value.toLowerCase();
   }
 
-  @nativeFunction
+  @pyFunction
   public islower(): boolean {
     if (!this.value) {
       return false;
@@ -247,12 +252,12 @@ export class StringObject extends ContainerObject {
     return this.value === this.value.toLowerCase();
   }
 
-  @nativeFunction
+  @pyFunction
   public isnumeric(): boolean {
     return /^[0-9]+$/.test(this.value);
   }
 
-  @nativeFunction
+  @pyFunction
   public isprintable(): boolean {
     if (!this.value) {
       return false;
@@ -265,7 +270,7 @@ export class StringObject extends ContainerObject {
     return true;
   }
 
-  @nativeFunction
+  @pyFunction
   public isspace(): boolean {
     if (!this.value) {
       return false;
@@ -282,7 +287,7 @@ export class StringObject extends ContainerObject {
     return true;
   }
 
-  @nativeFunction
+  @pyFunction
   public istitle(): boolean {
     if (!this.value) {
       return false;
@@ -314,7 +319,7 @@ export class StringObject extends ContainerObject {
     return true;
   }
 
-  @nativeFunction
+  @pyFunction
   public isupper() {
     for (let i = 0; i < this.value.length; i++) {
       const c = this.value[i];
@@ -325,8 +330,8 @@ export class StringObject extends ContainerObject {
     return true;
   }
 
-  @nativeFunction
-  public join(@param('list', IterableObject) list: IterableObject): string {
+  @pyFunction
+  public join(@pyParam('list', IterableObject) list: IterableObject): string {
     if (list.getCount() === 0) {
       return '';
     }
@@ -342,17 +347,17 @@ export class StringObject extends ContainerObject {
     return left ? this.value + repeat : repeat + this.value;
   }
 
-  @nativeFunction
-  public ljust(@param('width', IntegerObject) width: number, @param('separator', StringObject, ' ') separator: string) {
+  @pyFunction
+  public ljust(@pyParam('width', NumberObject) width: number, @pyParam('separator', StringObject, ' ') separator: string) {
     return this.justifyAny(width, separator, true);
   }
 
-  @nativeFunction
-  public rjust(@param('width', IntegerObject) width: number, @param('separator', StringObject, ' ') separator: string) {
+  @pyFunction
+  public rjust(@pyParam('width', NumberObject) width: number, @pyParam('separator', StringObject, ' ') separator: string) {
     return this.justifyAny(width, separator, false);
   }
 
-  @nativeFunction
+  @pyFunction
   public upper(): string {
     return this.value.toUpperCase();
   }
@@ -369,18 +374,18 @@ export class StringObject extends ContainerObject {
     return ret;
   }
 
-  @nativeFunction
-  public lstrip(@param('sep', StringObject, ' \t\r\n') sep: string) {
+  @pyFunction
+  public lstrip(@pyParam('sep', StringObject, ' \t\r\n') sep: string) {
     return this.stripAny(this.value, sep, true);
   }
 
-  @nativeFunction
-  public rstrip(@param('sep', StringObject, ' \t\r\n') sep: string) {
+  @pyFunction
+  public rstrip(@pyParam('sep', StringObject, ' \t\r\n') sep: string) {
     return this.stripAny(this.value, sep, false);
   }
 
-  @nativeFunction
-  public strip(@param('sep', StringObject, ' \t\r\n') sep: string) {
+  @pyFunction
+  public strip(@pyParam('sep', StringObject, ' \t\r\n') sep: string) {
     return this.stripAny(this.stripAny(this.value, sep, false), sep, true);
   }
 
@@ -389,33 +394,33 @@ export class StringObject extends ContainerObject {
     const pos = left ? this.value.indexOf(part) : this.value.lastIndexOf(part);
     if (pos <= 0) {
       if (left) {
-        return BaseObject.createTuple([this, new StringObject(''), new StringObject('')]);
+        return getObjectUtils().createTuple([this, new StringObject(''), new StringObject('')]);
       } else {
-        return BaseObject.createTuple([new StringObject(''), new StringObject(''), this]);
+        return getObjectUtils().createTuple([new StringObject(''), new StringObject(''), this]);
       }
     }
-    return BaseObject.createTuple([
+    return getObjectUtils().createTuple([
       new StringObject(this.value.substr(0, pos)),
       new StringObject(part),
       new StringObject(this.value.substr(pos + part.length)),
     ]);
   }
 
-  @nativeFunction
-  public partition(@param('part', StringObject) part: string) {
+  @pyFunction
+  public partition(@pyParam('part', StringObject) part: string) {
     return this.partitionAny(part, true);
   }
 
-  @nativeFunction
-  public rpartition(@param('part', StringObject) part: string) {
+  @pyFunction
+  public rpartition(@pyParam('part', StringObject) part: string) {
     return this.partitionAny(part, false);
   }
 
-  @nativeFunction
+  @pyFunction
   public replace(
-    @param('from', StringObject) from: string,
-    @param('to', StringObject) to: string,
-    @param('count', IntegerObject, 1) count: number,
+    @pyParam('from', StringObject) from: string,
+    @pyParam('to', StringObject) to: string,
+    @pyParam('count', NumberObject, 1) count: number,
   ): string {
     let newValue = this.value;
     let replaced = 0;
@@ -434,11 +439,11 @@ export class StringObject extends ContainerObject {
     return newValue;
   }
 
-  @nativeFunction
+  @pyFunction
   public rfind(
-    @param('sub', StringObject) sub: string,
-    @param('start', IntegerObject, 0) start: number,
-    @param('end', IntegerObject, -1) end: number,
+    @pyParam('sub', StringObject) sub: string,
+    @pyParam('start', NumberObject, 0) start: number,
+    @pyParam('end', NumberObject, -1) end: number,
   ): number {
     end = (end === -1 ? this.value.length : end) - sub.length;
     const newPos = this.value.lastIndexOf(sub, end);
@@ -448,15 +453,15 @@ export class StringObject extends ContainerObject {
     return newPos;
   }
 
-  @nativeFunction
+  @pyFunction
   public rindex(
-    @param('sub', StringObject) sub: string,
-    @param('start', IntegerObject, 0) start: number,
-    @param('end', IntegerObject, -1) end: number,
+    @pyParam('sub', StringObject) sub: string,
+    @pyParam('start', NumberObject, 0) start: number,
+    @pyParam('end', NumberObject, -1) end: number,
   ): number {
     const pos = this.rfind(sub, start, end);
     if (pos === -1) {
-      BaseObject.throwException(ExceptionType.ValueError);
+      getObjectUtils().throwException(ExceptionType.ValueError);
     }
     return pos;
   }
@@ -540,20 +545,20 @@ export class StringObject extends ContainerObject {
       }
     }
 
-    return BaseObject.createList(values.map(v => new StringObject(v)));
+    return getObjectUtils().createList(values.map(v => new StringObject(v)));
   }
 
-  @nativeFunction
-  public split(@param('sep', StringObject, '') sep: string, @param('maxsplit', IntegerObject, -1) maxsplit: number) {
+  @pyFunction
+  public split(@pyParam('sep', StringObject, '') sep: string, @pyParam('maxsplit', NumberObject, -1) maxsplit: number) {
     return this.splitAny(sep, maxsplit, true);
   }
 
-  @nativeFunction
-  public rsplit(@param('sep', StringObject, '') sep: string, @param('maxsplit', IntegerObject, -1) maxsplit: number) {
+  @pyFunction
+  public rsplit(@pyParam('sep', StringObject, '') sep: string, @pyParam('maxsplit', NumberObject, -1) maxsplit: number) {
     return this.splitAny(sep, maxsplit, false);
   }
 
-  @nativeFunction
+  @pyFunction
   public splitlines() {
     const ret: StringObject[] = [];
     let last = 0;
@@ -577,10 +582,10 @@ export class StringObject extends ContainerObject {
       }
     }
 
-    return BaseObject.createList(ret);
+    return getObjectUtils().createList(ret);
   }
 
-  @nativeFunction
+  @pyFunction
   public swapcase() {
     const lower = this.value.toLowerCase();
     const upper = this.value.toUpperCase();
@@ -598,7 +603,7 @@ export class StringObject extends ContainerObject {
     return new StringObject(ret);
   }
 
-  @nativeFunction
+  @pyFunction
   public title() {
     let ret = '';
     let upper = true;
@@ -619,8 +624,8 @@ export class StringObject extends ContainerObject {
     return new StringObject(ret);
   }
 
-  @nativeFunction
-  public zfill(@param('width', IntegerObject) width: number): string {
+  @pyFunction
+  public zfill(@pyParam('width', NumberObject) width: number): string {
     if (width <= this.value.length) {
       return this.value;
     }

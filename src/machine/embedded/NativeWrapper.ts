@@ -1,16 +1,15 @@
 import { CallableContext } from '../CallableContext';
 import { CallableIgnore, MemberWithMetadata, NativeFinishCallback, NativeParam, RunContextBase } from '../NativeTypes';
-import { BaseObject } from '../objects/BaseObject';
 import { ExceptionObject } from '../objects/ExceptionObject';
 import { ExceptionType } from '../../api/ExceptionType';
-import { IntegerObject } from '../objects/IntegerObject';
-import { RealObject } from '../objects/RealObject';
+import { NumberObject } from '../objects/NumberObject';
 import { StringObject } from '../objects/StringObject';
 import { BooleanObject } from '../objects/BooleanObject';
 import { ListObject } from '../objects/ListObject';
 import { DictionaryObject } from '../objects/DictionaryObject';
 import { TupleObject } from '../objects/TupleObject';
 import { IterableObject } from '../objects/IterableObject';
+import { PyObject } from '../../api/Object';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function nativeWrapper(instance: any, member: MemberWithMetadata) {
@@ -23,11 +22,11 @@ export function nativeWrapper(instance: any, member: MemberWithMetadata) {
         | number
         | string
         | boolean
-        | BaseObject
+        | PyObject
         | NativeFinishCallback
         | CallableContext
-        | BaseObject[]
-        | { [key: string]: BaseObject }
+        | PyObject[]
+        | { [key: string]: PyObject }
         | RunContextBase => {
         if (isCallback) {
           hasCallback = true;
@@ -47,7 +46,7 @@ export function nativeWrapper(instance: any, member: MemberWithMetadata) {
         if (type === RunContextBase) {
           return runContext;
         }
-        let sourceArg: BaseObject;
+        let sourceArg: PyObject;
         if (callContext.indexedArgs.length > index) {
           sourceArg = callContext.indexedArgs[index].object;
         } else {
@@ -59,11 +58,8 @@ export function nativeWrapper(instance: any, member: MemberWithMetadata) {
             throw new ExceptionObject(ExceptionType.FunctionArgumentError, [], name);
           }
         }
-        if (type === IntegerObject) {
-          return IntegerObject.toInteger(sourceArg, name);
-        }
-        if (type === RealObject) {
-          return RealObject.toReal(sourceArg, name);
+        if (type === NumberObject) {
+          return NumberObject.toNumber(sourceArg, name);
         }
         if (type === StringObject) {
           return StringObject.toString(sourceArg, name);
@@ -111,13 +107,13 @@ export function nativeWrapper(instance: any, member: MemberWithMetadata) {
       }
       switch (typeof ret) {
         case 'number':
-          return new RealObject(ret);
+          return new NumberObject(ret);
         case 'string':
           return new StringObject(ret);
         case 'boolean':
           return new BooleanObject(ret ? 1 : 0);
         default:
-          if (!(ret instanceof BaseObject)) {
+          if (!(ret instanceof PyObject)) {
             runContext.raiseException(new ExceptionObject(ExceptionType.TypeError));
           } else {
             return ret;

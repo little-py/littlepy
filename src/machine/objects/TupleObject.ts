@@ -1,32 +1,28 @@
-import { BaseObject } from './BaseObject';
 import { StringObject } from './StringObject';
 import { ContainerObject } from './ContainerObject';
+import { PyObject } from '../../api/Object';
 
 export class TupleObject extends ContainerObject {
   public getCount(): number {
     return this.items.length;
   }
 
-  public static initTuple() {
-    BaseObject.createTuple = items => new TupleObject(items);
-  }
-
-  public constructor(items: BaseObject[]) {
+  public constructor(items: PyObject[]) {
     super();
     this.items = items;
   }
 
-  public readonly items: BaseObject[];
+  public readonly items: PyObject[];
 
-  public getItem(index: number): BaseObject {
+  public getItem(index: number): PyObject {
     return this.items[index];
   }
 
-  public addItem(obj: BaseObject) {
+  public addItem(obj: PyObject) {
     this.items.push(obj);
   }
 
-  public contains(value: BaseObject): boolean {
+  public contains(value: PyObject): boolean {
     return this.items.findIndex(r => r.equals(value)) >= 0;
   }
 
@@ -43,5 +39,3 @@ export class TupleObject extends ContainerObject {
     return this.items.length === 1 ? `(${items},)` : `(${items})`;
   }
 }
-
-TupleObject.initTuple();

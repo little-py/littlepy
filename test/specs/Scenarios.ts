@@ -169,37 +169,91 @@ const scenarios: TestScenario[] = [
   {
     input: `
       print(1 < 2)
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
       a = 10
       b = 10
-      c = 20
       print(a is b)
+    `,
+    output: ['False'],
+  },
+  {
+    input: `
+      a = 10
       print(a is a)
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      a = 10
+      b = 10
       print(a is not b)
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      a = 10
+      b = 10
       print(a != b)
+    `,
+    output: ['False'],
+  },
+  {
+    input: `
+      a = 10
+      b = 10
       print(a == b)
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
+      a = 10
+      c = 20
       print(a != c)
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
       print(10 <= 10)
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
       print(10 < 10)
+    `,
+    output: ['False'],
+  },
+  {
+    input: `
       print(20 > 10)
+    `,
+    output: ['True'],
+  },
+  {
+    input: `
       print(20 < 10)
+    `,
+    output: ['False'],
+  },
+  {
+    input: `
       print(10 > 10)
+    `,
+    output: ['False'],
+  },
+  {
+    input: `
       print(10 >= 10)
     `,
-    output: [
-      'True', //
-      'False',
-      'True',
-      'True',
-      'False',
-      'True',
-      'True',
-      'True',
-      'False',
-      'True',
-      'False',
-      'False',
-      'True',
-    ],
+    output: ['True'],
   },
   {
     input: `
@@ -605,11 +659,13 @@ const scenarios: TestScenario[] = [
   },
   {
     input: `
-      a = 10
-      if not a < 10:
-        print('ok')
+      a = 1
+      if not a >= 0:
+        print('1')
+      else:
+        print('2')
     `,
-    output: ['ok'],
+    output: ['2'],
   },
   {
     input: `
@@ -3166,6 +3222,12 @@ line2"""
       print({10,20}.intersection({20,30}))
     `,
     output: ['{20}'],
+  },
+  {
+    input: `
+      print({1.2}.intersection({2}))
+    `,
+    output: ['{}'],
   },
   {
     input: `

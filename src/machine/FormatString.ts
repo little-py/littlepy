@@ -1,11 +1,12 @@
-import { BaseObject } from './BaseObject';
-import { DictionaryObject } from './DictionaryObject';
-import { IterableObject } from './IterableObject';
-import { ExceptionType } from '../../api/ExceptionType';
-import { StringObject } from './StringObject';
-import { ExceptionObject } from './ExceptionObject';
+import { DictionaryObject } from './objects/DictionaryObject';
+import { IterableObject } from './objects/IterableObject';
+import { ExceptionType } from '../api/ExceptionType';
+import { StringObject } from './objects/StringObject';
+import { ExceptionObject } from './objects/ExceptionObject';
+import { PyObject } from '../api/Object';
+import { NumberObject } from './objects/NumberObject';
 
-export const stringFormat = (self: StringObject, format: BaseObject) => {
+export const stringFormat = (self: StringObject, format: PyObject) => {
   let dictionary: DictionaryObject;
   let iterable: IterableObject;
   if (format instanceof DictionaryObject) {
@@ -21,7 +22,7 @@ export const stringFormat = (self: StringObject, format: BaseObject) => {
   const ret = self.value.replace(
     /%(?:\(([^)]+)\))?(#|0|-| |\+)?([0-9]+|\*)?(?:\.([0-9]+))?(d|i|o|u|x|X|e|E|f|F|g|G|c|r|s|a|%)/g,
     (_, mapper: string, modifier: string, length: string, precision: string, format: string) => {
-      let arg: BaseObject;
+      let arg: PyObject;
       if (mapper) {
         if (!dictionary) {
           throw new ExceptionObject(ExceptionType.TypeError, [], 'format');
@@ -64,7 +65,7 @@ export const stringFormat = (self: StringObject, format: BaseObject) => {
         case 'F':
         case 'g':
         case 'G': {
-          const number = arg.toReal();
+          const number = NumberObject.toNumber(arg, 'arg');
           const intValue = Math.floor(number);
           const left = intValue.toString();
           let right = (number - intValue).toString().substr(2);

@@ -1,24 +1,24 @@
 import { ContainerObject } from './ContainerObject';
-import { BaseObject } from './BaseObject';
 import { StringObject } from './StringObject';
 import { IteratorObject } from './IteratorObject';
 import { BooleanObject } from './BooleanObject';
 import { IterableObject } from './IterableObject';
-import { nativeFunction, param } from '../NativeTypes';
+import { PyObject } from '../../api/Object';
+import { pyFunction, pyParam } from '../../api/Decorators';
 
 export class FrozenSetObject extends ContainerObject {
-  public constructor(items: BaseObject[] = []) {
+  public constructor(items: PyObject[] = []) {
     super();
     this.items = items;
   }
 
-  protected readonly items: BaseObject[];
+  protected readonly items: PyObject[];
 
-  public getItem(index: number): BaseObject {
+  public getItem(index: number): PyObject {
     return this.items[index];
   }
 
-  public contains(value: BaseObject): boolean {
+  public contains(value: PyObject): boolean {
     return this.items.findIndex(r => r.equals(value)) >= 0;
   }
 
@@ -26,7 +26,7 @@ export class FrozenSetObject extends ContainerObject {
     return `frozenset({${this.items.map(o => (o instanceof StringObject ? `'${o.toString()}'` : o.toString())).join(', ')}})`;
   }
 
-  @nativeFunction
+  @pyFunction
   public __iter__() {
     return new IteratorObject(this);
   }
@@ -35,8 +35,8 @@ export class FrozenSetObject extends ContainerObject {
     return this.items.length;
   }
 
-  @nativeFunction
-  public isdisjoint(@param('other', IterableObject) other: IterableObject) {
+  @pyFunction
+  public isdisjoint(@pyParam('other', IterableObject) other: IterableObject) {
     let found = false;
     for (const item of this.items) {
       for (let i = 0; i < other.getCount(); i++) {
@@ -69,13 +69,13 @@ export class FrozenSetObject extends ContainerObject {
     return true;
   }
 
-  @nativeFunction
-  public issubset(@param('other', IterableObject) other: IterableObject) {
+  @pyFunction
+  public issubset(@pyParam('other', IterableObject) other: IterableObject) {
     return new BooleanObject(FrozenSetObject.issubset(this, other));
   }
 
-  @nativeFunction
-  issuperset(@param('other', IterableObject) other: IterableObject) {
+  @pyFunction
+  issuperset(@pyParam('other', IterableObject) other: IterableObject) {
     return new BooleanObject(FrozenSetObject.issubset(other, this));
   }
 
@@ -92,8 +92,8 @@ export class FrozenSetObject extends ContainerObject {
     return ret;
   }
 
-  @nativeFunction
-  public union(@param('other', IterableObject) other: IterableObject) {
+  @pyFunction
+  public union(@pyParam('other', IterableObject) other: IterableObject) {
     return this.unionBase(new FrozenSetObject(), other);
   }
 
@@ -107,8 +107,8 @@ export class FrozenSetObject extends ContainerObject {
     return ret;
   }
 
-  @nativeFunction
-  public intersection(@param('other', IterableObject) other: IterableObject) {
+  @pyFunction
+  public intersection(@pyParam('other', IterableObject) other: IterableObject) {
     return this.intersectionBase(new FrozenSetObject(), other);
   }
 
@@ -128,8 +128,8 @@ export class FrozenSetObject extends ContainerObject {
     return ret;
   }
 
-  @nativeFunction
-  public difference(@param('other', IterableObject) other: IterableObject) {
+  @pyFunction
+  public difference(@pyParam('other', IterableObject) other: IterableObject) {
     return this.differenceBase(new FrozenSetObject(), other);
   }
 
@@ -144,13 +144,13 @@ export class FrozenSetObject extends ContainerObject {
     return ret;
   }
 
-  @nativeFunction
+  @pyFunction
   // eslint-disable-next-line @typescript-eslint/camelcase
-  public symmetric_difference(@param('other', IterableObject) other: IterableObject) {
+  public symmetric_difference(@pyParam('other', IterableObject) other: IterableObject) {
     return this.symmetricDifferenceBase(new FrozenSetObject(), other);
   }
 
-  public equals(to: BaseObject): boolean {
+  public equals(to: PyObject): boolean {
     if (!(to instanceof FrozenSetObject)) {
       return false;
     }

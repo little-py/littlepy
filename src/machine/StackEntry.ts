@@ -1,14 +1,15 @@
-import { ObjectScope } from '../ObjectScope';
-import { BaseObject } from './BaseObject';
-import { FunctionRunContext } from '../FunctionRunContext';
-import { CallableContext } from '../CallableContext';
-import { Instruction } from '../../common/Instructions';
-import { InstructionType } from '../../common/InstructionType';
-import { RunContext } from '../RunContext';
-import { ReferenceObject } from './ReferenceObject';
-import { GeneratorObject } from './GeneratorObject';
-import { ExceptionObject } from './ExceptionObject';
-import { ExceptionType } from '../../api/ExceptionType';
+import { ObjectScope } from './ObjectScope';
+import { FunctionRunContext } from './FunctionRunContext';
+import { CallableContext } from './CallableContext';
+import { Instruction } from '../common/Instructions';
+import { InstructionType } from '../common/InstructionType';
+import { RunContext } from './RunContext';
+import { ReferenceObject } from './objects/ReferenceObject';
+import { GeneratorObject } from './objects/GeneratorObject';
+import { ExceptionObject } from './objects/ExceptionObject';
+import { ExceptionType } from '../api/ExceptionType';
+import { PyObject } from '../api/Object';
+import { PyStackEntry } from '../api/StackEntry';
 
 export enum StackEntryType {
   WhileCycle = 'While',
@@ -17,7 +18,7 @@ export enum StackEntryType {
   Function = 'Function',
 }
 
-export class StackEntry {
+export class StackEntry implements PyStackEntry {
   public constructor(t: StackEntryType, parent: StackEntry, name: string) {
     this.type = t;
     this.parent = parent;
@@ -25,11 +26,11 @@ export class StackEntry {
     this.functionEntry = t === StackEntryType.Function ? this : parent && parent.functionEntry;
   }
 
-  public setReg(num: number, value: BaseObject) {
+  public setReg(num: number, value: PyObject) {
     this.regs[num] = value;
   }
 
-  public getReg(num: number, extractRef: boolean, runContext: RunContext): BaseObject {
+  public getReg(num: number, extractRef: boolean, runContext: RunContext): PyObject {
     let reg = this.regs[num];
     if (!reg) {
       // safety check
@@ -66,12 +67,12 @@ export class StackEntry {
   public nextPosition: number;
   public trySection: boolean;
   public code: Instruction[];
-  private regs: BaseObject[] = [];
-  public onFinish: (ret: BaseObject, exception: ExceptionObject) => boolean | void | undefined;
+  private regs: PyObject[] = [];
+  public onFinish: (ret: PyObject, exception: ExceptionObject) => boolean | void | undefined;
   public callContext: CallableContext = new CallableContext();
   public finallyHandled: boolean;
   public exceptHandled: boolean;
-  public defaultReturnValue: BaseObject;
+  public defaultReturnValue: PyObject;
   public generatorObject: GeneratorObject;
   public exceptionVariable: string;
 }
