@@ -1,8 +1,21 @@
 import { GeneratedCode } from '../common/Instructions';
 import { LexicalContext } from './LexicalContext';
 import { CompilerContext } from './CompilerContext';
+import { DelimiterType, OperatorType, Token, TokenPosition, TokenType } from '../api/Token';
+import { ArgumentType, createDebugInformation, FunctionArgument, FunctionBody, FunctionType } from '../common/FunctionBody';
+import { CodeGenerator } from './CodeGenerator';
+import { KeywordType } from '../api/Keyword';
+import { ExpressionCompiler } from './ExpressionCompiler';
+import { CompiledModule } from './CompiledModule';
+import { LexicalAnalyzer } from './LexicalAnalyzer';
+import { CompilerBlockContext, CompilerBlockType } from './CompilerBlockContext';
+import { InstructionType } from '../common/InstructionType';
+import { RowDescriptor } from '../api/RowDescriptor';
+import { RowType } from '../api/RowType';
+import { PyErrorType } from '../api/ErrorType';
+import { LiteralType } from './Literal';
+import { ReferenceScope } from '../common/ReferenceScope';
 import {
-  DelimiterType,
   isAssignmentDelimiter,
   isBlockKeyword,
   isColon,
@@ -15,24 +28,7 @@ import {
   isPoint,
   isRightBracket,
   isSemicolon,
-  OperatorType,
-  Token,
-  TokenPosition,
-  TokenType,
-} from './Token';
-import { ArgumentType, createDebugInformation, FunctionArgument, FunctionBody, FunctionType } from '../common/FunctionBody';
-import { CodeGenerator } from './CodeGenerator';
-import { KeywordType } from './Keyword';
-import { ExpressionCompiler } from './ExpressionCompiler';
-import { CompiledModule } from './CompiledModule';
-import { LexicalAnalyzer } from './LexicalAnalyzer';
-import { CompilerBlockContext, CompilerBlockType } from './CompilerBlockContext';
-import { InstructionType } from '../common/InstructionType';
-import { RowDescriptor } from '../api/RowDescriptor';
-import { RowType } from '../api/RowType';
-import { PyErrorType } from '../api/ErrorType';
-import { LiteralType } from './Literal';
-import { ReferenceScope } from '../common/ReferenceScope';
+} from './TokenUtils';
 
 function getAssignmentInstruction(assignmentOperator: Token): InstructionType {
   let opType = InstructionType.Pass;

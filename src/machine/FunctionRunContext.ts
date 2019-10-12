@@ -1,9 +1,9 @@
 import { FunctionBody } from '../common/FunctionBody';
 import { ObjectScope } from './ObjectScope';
-import { BaseObject } from './objects/BaseObject';
+import { PyObject } from '../api/Object';
 
 export class FunctionRunContext {
   public scope: ObjectScope;
   public func: FunctionBody;
-  public defaultValues: BaseObject[];
+  public defaultValues: PyObject[];
 }

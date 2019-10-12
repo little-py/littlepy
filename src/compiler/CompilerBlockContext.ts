@@ -1,5 +1,5 @@
 import { GeneratedCode } from '../common/Instructions';
-import { TokenPosition } from './Token';
+import { TokenPosition } from '../api/Token';
 import { ReferenceScope } from '../common/ReferenceScope';
 
 export enum CompilerBlockType {

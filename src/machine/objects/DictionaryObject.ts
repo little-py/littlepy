@@ -1,10 +1,11 @@
-import { BaseObject } from './BaseObject';
 import { ContainerObject } from './ContainerObject';
 import { StringObject } from './StringObject';
 import { ExceptionType } from '../../api/ExceptionType';
 import { TupleObject } from './TupleObject';
 import { SetObject } from './SetObject';
-import { nativeFunction, param } from '../NativeTypes';
+import { PyObject } from '../../api/Object';
+import { getObjectUtils } from '../../api/ObjectUtils';
+import { pyFunction, pyParam } from '../../api/Decorators';
 
 export class DictionaryObject extends ContainerObject {
   public constructor() {
@@ -12,29 +13,29 @@ export class DictionaryObject extends ContainerObject {
   }
 
   private readonly _keys: StringObject[] = [];
-  private readonly _values: BaseObject[] = [];
+  private readonly _values: PyObject[] = [];
 
   public getCount(): number {
     return this._keys.length;
   }
 
-  public getItem(index: string): BaseObject {
+  public getItem(index: string): PyObject {
     if (typeof index === 'number') {
       return this._keys[index];
     }
     const pos = this._keys.findIndex(k => k.value === index);
     if (pos < 0) {
-      BaseObject.throwException(ExceptionType.IndexError);
+      getObjectUtils().throwException(ExceptionType.IndexError);
     }
     return this._values[pos];
   }
 
-  public contains(value: BaseObject): boolean {
+  public contains(value: PyObject): boolean {
     const name = value.toString();
     return this._keys.findIndex(n => n.value === name) >= 0;
   }
 
-  public setItem(key: string, value: BaseObject) {
+  public setItem(key: string, value: PyObject) {
     const pos = this._keys.findIndex(k => k.value === key);
     if (pos < 0) {
       this._keys.push(new StringObject(key));
@@ -53,14 +54,14 @@ export class DictionaryObject extends ContainerObject {
       .join(', ')}}`;
   }
 
-  @nativeFunction
-  public pop(@param('key', StringObject) key: string, @param('def', BaseObject, null) def: BaseObject) {
+  @pyFunction
+  public pop(@pyParam('key', StringObject) key: string, @pyParam('def', PyObject, null) def: PyObject) {
     const pos = this._keys.findIndex(k => k.value === key);
     if (pos < 0) {
       if (def) {
         return def;
       }
-      BaseObject.throwException(ExceptionType.KeyError);
+      getObjectUtils().throwException(ExceptionType.KeyError);
     }
     const ret = this._values[pos];
     this._keys.splice(pos, 1);
@@ -71,46 +72,46 @@ export class DictionaryObject extends ContainerObject {
   public removeItem(key: string) {
     const pos = this._keys.findIndex(k => k.value === key);
     if (pos < 0) {
-      BaseObject.throwException(ExceptionType.KeyError);
+      getObjectUtils().throwException(ExceptionType.KeyError);
     }
     this._keys.splice(pos, 1);
     this._values.splice(pos, 1);
   }
 
-  @nativeFunction
+  @pyFunction
   public keys() {
     return new SetObject(this._keys);
   }
 
-  @nativeFunction
+  @pyFunction
   public values() {
     return new SetObject(this._values);
   }
 
-  @nativeFunction
-  public get(@param('key', StringObject) key: string, @param('default', BaseObject, null) def: BaseObject) {
+  @pyFunction
+  public get(@pyParam('key', StringObject) key: string, @pyParam('default', PyObject, null) def: PyObject) {
     const pos = this._keys.findIndex(k => k.value === key);
     if (pos < 0) {
       if (def) {
         return def;
       }
-      BaseObject.throwException(ExceptionType.KeyError);
+      getObjectUtils().throwException(ExceptionType.KeyError);
     }
     return this._values[pos];
   }
 
-  @nativeFunction
+  @pyFunction
   public clear() {
     this._keys.splice(0, this._keys.length);
     this._values.splice(0, this._values.length);
   }
 
-  @nativeFunction
+  @pyFunction
   public popitem() {
     const pos = this._keys.length - 1;
     const key = this._keys[pos];
     if (!key) {
-      BaseObject.throwException(ExceptionType.KeyError);
+      getObjectUtils().throwException(ExceptionType.KeyError);
     }
     const value = this._values[pos];
     this._keys.splice(pos, 1);

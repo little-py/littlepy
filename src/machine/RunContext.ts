@@ -1,9 +1,7 @@
-import { BaseObject } from './objects/BaseObject';
 import { Instruction } from '../common/Instructions';
 import { GlobalScope, ObjectScope } from './ObjectScope';
-import { StackEntry, StackEntryType } from './objects/StackEntry';
-import { IntegerObject } from './objects/IntegerObject';
-import { RealObject } from './objects/RealObject';
+import { StackEntry, StackEntryType } from './StackEntry';
+import { NumberObject } from './objects/NumberObject';
 import { FunctionRunContext } from './FunctionRunContext';
 import { NoneObject } from './objects/NoneObject';
 import { FunctionObject } from './objects/FunctionObject';
@@ -30,7 +28,6 @@ import { SuperProxyObject } from './objects/SuperProxyObject';
 import { GeneratorObject } from './objects/GeneratorObject';
 import { calculateResolutionOrder } from './CalculateResolutionOrder';
 import { ExceptionClassObject } from './objects/ExceptionClassObject';
-import { PyMachine } from '../api/Machine';
 import { PyMachinePosition } from '../api/MachinePosition';
 import { PyBreakpoint } from '../api/Breakpoint';
 import { IterableObject } from './objects/IterableObject';
@@ -39,17 +36,23 @@ import { ExceptionType } from '../api/ExceptionType';
 import { ReferenceScope } from '../common/ReferenceScope';
 import { FrozenSetObject } from './objects/FrozenSetObject';
 import { embeddedModules } from './embedded/EmbeddedModules';
-import { stringFormat } from './objects/FormatString';
+import { stringFormat } from './FormatString';
 import { NativeReturnType, RunContextBase } from './NativeTypes';
 import { PyScope } from '../api/Scope';
+import { PyException } from '../api/Exception';
+import { setObjectUtils } from '../api/ObjectUtils';
+import { objectUtils } from './ObjectUtilsImpl';
+import { PyObject } from '../api/Object';
 
-export class RunContext extends RunContextBase implements PyMachine {
+setObjectUtils(objectUtils);
+
+export class RunContext extends RunContextBase {
   private readonly _compiledModules: { [key: string]: CompiledModule };
   private _breakpoints: { [key: string]: boolean } = {};
   private _functions: { [id: string]: FunctionRunContext } = {};
   private _importedModules: { [id: string]: ModuleObject } = {};
   private _globalScope: GlobalScope;
-  private _noneObject: BaseObject;
+  private _noneObject: PyObject;
   private _currentStack: StackEntry;
   private _stackCounter = 1;
   private _currentInstruction = -1;
@@ -196,7 +199,7 @@ export class RunContext extends RunContextBase implements PyMachine {
     return Object.values(module.functions).find(f => f.type === FunctionType.Module);
   }
 
-  public startCallModule(name: string, finishCallback: (returnValue: BaseObject, error: ExceptionObject) => void = undefined) {
+  public startCallModule(name: string, finishCallback: (returnValue: PyObject, error: ExceptionObject) => void = undefined) {
     if (!this._finished) {
       throw Error('Run context is not finished');
     }
@@ -216,7 +219,7 @@ export class RunContext extends RunContextBase implements PyMachine {
     this.prepareStart();
 
     const startModule = this.createFunction(moduleFunction);
-    const args: BaseObject[] = [];
+    const args: PyObject[] = [];
     this.enterFunction(
       startModule,
       (ret, exception) => {
@@ -233,8 +236,8 @@ export class RunContext extends RunContextBase implements PyMachine {
   public startCallFunction(
     moduleName: string,
     funcName: string,
-    args: BaseObject[] = [],
-    finishCallback: (returnValue: BaseObject, error: ExceptionObject) => void = undefined,
+    args: PyObject[] = [],
+    finishCallback: (returnValue: PyObject, error: ExceptionObject) => void = undefined,
   ) {
     if (!this._finished) {
       throw Error('Run context is not finished');
@@ -335,7 +338,7 @@ export class RunContext extends RunContextBase implements PyMachine {
   }
 
   private onCodeBlockFinished(functionStack: StackEntry) {
-    let retObject: BaseObject;
+    let retObject: PyObject;
     const { module, type } = functionStack.func.func;
     if (type === FunctionType.Module) {
       const moduleInstance = new ModuleObject();
@@ -483,7 +486,7 @@ export class RunContext extends RunContextBase implements PyMachine {
     const arrayValue = functionStack.getReg(current.arg1, true, this);
     const indexFrom = functionStack.getReg(current.arg2, true, this);
     const indexTo = functionStack.getReg(current.arg3, true, this);
-    const indexInterval: BaseObject = current.arg5 === -1 ? null : functionStack.getReg(current.arg5, true, this);
+    const indexInterval: PyObject = current.arg5 === -1 ? null : functionStack.getReg(current.arg5, true, this);
     const ref = new ReferenceObject(arrayValue, indexFrom, ReferenceType.Range, ReferenceScope.Default, this, indexTo, indexInterval);
     functionStack.setReg(current.arg6, ref);
   }
@@ -494,7 +497,7 @@ export class RunContext extends RunContextBase implements PyMachine {
     functionStack.setReg(current.arg1, obj);
   }
 
-  private getObject(identifier: string, scope?: ObjectScope, dontThrowException?: boolean): BaseObject {
+  private getObject(identifier: string, scope?: ObjectScope, dontThrowException?: boolean): PyObject {
     const identifiers = identifier.split('.');
     if (!scope) {
       scope = this._currentStack.scope;
@@ -628,7 +631,7 @@ export class RunContext extends RunContextBase implements PyMachine {
   }
 
   private stepRet(current: Instruction, functionStack: StackEntry) {
-    let arg: BaseObject;
+    let arg: PyObject;
     if (current.arg1 !== -1) {
       arg = functionStack.getReg(current.arg1, true, this);
       if (!arg) {
@@ -1119,11 +1122,11 @@ export class RunContext extends RunContextBase implements PyMachine {
       return;
     }
     if (obj instanceof ListObject) {
-      if (!index.canBeInteger()) {
+      if (!(index instanceof NumberObject)) {
         this.raiseTypeConversion();
         return;
       }
-      functionStack.setReg(current.arg3, obj.getItem(index.toInteger()));
+      functionStack.setReg(current.arg3, obj.getItem(index.value));
       return;
     }
     if (obj instanceof DictionaryObject) {
@@ -1145,13 +1148,13 @@ export class RunContext extends RunContextBase implements PyMachine {
 
     const indexFromObject = functionStack.getReg(current.arg2, true, this);
     const indexToObject = functionStack.getReg(current.arg3, true, this);
-    const indexIntervalObject: BaseObject = current.arg5 === -1 ? null : functionStack.getReg(current.arg5, true, this);
+    const indexIntervalObject: PyObject = current.arg5 === -1 ? null : functionStack.getReg(current.arg5, true, this);
 
     if (
       !(list instanceof ContainerObject) ||
-      !(indexFromObject instanceof IntegerObject) ||
-      !(indexToObject instanceof IntegerObject) ||
-      (indexIntervalObject && !(indexIntervalObject instanceof IntegerObject))
+      !(indexFromObject instanceof NumberObject) ||
+      !(indexToObject instanceof NumberObject) ||
+      (indexIntervalObject && !(indexIntervalObject instanceof NumberObject))
     ) {
       this.raiseTypeConversion();
       return;
@@ -1159,7 +1162,7 @@ export class RunContext extends RunContextBase implements PyMachine {
 
     const from = indexFromObject.value;
     const to = indexToObject.value;
-    const step = indexIntervalObject ? (indexIntervalObject as IntegerObject).value : 1;
+    const step = indexIntervalObject ? (indexIntervalObject as NumberObject).value : 1;
 
     if (step === 0) {
       this.raiseFunctionArgumentError();
@@ -1428,7 +1431,7 @@ export class RunContext extends RunContextBase implements PyMachine {
     return this._currentStack;
   }
 
-  private leaveStack(returnValue: BaseObject, useCallback: boolean) {
+  private leaveStack(returnValue: PyObject, useCallback: boolean) {
     const onFinish = this._currentStack.onFinish;
     if (this._currentStack.exceptionVariable) {
       delete this.getCurrentFunctionStack().scope.objects[this._currentStack.exceptionVariable];
@@ -1455,9 +1458,9 @@ export class RunContext extends RunContextBase implements PyMachine {
 
   private enterFunction(
     func: FunctionRunContext,
-    onFinish: (ret: BaseObject, exception: ExceptionObject) => boolean | void | undefined,
-    args: BaseObject[],
-    parent: BaseObject,
+    onFinish: (ret: PyObject, exception: ExceptionObject) => boolean | void | undefined,
+    args: PyObject[],
+    parent: PyObject,
   ): StackEntry {
     const stackEntry = this.enterStack(StackEntryType.Function, func.func.name);
     this._currentInstruction = 0;
@@ -1483,7 +1486,7 @@ export class RunContext extends RunContextBase implements PyMachine {
         } else {
           instance = (parent as SuperProxyObject).classInstance;
         }
-        stackEntry.scope.getObjectHook = (name: string): BaseObject => {
+        stackEntry.scope.getObjectHook = (name: string): PyObject => {
           if (name === 'super') {
             if (!superFunction) {
               superFunction = this.createSuperFunction(instance);
@@ -1512,7 +1515,7 @@ export class RunContext extends RunContextBase implements PyMachine {
     }
   }
 
-  public getNoneObject(): BaseObject {
+  public getNoneObject(): PyObject {
     if (this._noneObject) {
       return this._noneObject;
     }
@@ -1541,7 +1544,7 @@ export class RunContext extends RunContextBase implements PyMachine {
     return this.getCurrentFunctionStack().func.func.module;
   }
 
-  private createLiteral(literalId: number): BaseObject {
+  private createLiteral(literalId: number): PyObject {
     const module = this.getCurrentModule();
     const literalDef = module.literals[literalId];
     switch (literalDef.type & LiteralType.LiteralMask) {
@@ -1552,9 +1555,9 @@ export class RunContext extends RunContextBase implements PyMachine {
       case LiteralType.Bytes:
         return new BytesObject(literalDef.string);
       case LiteralType.Integer:
-        return new IntegerObject(literalDef.integer);
+        return new NumberObject(literalDef.integer);
       case LiteralType.FloatingPoint:
-        return new RealObject(literalDef.integer);
+        return new NumberObject(literalDef.integer);
     }
 
     // TODO: implement all other types
@@ -1587,20 +1590,16 @@ export class RunContext extends RunContextBase implements PyMachine {
     return ret;
   }
 
-  private expandArgument(arg: IterableObject, callback: (items: BaseObject[]) => void) {
+  private expandArgument(arg: IterableObject, callback: (items: PyObject[]) => void) {
     // TODO: handle custom iterable objects
-    const ret: BaseObject[] = [];
+    const ret: PyObject[] = [];
     for (let i = 0; i < arg.getCount(); i++) {
       ret.push(arg.getItem(i));
     }
     callback(ret);
   }
 
-  public callFunction(
-    func: CallableObject,
-    parent: BaseObject,
-    onFinish: (ret: BaseObject, exception: ExceptionObject) => boolean | void | undefined,
-  ) {
+  public callFunction(func: CallableObject, parent: PyObject, onFinish: (ret: PyObject, exception: ExceptionObject) => boolean | void | undefined) {
     const currentStack = this.getCurrentFunctionStack();
 
     const indexedArgsWithExpand = currentStack.callContext.indexedArgs;
@@ -1670,7 +1669,7 @@ export class RunContext extends RunContextBase implements PyMachine {
     }
 
     const runContext = this.getFunctionRunContext(func);
-    const args: BaseObject[] = [];
+    const args: PyObject[] = [];
     const functionBody = runContext.func;
     if (!(func instanceof ClassObject)) {
       args.length = functionBody.arguments.length;
@@ -1742,13 +1741,13 @@ export class RunContext extends RunContextBase implements PyMachine {
     }
     this.enterFunction(
       runContext,
-      (ret: BaseObject, exception: ExceptionObject) => onFinish(returnParent && !exception ? parent : ret, exception),
+      (ret: PyObject, exception: ExceptionObject) => onFinish(returnParent && !exception ? parent : ret, exception),
       args,
       parent,
     );
   }
 
-  private exitFunction(value: BaseObject) {
+  private exitFunction(value: PyObject) {
     const context = new ContinueContext();
     context.stack = this.getCurrentFunctionStack();
     context.instruction = context.stack.code.length;
@@ -1941,23 +1940,18 @@ export class RunContext extends RunContextBase implements PyMachine {
     return ret;
   }
 
-  private unaryOperation(obj: BaseObject, op: InstructionType): BaseObject {
+  private unaryOperation(obj: PyObject, op: InstructionType): PyObject {
     switch (op) {
       case InstructionType.Invert:
-        if (obj instanceof IntegerObject) {
-          return new IntegerObject(-obj.value);
-        }
-        if (obj.canBeReal()) {
-          let val = obj.toReal();
-          val = -val;
-          return this.realToObject(val);
+        if (obj instanceof NumberObject) {
+          return new NumberObject(-obj.value);
         }
         break;
       case InstructionType.BinInv:
-        if (obj.canBeInteger()) {
-          let val = obj.toInteger();
+        if (obj instanceof NumberObject) {
+          let val = obj.value;
           val = ~val;
-          return new IntegerObject(val);
+          return new NumberObject(val);
         }
         break;
     }
@@ -1966,17 +1960,17 @@ export class RunContext extends RunContextBase implements PyMachine {
     return null;
   }
 
-  private mathOperation(leftObj: BaseObject, rightObj: BaseObject, instruction: Instruction): BaseObject {
+  private mathOperation(leftObj: PyObject, rightObj: PyObject, instruction: Instruction): PyObject {
     const op: InstructionType = instruction.type === InstructionType.AugmentedCopy ? instruction.arg4 : instruction.type;
     switch (op) {
       case InstructionType.Is:
-        return new BooleanObject(leftObj === rightObj ? 1 : 0);
+        return new BooleanObject(leftObj === rightObj);
       case InstructionType.IsNot:
-        return new BooleanObject(leftObj === rightObj ? 0 : 1);
+        return new BooleanObject(leftObj !== rightObj);
     }
-    if (leftObj.canBeReal() && rightObj.canBeReal()) {
-      const left = leftObj.toReal();
-      const right = rightObj.toReal();
+    if (leftObj instanceof NumberObject && rightObj instanceof NumberObject) {
+      const left = leftObj.value;
+      const right = rightObj.value;
       switch (op) {
         case InstructionType.Add:
           return this.realToObject(left + right);
@@ -2015,31 +2009,31 @@ export class RunContext extends RunContextBase implements PyMachine {
         case InstructionType.BinXor:
           return this.realToObject(left ^ right);
         case InstructionType.Less:
-          return new BooleanObject(left < right ? 1 : 0);
+          return new BooleanObject(left < right);
         case InstructionType.Greater:
-          return new BooleanObject(left > right ? 1 : 0);
+          return new BooleanObject(left > right);
         case InstructionType.LessEq:
-          return new BooleanObject(left <= right ? 1 : 0);
+          return new BooleanObject(left <= right);
         case InstructionType.GreaterEq:
-          return new BooleanObject(left >= right ? 1 : 0);
+          return new BooleanObject(left >= right);
         case InstructionType.Equal:
           // eslint-disable-next-line eqeqeq
-          return new BooleanObject(left == right ? 1 : 0);
+          return new BooleanObject(left == right);
         case InstructionType.NotEq:
           // eslint-disable-next-line eqeqeq
-          return new BooleanObject(left != right ? 1 : 0);
+          return new BooleanObject(left != right);
         default:
           break;
       }
     }
     if (leftObj instanceof StringObject && rightObj instanceof StringObject) {
-      const left = (leftObj as StringObject).value;
-      const right = (rightObj as StringObject).value;
+      const left = leftObj.value;
+      const right = rightObj.value;
       switch (op) {
         case InstructionType.Equal:
-          return new BooleanObject(left === right ? 1 : 0);
+          return new BooleanObject(left === right);
         case InstructionType.NotEq:
-          return new BooleanObject(left !== right ? 1 : 0);
+          return new BooleanObject(left !== right);
         case InstructionType.Add:
           return new StringObject(left + right);
       }
@@ -2048,8 +2042,8 @@ export class RunContext extends RunContextBase implements PyMachine {
       case InstructionType.Equal:
       case InstructionType.NotEq: {
         let compare: CallableObject;
-        let self: BaseObject;
-        let other: BaseObject;
+        let self: PyObject;
+        let other: PyObject;
         let invert: boolean;
         let func = leftObj.getAttribute('__eq__');
         if (func && func instanceof CallableObject) {
@@ -2080,7 +2074,7 @@ export class RunContext extends RunContextBase implements PyMachine {
             currentStack.callContext.indexedArgs = savedIndexedArgs;
             currentStack.callContext.namedArgs = savedNamedArgs;
             if (invert) {
-              ret = new BooleanObject(ret.toBoolean() ? 0 : 1);
+              ret = new BooleanObject(!ret.toBoolean());
             }
             currentStack.setReg(instruction.arg3, ret);
           });
@@ -2088,7 +2082,7 @@ export class RunContext extends RunContextBase implements PyMachine {
         break;
       }
       case InstructionType.Mul:
-        if (leftObj instanceof ListObject && rightObj instanceof IntegerObject) {
+        if (leftObj instanceof ListObject && rightObj instanceof NumberObject) {
           const newList = new ListObject();
           for (let i = 0; i < rightObj.value; i++) {
             for (let j = 0; j < leftObj.getCount(); j++) {
@@ -2097,7 +2091,7 @@ export class RunContext extends RunContextBase implements PyMachine {
           }
           return newList;
         }
-        if (leftObj instanceof TupleObject && rightObj instanceof IntegerObject) {
+        if (leftObj instanceof TupleObject && rightObj instanceof NumberObject) {
           const newTuple = new TupleObject([]);
           for (let i = 0; i < rightObj.value; i++) {
             for (let j = 0; j < leftObj.getCount(); j++) {
@@ -2106,7 +2100,7 @@ export class RunContext extends RunContextBase implements PyMachine {
           }
           return newTuple;
         }
-        if (leftObj instanceof StringObject && rightObj instanceof IntegerObject) {
+        if (leftObj instanceof StringObject && rightObj instanceof NumberObject) {
           let ret = '';
           for (let i = 0; i < rightObj.value; i++) {
             ret += leftObj.value;
@@ -2119,7 +2113,7 @@ export class RunContext extends RunContextBase implements PyMachine {
       case InstructionType.Equal:
         return new BooleanObject(leftObj.equals(rightObj));
       case InstructionType.NotEq:
-        return new BooleanObject(leftObj !== rightObj ? 1 : 0);
+        return new BooleanObject(leftObj !== rightObj);
       case InstructionType.Mod:
         if (leftObj instanceof StringObject) {
           return stringFormat(leftObj, rightObj);
@@ -2174,7 +2168,7 @@ export class RunContext extends RunContextBase implements PyMachine {
     this._continueContext = context;
   }
 
-  public getCurrentException(): ExceptionObject {
+  public getCurrentException(): PyException {
     return this._currentException;
   }
 
@@ -2183,8 +2177,8 @@ export class RunContext extends RunContextBase implements PyMachine {
     this._unhandledException = exception;
   }
 
-  private realToObject(value: number): BaseObject {
-    return new RealObject(value);
+  private realToObject(value: number): PyObject {
+    return new NumberObject(value);
   }
 
   public raiseUnknownIdentifier(identifier: string) {

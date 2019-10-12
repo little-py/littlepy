@@ -1,7 +1,7 @@
-import { BaseObject } from './BaseObject';
-import { fromBaseObject, toBaseObject } from './ToBaseObject';
+import { PyObject } from '../../api/Object';
+import { getObjectUtils } from '../../api/ObjectUtils';
 
-export class ObjectWrapperObject extends BaseObject {
+export class ObjectWrapperObject extends PyObject {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public constructor(object: any) {
     super();
@@ -10,12 +10,12 @@ export class ObjectWrapperObject extends BaseObject {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public readonly object: any;
 
-  public getAttribute(name: string): BaseObject {
+  public getAttribute(name: string): PyObject {
     const val = this.object[name];
-    return toBaseObject(val);
+    return getObjectUtils().toPyObject(val, true);
   }
 
-  public setAttribute(name: string, value: BaseObject) {
-    this.object[name] = fromBaseObject(value);
+  public setAttribute(name: string, value: PyObject) {
+    this.object[name] = getObjectUtils().fromPyObject(value, true);
   }
 }

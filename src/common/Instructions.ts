@@ -1,5 +1,5 @@
 import { InstructionType } from './InstructionType';
-import { TokenPosition } from '../compiler/Token';
+import { TokenPosition } from '../api/Token';
 
 export class Instruction {
   public debug?: string;

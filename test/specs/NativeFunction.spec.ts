@@ -1,18 +1,5 @@
-import { IntegerObject } from '../../src/machine/objects/IntegerObject';
-import { RealObject } from '../../src/machine/objects/RealObject';
-import {
-  CallableIgnore,
-  MemberWithMetadata,
-  NativeFinishCallback,
-  nativeFunction,
-  param,
-  paramArgs,
-  paramCallback,
-  paramKwargs,
-  RunContextBase,
-} from '../../src/machine/NativeTypes';
+import { CallableIgnore, MemberWithMetadata, NativeFinishCallback, RunContextBase } from '../../src/machine/NativeTypes';
 import { StringObject } from '../../src/machine/objects/StringObject';
-import { BaseObject } from '../../src/machine/objects/BaseObject';
 import { CallableContext } from '../../src/machine/CallableContext';
 import { RunContext } from '../../src/machine/RunContext';
 import { ExceptionObject } from '../../src/machine/objects/ExceptionObject';
@@ -25,15 +12,18 @@ import { FrozenSetObject } from '../../src/machine/objects/FrozenSetObject';
 import { NoneObject } from '../../src/machine/objects/NoneObject';
 import { IterableObject } from '../../src/machine/objects/IterableObject';
 import { nativeWrapper } from '../../src/machine/embedded/NativeWrapper';
+import { PyObject } from '../../src/api/Object';
+import { NumberObject } from '../../src/machine/objects/NumberObject';
+import { pyFunction, pyParam, pyParamArgs, pyParamCallback, pyParamKwargs } from '../../src/api/Decorators';
 
 function createCallContext({
   indexed,
   named,
   onFinish,
 }: {
-  indexed?: BaseObject[];
-  named?: { [key: string]: BaseObject };
-  onFinish?: (ret: BaseObject, exception: ExceptionObject) => boolean | void | undefined;
+  indexed?: PyObject[];
+  named?: { [key: string]: PyObject };
+  onFinish?: (ret: PyObject, exception: ExceptionObject) => boolean | void | undefined;
 }): CallableContext {
   return {
     setIndexedArg: () => {},
@@ -56,111 +46,105 @@ describe('Native function', () => {
   let callString: string | undefined;
   let callBool: boolean | undefined;
   let callFrozenSet: FrozenSetObject;
-  let argsArgument: BaseObject[];
-  let kwargsArgument: { [key: string]: BaseObject };
+  let argsArgument: PyObject[];
+  let kwargsArgument: { [key: string]: PyObject };
   let callableContext: CallableContext;
   let runContext: RunContext;
 
   class NativeTest {
-    @nativeFunction
-    public testWithInteger(@param('param1', IntegerObject) param1: number): number {
+    @pyFunction
+    public testWithInteger(@pyParam('param1', NumberObject) param1: number): number {
       callNumber = param1;
       return 1;
     }
 
-    @nativeFunction
-    public testWithReal(@param('param1', RealObject) param1: number) {
-      callNumber = param1;
-      return 'test';
-    }
-
-    @nativeFunction
-    public testWithString(@param('param1', StringObject) param1: string) {
+    @pyFunction
+    public testWithString(@pyParam('param1', StringObject) param1: string) {
       callString = param1;
       return true;
     }
 
-    @nativeFunction
-    public testWithBoolean(@param('param1', BooleanObject) param1: boolean) {
+    @pyFunction
+    public testWithBoolean(@pyParam('param1', BooleanObject) param1: boolean) {
       callBool = param1;
       return false;
     }
 
-    @nativeFunction
+    @pyFunction
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    public testWithList(@param('param1', ListObject) param1: ListObject) {
+    public testWithList(@pyParam('param1', ListObject) param1: ListObject) {
       return new CallableIgnore();
     }
 
-    @nativeFunction
+    @pyFunction
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    public testWithDictionary(@param('dictionaryParam', DictionaryObject) param1: TupleObject) {
+    public testWithDictionary(@pyParam('dictionaryParam', DictionaryObject) param1: TupleObject) {
       return new CallableIgnore();
     }
 
-    @nativeFunction
-    public testWithSome(@param('someParam', FrozenSetObject) param1: FrozenSetObject) {
+    @pyFunction
+    public testWithSome(@pyParam('someParam', FrozenSetObject) param1: FrozenSetObject) {
       callFrozenSet = param1;
     }
 
-    @nativeFunction
+    @pyFunction
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    public testWithTuple(@param('tupleParam', TupleObject) param1: TupleObject) {
+    public testWithTuple(@pyParam('tupleParam', TupleObject) param1: TupleObject) {
       return new CallableIgnore();
     }
 
-    @nativeFunction
+    @pyFunction
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    public testWithIterable(@param('iterable', IterableObject) param1: IterableObject) {
+    public testWithIterable(@pyParam('iterable', IterableObject) param1: IterableObject) {
       return new CallableIgnore();
     }
 
-    @nativeFunction
-    public testWithCallback(@param('param1', IntegerObject) param1: number, @paramCallback callback: NativeFinishCallback) {
+    @pyFunction
+    public testWithCallback(@pyParam('param1', NumberObject) param1: number, @pyParamCallback callback: NativeFinishCallback) {
       callback(new StringObject('abc'), null);
     }
 
-    @nativeFunction
-    public testWithArgs(@paramArgs param1: BaseObject[]) {
+    @pyFunction
+    public testWithArgs(@pyParamArgs param1: PyObject[]) {
       argsArgument = param1;
       return new CallableIgnore();
     }
 
-    @nativeFunction
-    public testWithKwargs(@paramKwargs param1: { [key: string]: BaseObject }) {
+    @pyFunction
+    public testWithKwargs(@pyParamKwargs param1: { [key: string]: PyObject }) {
       kwargsArgument = param1;
       return new CallableIgnore();
     }
 
-    @nativeFunction
-    public testWithDefault(@param('param2', IntegerObject, 20) param1: number) {
+    @pyFunction
+    public testWithDefault(@pyParam('param2', NumberObject, 20) param1: number) {
       callNumber = param1;
       return new CallableIgnore();
     }
 
-    @nativeFunction
-    public testWithCallableContext(@param('context', CallableContext) ctx: CallableContext) {
+    @pyFunction
+    public testWithCallableContext(@pyParam('context', CallableContext) ctx: CallableContext) {
       callableContext = ctx;
       return new CallableIgnore();
     }
 
-    @nativeFunction
-    public testWithRunContext(@param('context', RunContextBase) ctx: RunContext) {
+    @pyFunction
+    public testWithRunContext(@pyParam('context', RunContextBase) ctx: RunContext) {
       runContext = ctx;
       return new CallableIgnore();
     }
 
-    @nativeFunction
+    @pyFunction
     public testReturnSome() {
       return new TupleObject([]);
     }
 
-    @nativeFunction
+    @pyFunction
     public testReturnUnknown() {
       return {};
     }
 
-    @nativeFunction
+    @pyFunction
     public testThrowError() {
       throw Error();
     }
@@ -177,20 +161,12 @@ describe('Native function', () => {
     runContext = undefined;
   });
 
-  it('should use integer argument', () => {
+  it('should use number argument', () => {
     const test = new NativeTest();
     const method = (test.testWithInteger as unknown) as MemberWithMetadata;
-    const ret = nativeWrapper(test, method)(createCallContext({ indexed: [new IntegerObject(10)] }), null);
-    expect(ret instanceof RealObject && ret.value).toEqual(1);
+    const ret = nativeWrapper(test, method)(createCallContext({ indexed: [new NumberObject(10)] }), null);
+    expect(ret instanceof NumberObject && ret.value).toEqual(1);
     expect(callNumber).toEqual(10);
-  });
-
-  it('should use real argument', () => {
-    const test = new NativeTest();
-    const method = (test.testWithReal as unknown) as MemberWithMetadata;
-    const ret = nativeWrapper(test, method)(createCallContext({ indexed: [new IntegerObject(20)] }), null);
-    expect(ret instanceof StringObject && ret.value).toEqual('test');
-    expect(callNumber).toEqual(20);
   });
 
   it('should use string argument', () => {
@@ -257,7 +233,7 @@ describe('Native function', () => {
     let raisedException: ExceptionObject;
     nativeWrapper(test, method)(
       createCallContext({
-        indexed: [new IntegerObject(10), new IntegerObject(20)],
+        indexed: [new NumberObject(10), new NumberObject(20)],
       }),
       createRunContext({
         raiseException: exception => {
@@ -272,13 +248,13 @@ describe('Native function', () => {
   it('should provide callback', () => {
     const test = new NativeTest();
     const method = (test.testWithCallback as unknown) as MemberWithMetadata;
-    let returnValue: BaseObject;
+    let returnValue: PyObject;
     nativeWrapper(test, method)(
       createCallContext({
         onFinish: ret => {
           returnValue = ret;
         },
-        indexed: [new IntegerObject(10)],
+        indexed: [new NumberObject(10)],
       }),
       null,
     );
@@ -290,7 +266,7 @@ describe('Native function', () => {
     const method = (test.testWithArgs as unknown) as MemberWithMetadata;
     nativeWrapper(test, method)(
       createCallContext({
-        indexed: [new IntegerObject(10)],
+        indexed: [new NumberObject(10)],
       }),
       null,
     );
@@ -303,13 +279,13 @@ describe('Native function', () => {
     nativeWrapper(test, method)(
       createCallContext({
         named: {
-          test1: new IntegerObject(100),
+          test1: new NumberObject(100),
         },
       }),
       null,
     );
     expect(kwargsArgument).toBeTruthy();
-    expect(kwargsArgument['test1'].toInteger()).toEqual(100);
+    expect(NumberObject.toNumber(kwargsArgument['test1'], 'test1')).toEqual(100);
   });
 
   it('should give default value', () => {
@@ -325,7 +301,7 @@ describe('Native function', () => {
     nativeWrapper(test, method)(
       createCallContext({
         named: {
-          param2: new IntegerObject(15),
+          param2: new NumberObject(15),
         },
       }),
       null,
@@ -338,7 +314,7 @@ describe('Native function', () => {
     const method = (test.testWithCallableContext as unknown) as MemberWithMetadata;
     nativeWrapper(test, method)(
       createCallContext({
-        indexed: [new IntegerObject(10), new IntegerObject(10)],
+        indexed: [new NumberObject(10), new NumberObject(10)],
       }),
       null,
     );
@@ -417,7 +393,7 @@ describe('Native function', () => {
     let raisedException: ExceptionObject;
     nativeWrapper(test, method)(
       createCallContext({
-        indexed: [new IntegerObject(20)],
+        indexed: [new NumberObject(20)],
       }),
       createRunContext({
         raiseException: exception => {

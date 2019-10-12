@@ -1,10 +1,10 @@
 import { FunctionBody } from '../common/FunctionBody';
 import { Literal } from './Literal';
-import { Token } from './Token';
+import { Token } from '../api/Token';
 import { PyModule } from '../api/Module';
 import { PyError } from '../api/Error';
 
-export class CompiledModule implements PyModule {
+export class CompiledModule extends PyModule {
   public tokens: Token[] = [];
   public readonly literals: Literal[] = [];
   public readonly identifiers: string[] = [];

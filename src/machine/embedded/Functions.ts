@@ -1,10 +1,8 @@
-import { BaseObject } from '../objects/BaseObject';
 import { ExceptionObject } from '../objects/ExceptionObject';
 import { ExceptionType } from '../../api/ExceptionType';
-import { RealObject } from '../objects/RealObject';
-import { IntegerObject } from '../objects/IntegerObject';
+import { NumberObject } from '../objects/NumberObject';
 import { IterableObject } from '../objects/IterableObject';
-import { CallableIgnore, nativeFunction, param, paramArgs, paramKwargs, RunContextBase } from '../NativeTypes';
+import { CallableIgnore, RunContextBase } from '../NativeTypes';
 import { RunContext } from '../RunContext';
 import { ReferenceObject } from '../objects/ReferenceObject';
 import { CallableObject } from '../objects/CallableObject';
@@ -14,6 +12,8 @@ import { SetObject } from '../objects/SetObject';
 import { ListObject } from '../objects/ListObject';
 import { FrozenSetObject } from '../objects/FrozenSetObject';
 import { DictionaryObject } from '../objects/DictionaryObject';
+import { PyObject } from '../../api/Object';
+import { pyFunction, pyParam, pyParamArgs, pyParamKwargs } from '../../api/Decorators';
 
 class RangeObject extends IterableObject {
   private readonly items: number[];
@@ -27,25 +27,22 @@ class RangeObject extends IterableObject {
     return this.items.length;
   }
 
-  getItem(index: number | string): BaseObject {
-    return new IntegerObject(this.items[index]);
+  getItem(index: number | string): PyObject {
+    return new NumberObject(this.items[index]);
   }
 }
 
 class ExportedFunctions {
-  @nativeFunction
-  abs(@param('x') x: BaseObject) {
-    if (x instanceof IntegerObject) {
-      return new IntegerObject(Math.abs(x.value));
-    }
-    if (!x.canBeReal()) {
+  @pyFunction
+  abs(@pyParam('x') x: PyObject) {
+    if (!(x instanceof NumberObject)) {
       throw new ExceptionObject(ExceptionType.TypeError, [], 'x');
     }
-    return new RealObject(Math.abs(x.toReal()));
+    return new NumberObject(Math.abs(x.value));
   }
 
-  @nativeFunction
-  all(@param('x', IterableObject) x: IterableObject): boolean {
+  @pyFunction
+  all(@pyParam('x', IterableObject) x: IterableObject): boolean {
     let ret = true;
     for (let i = 0; i < x.getCount(); i++) {
       if (!x.getItem(i).toBoolean()) {
@@ -56,8 +53,8 @@ class ExportedFunctions {
     return ret;
   }
 
-  @nativeFunction
-  any(@param('x', IterableObject) x: IterableObject): boolean {
+  @pyFunction
+  any(@pyParam('x', IterableObject) x: IterableObject): boolean {
     let ret = false;
     for (let i = 0; i < x.getCount(); i++) {
       if (x.getItem(i).toBoolean()) {
@@ -68,56 +65,56 @@ class ExportedFunctions {
     return ret;
   }
 
-  @nativeFunction
-  chr(@param('x', IntegerObject) x: number) {
+  @pyFunction
+  chr(@pyParam('x', NumberObject) x: number) {
     return String.fromCharCode(x);
   }
 
-  @nativeFunction
-  min(@paramArgs args: BaseObject[]) {
+  @pyFunction
+  min(@pyParamArgs args: PyObject[]) {
     if (args.length === 0) {
       throw new ExceptionObject(ExceptionType.ValueError);
     }
-    let ret = args[0].toReal();
+    let ret = NumberObject.toNumber(args[0], 'args');
     for (let i = 1; i < args.length; i++) {
-      const next = args[i].toReal();
+      const next = NumberObject.toNumber(args[i], 'args');
       if (next < ret) {
         ret = next;
       }
     }
-    return new RealObject(ret);
+    return new NumberObject(ret);
   }
 
-  @nativeFunction
-  max(@paramArgs args: BaseObject[]) {
+  @pyFunction
+  max(@pyParamArgs args: PyObject[]) {
     if (args.length === 0) {
       throw new ExceptionObject(ExceptionType.ValueError);
     }
-    let ret = args[0].toReal();
+    let ret = NumberObject.toNumber(args[0], 'args');
     for (let i = 1; i < args.length; i++) {
-      const next = args[i].toReal();
+      const next = NumberObject.toNumber(args[i], 'args');
       if (next > ret) {
         ret = next;
       }
     }
-    return new RealObject(ret);
+    return new NumberObject(ret);
   }
 
-  @nativeFunction
-  sum(@paramArgs args: BaseObject[]) {
+  @pyFunction
+  sum(@pyParamArgs args: PyObject[]) {
     if (args.length === 0) {
       throw new ExceptionObject(ExceptionType.ValueError);
     }
     let ret = 0;
     for (let i = 0; i < args.length; i++) {
-      const next = args[i].toReal();
+      const next = NumberObject.toNumber(args[i], 'args');
       ret += next;
     }
-    return new RealObject(ret);
+    return new NumberObject(ret);
   }
 
-  @nativeFunction
-  print(@paramArgs args: BaseObject[], @paramKwargs kwargs: { [key: string]: BaseObject }, @param('', RunContextBase) runContext: RunContext) {
+  @pyFunction
+  print(@pyParamArgs args: PyObject[], @pyParamKwargs kwargs: { [key: string]: PyObject }, @pyParam('', RunContextBase) runContext: RunContext) {
     let output = '';
     for (let i = 0; i < args.length; i++) {
       if (i > 0) {
@@ -148,12 +145,12 @@ class ExportedFunctions {
     }
   }
 
-  @nativeFunction
+  @pyFunction
   range(
-    @param('start', IntegerObject) start: number,
-    @param('end', IntegerObject, null) end: number,
-    @param('step', IntegerObject, null) step: number,
-  ): BaseObject {
+    @pyParam('start', NumberObject) start: number,
+    @pyParam('end', NumberObject, null) end: number,
+    @pyParam('step', NumberObject, null) step: number,
+  ): PyObject {
     if (step === null) {
       step = 1;
     } else {
@@ -179,8 +176,8 @@ class ExportedFunctions {
     return new RangeObject(items);
   }
 
-  @nativeFunction
-  len(@param('object') obj: BaseObject, @param('', CallableContext) callContext: CallableContext, @param('', RunContextBase) runContext: RunContext) {
+  @pyFunction
+  len(@pyParam('object') obj: PyObject, @pyParam('', CallableContext) callContext: CallableContext, @pyParam('', RunContextBase) runContext: RunContext) {
     if (obj instanceof IterableObject) {
       return obj.getCount();
     }
@@ -196,26 +193,26 @@ class ExportedFunctions {
     return new CallableIgnore();
   }
 
-  @nativeFunction
+  @pyFunction
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  hash(@param('object', BaseObject) object: BaseObject) {
+  hash(@pyParam('object', PyObject) object: PyObject) {
     throw new ExceptionObject(ExceptionType.NotImplementedError, [], 'hash');
   }
 
-  @nativeFunction
-  iter(@param('object', IterableObject) object: IterableObject) {
+  @pyFunction
+  iter(@pyParam('object', IterableObject) object: IterableObject) {
     return new IteratorObject(object);
   }
 
-  @nativeFunction
-  set(@param('source', BaseObject, null) source: BaseObject) {
+  @pyFunction
+  set(@pyParam('source', PyObject, null) source: PyObject) {
     if (!source) {
       return new SetObject();
     }
     if (!(source instanceof IterableObject)) {
       throw new ExceptionObject(ExceptionType.ValueError);
     }
-    const values: BaseObject[] = [];
+    const values: PyObject[] = [];
     for (let i = 0; i < source.getCount(); i++) {
       values.push(source.getItem(i));
     }
@@ -223,15 +220,15 @@ class ExportedFunctions {
     return new SetObject(values);
   }
 
-  @nativeFunction
-  frozenset(@param('source', BaseObject, null) source: BaseObject) {
+  @pyFunction
+  frozenset(@pyParam('source', PyObject, null) source: PyObject) {
     if (!source) {
       return new FrozenSetObject();
     }
     if (!(source instanceof IterableObject)) {
       throw new ExceptionObject(ExceptionType.ValueError);
     }
-    const values: BaseObject[] = [];
+    const values: PyObject[] = [];
     for (let i = 0; i < source.getCount(); i++) {
       values.push(source.getItem(i));
     }
@@ -239,8 +236,8 @@ class ExportedFunctions {
     return new FrozenSetObject(values);
   }
 
-  @nativeFunction
-  dict(@paramKwargs named: { [key: string]: BaseObject }) {
+  @pyFunction
+  dict(@pyParamKwargs named: { [key: string]: PyObject }) {
     const dict = new DictionaryObject();
     for (const key of Object.keys(named)) {
       dict.setItem(key, named[key]);
@@ -248,15 +245,15 @@ class ExportedFunctions {
     return dict;
   }
 
-  @nativeFunction
-  list(@param('source', BaseObject, null) source: BaseObject) {
+  @pyFunction
+  list(@pyParam('source', PyObject, null) source: PyObject) {
     if (!source) {
       return new SetObject();
     }
     if (!(source instanceof IterableObject)) {
       throw new ExceptionObject(ExceptionType.ValueError);
     }
-    const values: BaseObject[] = [];
+    const values: PyObject[] = [];
     for (let i = 0; i < source.getCount(); i++) {
       values.push(source.getItem(i));
     }

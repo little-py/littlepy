@@ -1,16 +1,17 @@
-import { BaseObject } from './BaseObject';
 import { StringObject } from './StringObject';
 import { FrozenSetObject } from './FrozenSetObject';
 import { IterableObject } from './IterableObject';
 import { ExceptionType } from '../../api/ExceptionType';
-import { nativeFunction, param, paramArgs } from '../NativeTypes';
+import { PyObject } from '../../api/Object';
+import { getObjectUtils } from '../../api/ObjectUtils';
+import { pyFunction, pyParam, pyParamArgs } from '../../api/Decorators';
 
 export class SetObject extends FrozenSetObject {
-  public constructor(items: BaseObject[] = []) {
+  public constructor(items: PyObject[] = []) {
     super(items);
   }
 
-  public addItem(value: BaseObject) {
+  public addItem(value: PyObject) {
     if (!this.contains(value)) {
       this.items.push(value);
     }
@@ -20,52 +21,52 @@ export class SetObject extends FrozenSetObject {
     return `{${this.items.map(o => (o instanceof StringObject ? `'${o.toString()}'` : o.toString())).join(', ')}}`;
   }
 
-  @nativeFunction
-  public union(@param('other', IterableObject) other: IterableObject) {
+  @pyFunction
+  public union(@pyParam('other', IterableObject) other: IterableObject) {
     return this.unionBase(new SetObject(), other);
   }
 
-  @nativeFunction
-  public intersection(@param('other', IterableObject) other: IterableObject) {
+  @pyFunction
+  public intersection(@pyParam('other', IterableObject) other: IterableObject) {
     return this.intersectionBase(new SetObject(), other);
   }
 
-  @nativeFunction
-  public difference(@param('other', IterableObject) other: IterableObject) {
+  @pyFunction
+  public difference(@pyParam('other', IterableObject) other: IterableObject) {
     return this.differenceBase(new SetObject(), other);
   }
 
-  @nativeFunction
+  @pyFunction
   // eslint-disable-next-line @typescript-eslint/camelcase
-  public symmetric_difference(@param('other', IterableObject) other: IterableObject) {
+  public symmetric_difference(@pyParam('other', IterableObject) other: IterableObject) {
     return this.symmetricDifferenceBase(new SetObject(), other);
   }
 
-  @nativeFunction
-  public add(@param('obj', BaseObject) obj: BaseObject) {
+  @pyFunction
+  public add(@pyParam('obj', PyObject) obj: PyObject) {
     this.addItem(obj);
   }
 
-  @nativeFunction
-  public remove(@param('obj', BaseObject) obj: BaseObject) {
+  @pyFunction
+  public remove(@pyParam('obj', PyObject) obj: PyObject) {
     const pos = this.items.findIndex(r => r.equals(obj));
     if (pos >= 0) {
       this.items.splice(pos, 1);
     } else {
-      BaseObject.throwException(ExceptionType.KeyError);
+      getObjectUtils().throwException(ExceptionType.KeyError);
     }
   }
 
-  @nativeFunction
-  public discard(@param('obj', BaseObject) obj: BaseObject) {
+  @pyFunction
+  public discard(@pyParam('obj', PyObject) obj: PyObject) {
     const pos = this.items.findIndex(r => r.equals(obj));
     if (pos >= 0) {
       this.items.splice(pos, 1);
     }
   }
 
-  @nativeFunction
-  public update(@paramArgs args: BaseObject[]) {
+  @pyFunction
+  public update(@pyParamArgs args: PyObject[]) {
     for (const item of args) {
       if (item instanceof IterableObject) {
         for (let i = 0; i < item.getCount(); i++) {
@@ -77,7 +78,7 @@ export class SetObject extends FrozenSetObject {
     }
   }
 
-  @nativeFunction
+  @pyFunction
   public clear() {
     this.items.splice(0, this.items.length);
   }

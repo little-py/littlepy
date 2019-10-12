@@ -1,6 +1,6 @@
-import { BaseObject } from './BaseObject';
+import { PyObject } from '../../api/Object';
 
-export class BytesObject extends BaseObject {
+export class BytesObject extends PyObject {
   public constructor(value: string) {
     super();
     this.value = value;

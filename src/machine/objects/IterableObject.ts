@@ -1,27 +1,28 @@
-import { BaseObject } from './BaseObject';
 import { IteratorObject } from './IteratorObject';
 import { ExceptionType } from '../../api/ExceptionType';
-import { IntegerObject } from './IntegerObject';
-import { nativeFunction, param } from '../NativeTypes';
+import { PyObject } from '../../api/Object';
+import { getObjectUtils } from '../../api/ObjectUtils';
+import { NumberObject } from './NumberObject';
+import { pyFunction, pyParam } from '../../api/Decorators';
 
-export abstract class IterableObject extends BaseObject {
+export abstract class IterableObject extends PyObject {
   protected constructor() {
     super();
   }
 
-  abstract getItem(index: number | string): BaseObject;
+  abstract getItem(index: number | string): PyObject;
   abstract getCount(): number;
 
-  @nativeFunction
+  @pyFunction
   public __iter__() {
     return new IteratorObject(this);
   }
 
-  @nativeFunction
+  @pyFunction
   public index(
-    @param('element', BaseObject) element: BaseObject,
-    @param('start', IntegerObject, 0) start: number,
-    @param('end', IntegerObject, -1) end: number,
+    @pyParam('element', PyObject) element: PyObject,
+    @pyParam('start', NumberObject, 0) start: number,
+    @pyParam('end', NumberObject, -1) end: number,
   ) {
     if (end === -1) {
       end = this.getCount();
@@ -32,6 +33,6 @@ export abstract class IterableObject extends BaseObject {
         return i;
       }
     }
-    BaseObject.throwException(ExceptionType.ValueError, 'cannot find element');
+    getObjectUtils().throwException(ExceptionType.ValueError, 'cannot find element');
   }
 }

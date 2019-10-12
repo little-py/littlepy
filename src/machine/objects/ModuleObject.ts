@@ -1,5 +1,3 @@
-import { BaseObject } from './BaseObject';
+import { PyObject } from '../../api/Object';
 
-export class ModuleObject extends BaseObject {
-  public name: string;
-}
+export class ModuleObject extends PyObject {}

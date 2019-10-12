@@ -1,23 +1,20 @@
-import { BaseObject } from './BaseObject';
 import { IteratorObject } from './IteratorObject';
 import { ContainerObject } from './ContainerObject';
 import { StringObject } from './StringObject';
 import { ExceptionType } from '../../api/ExceptionType';
-import { nativeFunction, param } from '../NativeTypes';
+import { PyObject } from '../../api/Object';
+import { getObjectUtils } from '../../api/ObjectUtils';
+import { pyFunction, pyParam } from '../../api/Decorators';
 
 export class ListObject extends ContainerObject {
-  public constructor(values: BaseObject[] = []) {
+  public constructor(values: PyObject[] = []) {
     super();
     this.items = values;
   }
 
-  public static initList() {
-    BaseObject.createList = items => new ListObject(items);
-  }
+  private readonly items: PyObject[];
 
-  private readonly items: BaseObject[];
-
-  public contains(value: BaseObject): boolean {
+  public contains(value: PyObject): boolean {
     return this.items.findIndex(r => r.equals(value)) >= 0;
   }
 
@@ -25,18 +22,18 @@ export class ListObject extends ContainerObject {
     return this.items.length;
   }
 
-  public getItem(index: number | string): BaseObject {
+  public getItem(index: number | string): PyObject {
     if (typeof index === 'string') {
-      BaseObject.throwException(ExceptionType.TypeError);
+      getObjectUtils().throwException(ExceptionType.TypeError);
     }
     return this.items[index];
   }
 
-  public setItem(index: number, value: BaseObject) {
+  public setItem(index: number, value: PyObject) {
     this.items[index] = value;
   }
 
-  public addItem(value: BaseObject) {
+  public addItem(value: PyObject) {
     this.items.push(value);
   }
 
@@ -60,15 +57,13 @@ export class ListObject extends ContainerObject {
       .join(', ')}]`;
   }
 
-  @nativeFunction
+  @pyFunction
   public __iter__() {
     return new IteratorObject(this);
   }
 
-  @nativeFunction
-  public append(@param('element', BaseObject) element: BaseObject) {
+  @pyFunction
+  public append(@pyParam('element', PyObject) element: PyObject) {
     this.items.push(element);
   }
 }
-
-ListObject.initList();

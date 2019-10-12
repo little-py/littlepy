@@ -1,31 +1,8 @@
-import {
-  DelimiterType,
-  getTokenOperatorPriority,
-  isBinaryOperator,
-  isColon,
-  isComma,
-  isDelimiterEqual,
-  isExpressionEnd,
-  isIdentifier,
-  isIfOperator,
-  isKeywordElse,
-  isKeywordIn,
-  isLeftBracket,
-  isLeftSquareBracket,
-  isLiteral,
-  isPoint,
-  isRightBracket,
-  isRightFigureBracket,
-  isRightSquareBracket,
-  isUnaryOperator,
-  Token,
-  TokenPosition,
-  TokenType,
-} from './Token';
+import { DelimiterType, Token, TokenPosition, TokenType } from '../api/Token';
 import { CompilerContext } from './CompilerContext';
 import { LexicalContext } from './LexicalContext';
 import { GeneratedCode } from '../common/Instructions';
-import { KeywordType } from './Keyword';
+import { KeywordType } from '../api/Keyword';
 import { CodeGenerator } from './CodeGenerator';
 import { CompiledModule } from './CompiledModule';
 import { LiteralType } from './Literal';
@@ -34,6 +11,26 @@ import { PyErrorType } from '../api/ErrorType';
 import { ArgumentType, FunctionArgument, FunctionBody, FunctionType } from '../common/FunctionBody';
 import { ReferenceScope } from '../common/ReferenceScope';
 import { CompilerBlockContext, CompilerBlockType } from './CompilerBlockContext';
+import {
+  isBinaryOperator,
+  isIfOperator,
+  isUnaryOperator,
+  isExpressionEnd,
+  isComma,
+  isLeftBracket,
+  isPoint,
+  isLeftSquareBracket,
+  isIdentifier,
+  getTokenOperatorPriority,
+  isDelimiterEqual,
+  isRightBracket,
+  isColon,
+  isRightSquareBracket,
+  isKeywordIn,
+  isRightFigureBracket,
+  isLiteral,
+  isKeywordElse,
+} from './TokenUtils';
 
 export class ExpressionCompiler {
   private _from: number;
@@ -139,6 +136,15 @@ export class ExpressionCompiler {
           }
           operators.push(token);
           this._from++;
+          continue;
+        }
+        if (token.type === TokenType.Keyword && token.keyword === KeywordType.Not) {
+          const argument = this.compileInternal(this._from + 1, true, false, true);
+          if (!argument.success) {
+            return argument;
+          }
+          this._from = argument.finish;
+          values.push(CodeGenerator.unaryOperators([token], argument));
           continue;
         }
         const unaryOperators: Token[] = [];
