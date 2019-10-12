@@ -2,6 +2,7 @@ import { CallableObject } from './CallableObject';
 import { FunctionRunContext } from '../FunctionRunContext';
 import { BaseObject } from './BaseObject';
 import { MemberWithMetadata, NativeFunction } from '../NativeTypes';
+import { nativeWrapper } from '../embedded/NativeWrapper';
 
 export class InstanceMethodObject extends CallableObject {
   public constructor(context: FunctionRunContext, nativeFunction: Function = null, newNativeFunction: NativeFunction = null) {
@@ -14,10 +15,13 @@ export class InstanceMethodObject extends CallableObject {
       return null;
     }
     const method = func as MemberWithMetadata;
-    if (!method.pythonWrapper) {
+    if (!method.pythonMethod) {
       return null;
     }
-    const ret = new InstanceMethodObject(null, null, method.pythonWrapper().bind(instance));
+    if (!method.pythonWrapper) {
+      method.pythonWrapper = nativeWrapper(instance, method);
+    }
+    const ret = new InstanceMethodObject(null, null, method.pythonWrapper.bind(instance));
     ret.name = name;
     return ret;
   }

@@ -41,11 +41,7 @@ import { FrozenSetObject } from './objects/FrozenSetObject';
 import { embeddedModules } from './embedded/EmbeddedModules';
 import { stringFormat } from './objects/FormatString';
 import { NativeReturnType, RunContextBase } from './NativeTypes';
-
-import { setNativeWrapper } from './embedded/NativeFunction';
-import { nativeWrapper } from './embedded/NativeWrapper';
-
-setNativeWrapper(nativeWrapper);
+import { PyScope } from '../api/Scope';
 
 export class RunContext extends RunContextBase implements PyMachine {
   private readonly _compiledModules: { [key: string]: CompiledModule };
@@ -65,7 +61,7 @@ export class RunContext extends RunContextBase implements PyMachine {
   private _locationId: string;
   private _position: PyMachinePosition;
   public onWriteLine: (line: string) => void = null;
-  public onLeaveFunction: (stack: StackEntry) => void = () => {};
+  public onLeaveFunction: (name: string, scope: PyScope) => void;
   private _cachedOutputLine = '';
 
   private prepareStart() {
@@ -1793,7 +1789,9 @@ export class RunContext extends RunContextBase implements PyMachine {
     switch (this._continueContext.type) {
       case ContinueContextType.Exit: {
         const onFinish = this._currentStack.onFinish;
-        this.onLeaveFunction(this._currentStack);
+        if (this.onLeaveFunction) {
+          this.onLeaveFunction(this._currentStack.func.func.name, this._currentStack.scope);
+        }
         const previousStack = this._currentStack;
         this.leaveStack(this._continueContext.returnValue, false);
         const currentFunctionStack = this.getCurrentFunctionStack();

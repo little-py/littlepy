@@ -23,11 +23,33 @@ import { DictionaryObject } from '../../src/machine/objects/DictionaryObject';
 import { TupleObject } from '../../src/machine/objects/TupleObject';
 import { FrozenSetObject } from '../../src/machine/objects/FrozenSetObject';
 import { NoneObject } from '../../src/machine/objects/NoneObject';
-import { setNativeWrapper } from '../../src/machine/embedded/NativeFunction';
-import { nativeWrapper } from '../../src/machine/embedded/NativeWrapper';
 import { IterableObject } from '../../src/machine/objects/IterableObject';
+import { nativeWrapper } from '../../src/machine/embedded/NativeWrapper';
 
-setNativeWrapper(nativeWrapper);
+function createCallContext({
+  indexed,
+  named,
+  onFinish,
+}: {
+  indexed?: BaseObject[];
+  named?: { [key: string]: BaseObject };
+  onFinish?: (ret: BaseObject, exception: ExceptionObject) => boolean | void | undefined;
+}): CallableContext {
+  return {
+    setIndexedArg: () => {},
+    setNamedArg: () => {},
+    onFinish,
+    indexedArgs: (indexed || []).map(object => ({
+      object,
+      expand: false,
+    })),
+    namedArgs: named || {},
+  };
+}
+
+function createRunContext(runContext: Partial<RunContext>): RunContext {
+  return runContext as RunContext;
+}
 
 describe('Native function', () => {
   let callNumber = 0;
@@ -158,16 +180,7 @@ describe('Native function', () => {
   it('should use integer argument', () => {
     const test = new NativeTest();
     const method = (test.testWithInteger as unknown) as MemberWithMetadata;
-    const ret = method.pythonWrapper()(
-      {
-        indexedArgs: [
-          {
-            object: new IntegerObject(10),
-          },
-        ],
-      },
-      null,
-    );
+    const ret = nativeWrapper(test, method)(createCallContext({ indexed: [new IntegerObject(10)] }), null);
     expect(ret instanceof RealObject && ret.value).toEqual(1);
     expect(callNumber).toEqual(10);
   });
@@ -175,16 +188,7 @@ describe('Native function', () => {
   it('should use real argument', () => {
     const test = new NativeTest();
     const method = (test.testWithReal as unknown) as MemberWithMetadata;
-    const ret = method.pythonWrapper()(
-      {
-        indexedArgs: [
-          {
-            object: new IntegerObject(20),
-          },
-        ],
-      },
-      null,
-    );
+    const ret = nativeWrapper(test, method)(createCallContext({ indexed: [new IntegerObject(20)] }), null);
     expect(ret instanceof StringObject && ret.value).toEqual('test');
     expect(callNumber).toEqual(20);
   });
@@ -192,16 +196,7 @@ describe('Native function', () => {
   it('should use string argument', () => {
     const test = new NativeTest();
     const method = (test.testWithString as unknown) as MemberWithMetadata;
-    const ret = method.pythonWrapper()(
-      {
-        indexedArgs: [
-          {
-            object: new StringObject('xyz'),
-          },
-        ],
-      },
-      null,
-    );
+    const ret = nativeWrapper(test, method)(createCallContext({ indexed: [new StringObject('xyz')] }), null);
     expect(callString).toEqual('xyz');
     expect(ret instanceof BooleanObject && ret.value).toEqual(1);
   });
@@ -209,16 +204,7 @@ describe('Native function', () => {
   it('should use bool argument', () => {
     const test = new NativeTest();
     const method = (test.testWithBoolean as unknown) as MemberWithMetadata;
-    const ret = method.pythonWrapper()(
-      {
-        indexedArgs: [
-          {
-            object: new BooleanObject(true),
-          },
-        ],
-      },
-      null,
-    );
+    const ret = nativeWrapper(test, method)(createCallContext({ indexed: [new BooleanObject(true)] }), null);
     expect(callBool).toEqual(true);
     expect(ret instanceof BooleanObject && ret.value).toEqual(0);
   });
@@ -227,19 +213,13 @@ describe('Native function', () => {
     const test = new NativeTest();
     const method = (test.testWithBoolean as unknown) as MemberWithMetadata;
     let raisedException: ExceptionObject;
-    method.pythonWrapper()(
-      {
-        indexedArgs: [
-          {
-            object: new DictionaryObject(),
-          },
-        ],
-      },
-      {
-        raiseException: exception => {
+    nativeWrapper(test, method)(
+      createCallContext({ indexed: [new DictionaryObject()] }),
+      createRunContext({
+        raiseException(exception) {
           raisedException = exception;
         },
-      },
+      }),
     );
     expect(raisedException.exceptionType).toEqual(ExceptionType.TypeError);
   });
@@ -247,17 +227,9 @@ describe('Native function', () => {
   it('should use any other argument', () => {
     const test = new NativeTest();
     const method = (test.testWithSome as unknown) as MemberWithMetadata;
-    const ret = method.pythonWrapper()(
-      {
-        indexedArgs: [
-          {
-            object: new FrozenSetObject(),
-          },
-        ],
-      },
-      {
-        getNoneObject: () => new NoneObject(),
-      },
+    const ret = nativeWrapper(test, method)(
+      createCallContext({ indexed: [new FrozenSetObject()] }),
+      createRunContext({ getNoneObject: () => new NoneObject() }),
     );
     expect(callFrozenSet).toBeTruthy();
     expect(ret instanceof NoneObject).toBeTruthy();
@@ -267,16 +239,13 @@ describe('Native function', () => {
     const test = new NativeTest();
     const method = (test.testWithInteger as unknown) as MemberWithMetadata;
     let raisedException: ExceptionObject;
-    method.pythonWrapper()(
-      {
-        indexedArgs: [],
-        namedArgs: {},
-      },
-      {
+    nativeWrapper(test, method)(
+      createCallContext({}),
+      createRunContext({
         raiseException: exception => {
           raisedException = exception;
         },
-      },
+      }),
     );
     expect(raisedException).toBeTruthy();
     expect(raisedException.exceptionType).toEqual(ExceptionType.FunctionArgumentError);
@@ -286,16 +255,15 @@ describe('Native function', () => {
     const test = new NativeTest();
     const method = (test.testWithInteger as unknown) as MemberWithMetadata;
     let raisedException: ExceptionObject;
-    method.pythonWrapper()(
-      {
-        indexedArgs: [{ object: new IntegerObject(10) }, { object: new IntegerObject(20) }],
-        namedArgs: {},
-      },
-      {
+    nativeWrapper(test, method)(
+      createCallContext({
+        indexed: [new IntegerObject(10), new IntegerObject(20)],
+      }),
+      createRunContext({
         raiseException: exception => {
           raisedException = exception;
         },
-      },
+      }),
     );
     expect(raisedException).toBeTruthy();
     expect(raisedException.exceptionType).toEqual(ExceptionType.FunctionArgumentCountMismatch);
@@ -305,17 +273,13 @@ describe('Native function', () => {
     const test = new NativeTest();
     const method = (test.testWithCallback as unknown) as MemberWithMetadata;
     let returnValue: BaseObject;
-    method.pythonWrapper()(
-      {
+    nativeWrapper(test, method)(
+      createCallContext({
         onFinish: ret => {
           returnValue = ret;
         },
-        indexedArgs: [
-          {
-            object: new IntegerObject(10),
-          },
-        ],
-      },
+        indexed: [new IntegerObject(10)],
+      }),
       null,
     );
     expect(returnValue instanceof StringObject && returnValue.value).toEqual('abc');
@@ -324,14 +288,10 @@ describe('Native function', () => {
   it('should give args', () => {
     const test = new NativeTest();
     const method = (test.testWithArgs as unknown) as MemberWithMetadata;
-    method.pythonWrapper()(
-      {
-        indexedArgs: [
-          {
-            object: new IntegerObject(10),
-          },
-        ],
-      },
+    nativeWrapper(test, method)(
+      createCallContext({
+        indexed: [new IntegerObject(10)],
+      }),
       null,
     );
     expect(argsArgument).toHaveLength(1);
@@ -340,13 +300,12 @@ describe('Native function', () => {
   it('should give kwargs', () => {
     const test = new NativeTest();
     const method = (test.testWithKwargs as unknown) as MemberWithMetadata;
-    method.pythonWrapper()(
-      {
-        indexedArgs: [],
-        namedArgs: {
+    nativeWrapper(test, method)(
+      createCallContext({
+        named: {
           test1: new IntegerObject(100),
         },
-      },
+      }),
       null,
     );
     expect(kwargsArgument).toBeTruthy();
@@ -356,26 +315,19 @@ describe('Native function', () => {
   it('should give default value', () => {
     const test = new NativeTest();
     const method = (test.testWithDefault as unknown) as MemberWithMetadata;
-    method.pythonWrapper()(
-      {
-        indexedArgs: [],
-        namedArgs: {},
-      },
-      null,
-    );
+    nativeWrapper(test, method)(createCallContext({}), null);
     expect(callNumber).toEqual(20);
   });
 
   it('should take value from named', () => {
     const test = new NativeTest();
     const method = (test.testWithDefault as unknown) as MemberWithMetadata;
-    method.pythonWrapper()(
-      {
-        indexedArgs: [],
-        namedArgs: {
+    nativeWrapper(test, method)(
+      createCallContext({
+        named: {
           param2: new IntegerObject(15),
         },
-      },
+      }),
       null,
     );
     expect(callNumber).toEqual(15);
@@ -384,17 +336,10 @@ describe('Native function', () => {
   it('should give callable context', () => {
     const test = new NativeTest();
     const method = (test.testWithCallableContext as unknown) as MemberWithMetadata;
-    method.pythonWrapper()(
-      {
-        indexedArgs: [
-          {
-            object: new IntegerObject(10),
-          },
-          {
-            object: new IntegerObject(10),
-          },
-        ],
-      },
+    nativeWrapper(test, method)(
+      createCallContext({
+        indexed: [new IntegerObject(10), new IntegerObject(10)],
+      }),
       null,
     );
     expect(callableContext).toBeTruthy();
@@ -404,13 +349,11 @@ describe('Native function', () => {
   it('should give run context', () => {
     const test = new NativeTest();
     const method = (test.testWithRunContext as unknown) as MemberWithMetadata;
-    method.pythonWrapper()(
-      {
-        indexedArgs: [],
-      },
-      {
+    nativeWrapper(test, method)(
+      createCallContext({}),
+      createRunContext({
         onLeaveFunction: () => {},
-      },
+      }),
     );
     expect(runContext).toBeTruthy();
     expect(runContext.onLeaveFunction).toBeTruthy();
@@ -420,19 +363,15 @@ describe('Native function', () => {
     const test = new NativeTest();
     const method = (test.testWithList as unknown) as MemberWithMetadata;
     let raisedException: ExceptionObject;
-    method.pythonWrapper()(
-      {
-        indexedArgs: [
-          {
-            object: new StringObject('xyz'),
-          },
-        ],
-      },
-      {
+    nativeWrapper(test, method)(
+      createCallContext({
+        indexed: [new StringObject('xyz')],
+      }),
+      createRunContext({
         raiseException: exception => {
           raisedException = exception;
         },
-      },
+      }),
     );
     expect(raisedException.exceptionType).toEqual(ExceptionType.TypeError);
   });
@@ -441,19 +380,15 @@ describe('Native function', () => {
     const test = new NativeTest();
     const method = (test.testWithDictionary as unknown) as MemberWithMetadata;
     let raisedException: ExceptionObject;
-    method.pythonWrapper()(
-      {
-        indexedArgs: [
-          {
-            object: new StringObject('xyz'),
-          },
-        ],
-      },
-      {
+    nativeWrapper(test, method)(
+      createCallContext({
+        indexed: [new StringObject('xyz')],
+      }),
+      createRunContext({
         raiseException: exception => {
           raisedException = exception;
         },
-      },
+      }),
     );
     expect(raisedException.exceptionType).toEqual(ExceptionType.TypeError);
   });
@@ -462,19 +397,15 @@ describe('Native function', () => {
     const test = new NativeTest();
     const method = (test.testWithTuple as unknown) as MemberWithMetadata;
     let raisedException: ExceptionObject;
-    method.pythonWrapper()(
-      {
-        indexedArgs: [
-          {
-            object: new StringObject('xyz'),
-          },
-        ],
-      },
-      {
+    nativeWrapper(test, method)(
+      createCallContext({
+        indexed: [new StringObject('xyz')],
+      }),
+      createRunContext({
         raiseException: exception => {
           raisedException = exception;
         },
-      },
+      }),
     );
     expect(raisedException.exceptionType).toEqual(ExceptionType.TypeError);
     expect(raisedException.params).toEqual(['tupleParam']);
@@ -484,19 +415,15 @@ describe('Native function', () => {
     const test = new NativeTest();
     const method = (test.testWithIterable as unknown) as MemberWithMetadata;
     let raisedException: ExceptionObject;
-    method.pythonWrapper()(
-      {
-        indexedArgs: [
-          {
-            object: new IntegerObject(20),
-          },
-        ],
-      },
-      {
+    nativeWrapper(test, method)(
+      createCallContext({
+        indexed: [new IntegerObject(20)],
+      }),
+      createRunContext({
         raiseException: exception => {
           raisedException = exception;
         },
-      },
+      }),
     );
     expect(raisedException.exceptionType).toEqual(ExceptionType.TypeError);
     expect(raisedException.params).toEqual(['iterable']);
@@ -505,13 +432,7 @@ describe('Native function', () => {
   it('should return any other argument', () => {
     const test = new NativeTest();
     const method = (test.testReturnSome as unknown) as MemberWithMetadata;
-    const ret = method.pythonWrapper()(
-      {
-        indexedArgs: [],
-        namedArgs: {},
-      },
-      null,
-    );
+    const ret = nativeWrapper(test, method)(createCallContext({}), null);
     expect(ret instanceof TupleObject).toBeTruthy();
   });
 
@@ -519,16 +440,13 @@ describe('Native function', () => {
     const test = new NativeTest();
     const method = (test.testReturnUnknown as unknown) as MemberWithMetadata;
     let raisedException: ExceptionObject;
-    method.pythonWrapper()(
-      {
-        indexedArgs: [],
-        namedArgs: {},
-      },
-      {
+    nativeWrapper(test, method)(
+      createCallContext({}),
+      createRunContext({
         raiseException: exception => {
           raisedException = exception;
         },
-      },
+      }),
     );
     expect(raisedException.exceptionType).toEqual(ExceptionType.TypeError);
   });
@@ -537,16 +455,13 @@ describe('Native function', () => {
     const test = new NativeTest();
     const method = (test.testThrowError as unknown) as MemberWithMetadata;
     let raisedException: ExceptionObject;
-    method.pythonWrapper()(
-      {
-        indexedArgs: [],
-        namedArgs: {},
-      },
-      {
+    nativeWrapper(test, method)(
+      createCallContext({}),
+      createRunContext({
         raiseException: exception => {
           raisedException = exception;
         },
-      },
+      }),
     );
     expect(raisedException.exceptionType).toEqual(ExceptionType.SystemError);
   });
