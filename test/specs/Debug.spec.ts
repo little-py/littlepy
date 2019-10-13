@@ -1,6 +1,7 @@
 import { compileAndStartModule, compileModule } from './Utils';
 import { RunContext } from '../../src/machine/RunContext';
 import { NumberObject } from '../../src/machine/objects/NumberObject';
+import { PyScope } from '../../src/api/Scope';
 
 describe('Debug flow', () => {
   it('should step from first to second line and initialize two variables', () => {
@@ -14,7 +15,7 @@ describe('Debug flow', () => {
     position = runContext.getPosition();
     expect(position.row).toEqual(1);
     expect(position === runContext.getPosition());
-    let scope = runContext.getGlobalScope();
+    let scope: PyScope = runContext.getGlobalScope();
     expect(scope.getObject('a')).toBeUndefined();
     scope = runContext.getCurrentFunctionStack().scope;
     expect(scope.getObject('a')).toBeDefined();
