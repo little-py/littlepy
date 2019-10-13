@@ -1,5 +1,4 @@
 import { PyInheritance } from './Class';
-import { FunctionRunContext } from '../machine/FunctionRunContext';
 import { PyObject } from './Object';
 
 export class PyClassInstance extends PyObject {
@@ -19,7 +18,7 @@ export class PyClassInstance extends PyObject {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public constructor(classInheritance: PyInheritance[], context: FunctionRunContext) {
+  public constructor(classInheritance: PyInheritance[]) {
     super();
     if (classInheritance.length) {
       this.classInheritance = classInheritance;

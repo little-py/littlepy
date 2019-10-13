@@ -1,9 +1,10 @@
-import { CallableObject } from './CallableObject';
-import { FunctionRunContext } from '../FunctionRunContext';
+import { Callable } from '../../api/Callable';
+import { FunctionContext } from '../../api/FunctionContext';
 import { NativeFunction } from '../NativeTypes';
+import { FunctionBody } from '../../common/FunctionBody';
 
-export class InstanceMethodObject extends CallableObject {
-  public constructor(context: FunctionRunContext, nativeFunction: Function = null, newNativeFunction: NativeFunction = null) {
-    super(context, nativeFunction, newNativeFunction);
+export class InstanceMethodObject extends Callable {
+  public constructor(body: FunctionBody, context: FunctionContext, nativeFunction: Function = null, newNativeFunction: NativeFunction = null) {
+    super(body, context, nativeFunction, newNativeFunction);
   }
 }

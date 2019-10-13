@@ -11,8 +11,8 @@ import { getObjectUtils } from '../../api/ObjectUtils';
 
 const GlobalPropertiesCreators: { [key: string]: () => PyObject } = {
   pow: () => getObjectUtils().createNativeMethod(mathFunctions.pow, mathFunctions, 'pow'),
-  int: () => getClassObject(new IntegerClassObject(null), 'int'),
-  float: () => getClassObject(new FloatClassObject(null), 'float'),
+  int: () => getClassObject(new IntegerClassObject(null, null), 'int'),
+  float: () => getClassObject(new FloatClassObject(null, null), 'float'),
   __sys__: sys,
   Exception: exceptions(ExceptionType.Base, 'Exception'),
   SystemExit: exceptions(ExceptionType.SystemExit, 'SystemExit'),

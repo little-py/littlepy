@@ -30,7 +30,7 @@ class ObjectUtilsImpl implements ObjectUtils {
     if (!method.pythonWrapper) {
       method.pythonWrapper = nativeWrapper(instance, method);
     }
-    const ret = new InstanceMethodObject(null, null, method.pythonWrapper.bind(instance));
+    const ret = new InstanceMethodObject(null, null, null, method.pythonWrapper.bind(instance));
     ret.name = name;
     return ret;
   }

@@ -1,5 +1,6 @@
-import { CallableObject } from '../machine/objects/CallableObject';
-import { FunctionRunContext } from '../machine/FunctionRunContext';
+import { Callable } from './Callable';
+import { FunctionContext } from './FunctionContext';
+import { PyFunction } from './Function';
 
 export class PyInheritance {
   public constructor(name, object) {
@@ -11,9 +12,9 @@ export class PyInheritance {
   public readonly object: PyClass;
 }
 
-export class PyClass extends CallableObject {
-  public constructor(context: FunctionRunContext, inheritsFrom: PyInheritance[], nativeConstructor: Function = null) {
-    super(context, nativeConstructor);
+export class PyClass extends Callable {
+  public constructor(body: PyFunction, context: FunctionContext, inheritsFrom: PyInheritance[], nativeConstructor: Function = null) {
+    super(body, context, nativeConstructor);
     this.inheritsFrom = inheritsFrom;
   }
 

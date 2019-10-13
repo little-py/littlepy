@@ -4,7 +4,7 @@ import { PyObject } from '../../api/Object';
 
 export function exceptions(type: ExceptionType, name: string) {
   return (): PyObject => {
-    const obj = new ExceptionClassObject(null, type);
+    const obj = new ExceptionClassObject(null, null, type);
     obj.name = name;
     return obj;
   };

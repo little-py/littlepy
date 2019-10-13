@@ -1,7 +1,4 @@
-import { ObjectScope } from './ObjectScope';
-import { FunctionRunContext } from './FunctionRunContext';
 import { CallableContext } from './CallableContext';
-import { Instruction } from '../common/Instructions';
 import { InstructionType } from '../common/InstructionType';
 import { RunContext } from './RunContext';
 import { ReferenceObject } from './objects/ReferenceObject';
@@ -10,6 +7,9 @@ import { ExceptionObject } from './objects/ExceptionObject';
 import { ExceptionType } from '../api/ExceptionType';
 import { PyObject } from '../api/Object';
 import { PyStackEntry } from '../api/StackEntry';
+import { FunctionBody } from '../common/FunctionBody';
+import { PyScope } from '../api/Scope';
+import { FunctionContext } from '../api/FunctionContext';
 
 export enum StackEntryType {
   WhileCycle = 'While',
@@ -44,8 +44,8 @@ export class StackEntry implements PyStackEntry {
   }
 
   public findLabel(label: number): number {
-    for (let i = 0; i < this.code.length; i++) {
-      if (this.code[i].type === InstructionType.Label && this.code[i].arg1 === label) {
+    for (let i = 0; i < this.functionBody.code.length; i++) {
+      if (this.functionBody.code[i].type === InstructionType.Label && this.functionBody.code[i].arg1 === label) {
         return i + 1;
       }
     }
@@ -58,15 +58,15 @@ export class StackEntry implements PyStackEntry {
   public readonly type: StackEntryType;
   public parent: StackEntry;
   public functionEntry: StackEntry;
-  public scope: ObjectScope;
-  public func: FunctionRunContext;
+  public scope: PyScope;
+  public functionContext: FunctionContext;
+  public functionBody: FunctionBody;
   public instruction: number;
   public startInstruction: number;
   public endInstruction: number;
   public noBreakInstruction: number;
   public nextPosition: number;
   public trySection: boolean;
-  public code: Instruction[];
   private regs: PyObject[] = [];
   public onFinish: (ret: PyObject, exception: ExceptionObject) => boolean | void | undefined;
   public callContext: CallableContext = new CallableContext();
