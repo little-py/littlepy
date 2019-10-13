@@ -29,6 +29,7 @@ import {
   isRightBracket,
   isSemicolon,
 } from './TokenUtils';
+import {CompileOptions} from "../api/LittlePy";
 
 function getAssignmentInstruction(assignmentOperator: Token): InstructionType {
   let opType = InstructionType.Pass;
@@ -92,9 +93,9 @@ export class Compiler {
   private _indent: number;
   private _insideIndentedBlocks = false;
 
-  private constructor(code: CompiledModule, lexicalContext: LexicalContext, calculateExpression: boolean) {
+  private constructor(code: CompiledModule, lexicalContext: LexicalContext, options?: CompileOptions) {
     this._compiledModule = code;
-    this._calculateExpression = calculateExpression;
+    this._calculateExpression = options && options.wrapWithPrint;
     this._compilerContext = new CompilerContext(code);
     this._lexicalContext = lexicalContext;
     this._offset = 0;
@@ -105,7 +106,7 @@ export class Compiler {
     name: string,
     id: string,
     text: string,
-    wrapWithPrint: boolean,
+    options?: CompileOptions,
   ): {
     code: CompiledModule;
     rows: RowDescriptor[];
@@ -114,11 +115,13 @@ export class Compiler {
     const lexicalAnalyzer = new LexicalAnalyzer(compiledCode);
     const lexicalContext = new LexicalContext(compiledCode);
     lexicalAnalyzer.parse(text, lexicalContext);
-    const compiler = new Compiler(compiledCode, lexicalContext, wrapWithPrint);
+    const compiler = new Compiler(compiledCode, lexicalContext, options);
     compiler.compileModuleWithContext(name);
     compiledCode.name = name;
     compiledCode.id = id;
-    delete compiledCode.tokens;
+    if (!options || !options.preserveTokens) {
+      delete compiledCode.tokens;
+    }
     return { code: compiledCode, rows: compiler._compilerContext.rowDescriptors };
   }
 

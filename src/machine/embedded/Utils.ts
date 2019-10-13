@@ -1,8 +1,8 @@
-import { ClassObject } from '../objects/ClassObject';
 import { ModuleObject } from '../objects/ModuleObject';
 import { getObjectUtils } from '../../api/ObjectUtils';
+import { PyClass } from '../../api/Class';
 
-export function getClassObject(object: ClassObject, name: string): ClassObject {
+export function getClassObject(object: PyClass, name: string): PyClass {
   object.name = name;
   return object;
 }
