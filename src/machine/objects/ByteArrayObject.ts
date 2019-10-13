@@ -1,3 +1,3 @@
-import { CallableObject } from './CallableObject';
+import { PyObject } from '../../api/Object';
 
-export class ByteArrayObject extends CallableObject {}
+export class ByteArrayObject extends PyObject {}

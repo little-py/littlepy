@@ -1,3 +1,3 @@
-import { CallableObject } from './CallableObject';
+import { PyObject } from '../../api/Object';
 
-export class ComplexObject extends CallableObject {}
+export class ComplexObject extends PyObject {}

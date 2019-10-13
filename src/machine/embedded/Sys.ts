@@ -13,7 +13,7 @@ class PythonSys {
     const exception = runContext.getCurrentException();
     let items: PyObject[];
     if (exception) {
-      items = [new ExceptionClassObject(null, exception.exceptionType), exception, new PyObject()];
+      items = [new ExceptionClassObject(null, null, exception.exceptionType), exception, new PyObject()];
     } else {
       items = [runContext.getNoneObject(), runContext.getNoneObject(), runContext.getNoneObject()];
     }

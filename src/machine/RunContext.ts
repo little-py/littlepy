@@ -2,11 +2,11 @@ import { Instruction } from '../common/Instructions';
 import { GlobalScope, ObjectScope } from './ObjectScope';
 import { StackEntry, StackEntryType } from './StackEntry';
 import { NumberObject } from './objects/NumberObject';
-import { FunctionRunContext } from './FunctionRunContext';
+import { FunctionContext } from '../api/FunctionContext';
 import { NoneObject } from './objects/NoneObject';
 import { FunctionObject } from './objects/FunctionObject';
 import { ListObject } from './objects/ListObject';
-import { CallableObject, callNativeFunction } from './objects/CallableObject';
+import { Callable } from '../api/Callable';
 import { ExceptionObject } from './objects/ExceptionObject';
 import { StringObject } from './objects/StringObject';
 import { BytesObject } from './objects/BytesObject';
@@ -43,13 +43,13 @@ import { PyException } from '../api/Exception';
 import { setObjectUtils } from '../api/ObjectUtils';
 import { objectUtils } from './ObjectUtilsImpl';
 import { PyObject } from '../api/Object';
+import { PyFunction } from '../api/Function';
 
 setObjectUtils(objectUtils);
 
 export class RunContext extends RunContextBase {
   private readonly _compiledModules: { [key: string]: CompiledModule };
   private _breakpoints: { [key: string]: boolean } = {};
-  private _functions: { [id: string]: FunctionRunContext } = {};
   private _importedModules: { [id: string]: ModuleObject } = {};
   private _globalScope: GlobalScope;
   private _noneObject: PyObject;
@@ -120,8 +120,8 @@ export class RunContext extends RunContextBase {
     if (!functionStack) {
       return;
     }
-    const func = functionStack.func.func;
-    const instruction = functionStack.code[this._currentInstruction];
+    const func = functionStack.functionBody;
+    const instruction = functionStack.functionBody.code[this._currentInstruction];
     this._position = {
       module: func.module,
       func,
@@ -218,10 +218,11 @@ export class RunContext extends RunContextBase {
 
     this.prepareStart();
 
-    const startModule = this.createFunction(moduleFunction);
+    const moduleContext = this.createFunctionContext(moduleFunction);
     const args: PyObject[] = [];
     this.enterFunction(
-      startModule,
+      moduleContext,
+      moduleFunction,
       (ret, exception) => {
         if (finishCallback) {
           finishCallback(ret, exception);
@@ -248,15 +249,18 @@ export class RunContext extends RunContextBase {
       return;
     }
     const functionObject: FunctionObject = module.getAttribute(funcName) as FunctionObject;
-    if (!functionObject) {
+    if (!functionObject || !functionObject.context) {
       this.onRuntimeError();
       return;
     }
 
+    const functionContext = functionObject.context;
+    const functionBody = functionObject.body;
+
     this.prepareStart();
-    const func = this._functions[functionObject.context.func.id];
     this.enterFunction(
-      func,
+      functionContext,
+      functionBody,
       (ret, exception) => {
         if (finishCallback) {
           finishCallback(ret, exception);
@@ -339,7 +343,7 @@ export class RunContext extends RunContextBase {
 
   private onCodeBlockFinished(functionStack: StackEntry) {
     let retObject: PyObject;
-    const { module, type } = functionStack.func.func;
+    const { module, type } = functionStack.functionBody;
     if (type === FunctionType.Module) {
       const moduleInstance = new ModuleObject();
       moduleInstance.name = module.name;
@@ -361,7 +365,7 @@ export class RunContext extends RunContextBase {
     }
     this._position = undefined;
     const functionStack = this.getCurrentFunctionStack();
-    const code = functionStack.code;
+    const code = functionStack.functionBody.code;
     if (functionStack.instruction >= code.length) {
       this.onCodeBlockFinished(functionStack);
       return true;
@@ -399,11 +403,11 @@ export class RunContext extends RunContextBase {
     }
   }
 
-  private createClassWithHierarchy(context: FunctionRunContext, scope: ObjectScope): PyClass {
+  private createClassWithHierarchy(context: FunctionContext, body: FunctionBody, scope: PyScope): PyClass {
     const inheritsFrom: PyInheritance[] = [];
     let isException = false;
     let exceptionType: ExceptionType;
-    for (const id of context.func.inheritsFrom) {
+    for (const id of body.inheritsFrom) {
       const obj = this.getObject(id, scope);
       if (!obj) {
         return;
@@ -419,26 +423,28 @@ export class RunContext extends RunContextBase {
       inheritsFrom.push(new PyInheritance(id, obj));
     }
     if (isException) {
-      return new ExceptionClassObject(context, exceptionType, inheritsFrom);
+      return new ExceptionClassObject(body, context, exceptionType, inheritsFrom);
     } else {
-      return new PyClass(context, inheritsFrom);
+      return new PyClass(body, context, inheritsFrom);
     }
   }
 
   private stepCreateFunc(current: Instruction, module: CompiledModule, functionStack: StackEntry) {
-    const funcContext: FunctionRunContext = this.createFunction(module.functions[current.arg1]);
-    let funcObject: CallableObject;
-    switch (funcContext.func.type) {
+    const functionBody = module.functions[current.arg1];
+    const functionContext = this.createFunctionContext(functionBody);
+    let funcObject: Callable;
+    switch (functionBody.type) {
       case FunctionType.Class:
-        funcObject = this.createClassWithHierarchy(funcContext, this._currentStack.scope);
+        funcObject = this.createClassWithHierarchy(functionContext, functionBody, this._currentStack.scope);
         if (!funcObject) {
           return;
         }
         if (!funcObject.name) {
-          funcObject.name = funcContext.func.name;
+          funcObject.name = functionBody.name;
         }
         const stackEntry = this.enterFunction(
-          funcContext,
+          functionContext,
+          functionBody,
           () => {
             for (const key of Object.keys(stackEntry.scope.objects)) {
               const value = stackEntry.scope.objects[key];
@@ -451,15 +457,15 @@ export class RunContext extends RunContextBase {
         );
         return;
       case FunctionType.ClassMember:
-        funcObject = new InstanceMethodObject(funcContext);
+        funcObject = new InstanceMethodObject(functionBody, functionContext);
         break;
       default:
-        funcObject = new FunctionObject(funcContext);
+        funcObject = new FunctionObject(functionBody, functionContext);
         break;
     }
     functionStack.setReg(current.arg2, funcObject);
     if (!funcObject.name) {
-      funcObject.name = funcContext.func.name;
+      funcObject.name = functionBody.name;
     }
   }
 
@@ -497,7 +503,7 @@ export class RunContext extends RunContextBase {
     functionStack.setReg(current.arg1, obj);
   }
 
-  private getObject(identifier: string, scope?: ObjectScope, dontThrowException?: boolean): PyObject {
+  private getObject(identifier: string, scope?: PyScope, dontThrowException?: boolean): PyObject {
     const identifiers = identifier.split('.');
     if (!scope) {
       scope = this._currentStack.scope;
@@ -597,7 +603,7 @@ export class RunContext extends RunContextBase {
     if (!functionObj) {
       return;
     }
-    if (!(functionObj instanceof CallableObject)) {
+    if (!(functionObj instanceof Callable)) {
       this.raiseNotAFunction();
       return;
     }
@@ -613,7 +619,7 @@ export class RunContext extends RunContextBase {
     if (!functionObj) {
       return;
     }
-    if (!(functionObj instanceof CallableObject)) {
+    if (!(functionObj instanceof Callable)) {
       this.raiseNotAFunction();
       return;
     }
@@ -908,7 +914,7 @@ export class RunContext extends RunContextBase {
   }
 
   private ensureAtModuleLevel(functionStack: StackEntry) {
-    if (functionStack.func.func.type !== FunctionType.Module) {
+    if (functionStack.functionBody.type !== FunctionType.Module) {
       this.raiseException(new ExceptionObject(ExceptionType.ImportAllowedOnlyOnModuleLevel));
       return false;
     }
@@ -969,9 +975,10 @@ export class RunContext extends RunContextBase {
 
     const moduleFunction = this.getModuleFunction(compiledModule);
 
-    const startModule = this.createFunction(moduleFunction);
+    const moduleContext = this.createFunctionContext(moduleFunction);
     this.enterFunction(
-      startModule,
+      moduleContext,
+      moduleFunction,
       ret => {
         const moduleObject = ret as ModuleObject;
         onFinished(moduleObject);
@@ -989,8 +996,8 @@ export class RunContext extends RunContextBase {
       return;
     }
     const boolFunc = obj.getAttribute('__bool__');
-    if (boolFunc && boolFunc instanceof CallableObject) {
-      this.callFunction(boolFunc as CallableObject, obj, (ret, exception) => {
+    if (boolFunc && boolFunc instanceof Callable) {
+      this.callFunction(boolFunc as Callable, obj, (ret, exception) => {
         if (!exception) {
           functionStack.setReg(current.arg2, ret);
         }
@@ -998,8 +1005,8 @@ export class RunContext extends RunContextBase {
       return;
     }
     const lenFunc = obj.getAttribute('__len__');
-    if (lenFunc && lenFunc instanceof CallableObject) {
-      this.callFunction(lenFunc as CallableObject, obj, (ret, exception) => {
+    if (lenFunc && lenFunc instanceof Callable) {
+      this.callFunction(lenFunc as Callable, obj, (ret, exception) => {
         if (!exception) {
           functionStack.setReg(current.arg2, ret);
         }
@@ -1059,7 +1066,7 @@ export class RunContext extends RunContextBase {
       return;
     }
     const contains = container.getAttribute('__contains__');
-    if (contains && contains instanceof CallableObject) {
+    if (contains && contains instanceof Callable) {
       const stack = this.getCurrentFunctionStack();
       const savedIndexedArgs = stack.callContext.indexedArgs;
       const savedNamedArgs = stack.callContext.namedArgs;
@@ -1202,7 +1209,7 @@ export class RunContext extends RunContextBase {
 
   private stepInternal(current: Instruction) {
     const functionStack = this.getCurrentFunctionStack();
-    const module = functionStack.func.func.module;
+    const module = functionStack.functionBody.module;
     switch (current.type) {
       case InstructionType.LeaveCycle:
         this.stepLeaveCycle();
@@ -1399,22 +1406,20 @@ export class RunContext extends RunContextBase {
     }
   }
 
-  private createFunction(functionDef: FunctionBody): FunctionRunContext {
-    let currentScope: ObjectScope;
+  private createFunctionContext(functionDef: FunctionBody): FunctionContext {
+    let currentScope: PyScope;
     if (!this._currentStack || !this._currentStack.functionEntry || functionDef.type === FunctionType.Module) {
       currentScope = this._globalScope;
     } else {
-      currentScope = this._currentStack.functionEntry.func.scope;
+      currentScope = this._currentStack.functionEntry.functionContext.scope;
     }
 
-    const context = new FunctionRunContext();
+    const context = new FunctionContext();
     context.defaultValues = [];
     context.scope = new ObjectScope(
       functionDef.type === FunctionType.Module ? `module ${functionDef.module.name}` : `${functionDef.module.name}.${functionDef.name}`,
       currentScope,
     );
-    context.func = functionDef;
-    this._functions[functionDef.id] = context;
     for (let i = 0; i < functionDef.arguments.length; i++) {
       const arg = functionDef.arguments[i];
       if (arg.initReg < 0) {
@@ -1447,7 +1452,7 @@ export class RunContext extends RunContextBase {
 
   private createSuperFunction(instance: PyClassInstance) {
     let superInstance: SuperProxyObject;
-    return new FunctionObject(null, () => {
+    return new FunctionObject(null, null, () => {
       // TODO: handle arguments
       if (!superInstance) {
         superInstance = new SuperProxyObject(instance);
@@ -1457,25 +1462,27 @@ export class RunContext extends RunContextBase {
   }
 
   private enterFunction(
-    func: FunctionRunContext,
+    functionContext: FunctionContext,
+    functionBody: PyFunction,
     onFinish: (ret: PyObject, exception: ExceptionObject) => boolean | void | undefined,
     args: PyObject[],
     parent: PyObject,
   ): StackEntry {
-    const stackEntry = this.enterStack(StackEntryType.Function, func.func.name);
+    const stackEntry = this.enterStack(StackEntryType.Function, functionBody.name);
     this._currentInstruction = 0;
-    stackEntry.func = func;
+    stackEntry.functionContext = functionContext;
+    stackEntry.functionBody = functionBody as FunctionBody;
     stackEntry.instruction = 0;
     stackEntry.trySection = false;
-    stackEntry.code = func.func.code;
     stackEntry.onFinish = onFinish;
-    if (func.func.type === FunctionType.Module) {
+    if (stackEntry.functionBody.type === FunctionType.Module) {
       // we enter module function only once so no need to create scope per call
-      stackEntry.scope = func.scope;
+      stackEntry.scope = functionContext.scope;
     } else {
-      stackEntry.scope = new ObjectScope(`${func.scope.name}.__internal`, func.scope);
+      const scope = new ObjectScope(`${functionContext.scope.name}.__internal`, functionContext.scope);
+      stackEntry.scope = scope;
       if (
-        func.func.type === FunctionType.ClassMember &&
+        stackEntry.functionBody.type === FunctionType.ClassMember &&
         parent &&
         (parent instanceof PyClassInstance || parent instanceof ExceptionObject || parent instanceof SuperProxyObject)
       ) {
@@ -1486,7 +1493,7 @@ export class RunContext extends RunContextBase {
         } else {
           instance = (parent as SuperProxyObject).classInstance;
         }
-        stackEntry.scope.getObjectHook = (name: string): PyObject => {
+        scope.getObjectHook = (name: string): PyObject => {
           if (name === 'super') {
             if (!superFunction) {
               superFunction = this.createSuperFunction(instance);
@@ -1496,14 +1503,14 @@ export class RunContext extends RunContextBase {
         };
       }
     }
-    if (func.func.arguments) {
-      for (let i = 0; i < func.func.arguments.length; i++) {
-        const argName = func.func.module.identifiers[func.func.arguments[i].id];
+    if (stackEntry.functionBody.arguments) {
+      for (let i = 0; i < stackEntry.functionBody.arguments.length; i++) {
+        const argName = stackEntry.functionBody.module.identifiers[stackEntry.functionBody.arguments[i].id];
         stackEntry.scope.objects[argName] = args[i];
       }
     }
-    if (stackEntry.code.length > 0) {
-      this.updateLocation(stackEntry.code[0]);
+    if (stackEntry.functionBody.code.length > 0) {
+      this.updateLocation(stackEntry.functionBody.code[0]);
     }
     return stackEntry;
   }
@@ -1541,7 +1548,7 @@ export class RunContext extends RunContextBase {
   }
 
   private getCurrentModule(): CompiledModule {
-    return this.getCurrentFunctionStack().func.func.module;
+    return this.getCurrentFunctionStack().functionBody.module;
   }
 
   private createLiteral(literalId: number): PyObject {
@@ -1564,11 +1571,7 @@ export class RunContext extends RunContextBase {
     this.raiseException(new ExceptionObject(ExceptionType.NotImplementedError));
   }
 
-  private getFunctionRunContext(func: CallableObject): FunctionRunContext {
-    return this._functions[func.context.func.id];
-  }
-
-  private instantiateClass(context: FunctionRunContext, classObject: PyClass): PyClassInstance {
+  private instantiateClass(classObject: PyClass): PyClassInstance {
     const inherits = calculateResolutionOrder(new PyInheritance(classObject.name, classObject));
     if (!inherits) {
       this.raiseException(new ExceptionObject(ExceptionType.ResolutionOrder));
@@ -1584,7 +1587,7 @@ export class RunContext extends RunContextBase {
       const exception = coreExceptions[0].object as ExceptionClassObject;
       ret = new ExceptionObject(exception.exceptionType, inherits);
     } else {
-      ret = new PyClassInstance(inherits, context);
+      ret = new PyClassInstance(inherits);
     }
     ret.setAttribute('__class__', classObject);
     return ret;
@@ -1599,7 +1602,7 @@ export class RunContext extends RunContextBase {
     callback(ret);
   }
 
-  public callFunction(func: CallableObject, parent: PyObject, onFinish: (ret: PyObject, exception: ExceptionObject) => boolean | void | undefined) {
+  public callFunction(func: Callable, parent: PyObject, onFinish: (ret: PyObject, exception: ExceptionObject) => boolean | void | undefined) {
     const currentStack = this.getCurrentFunctionStack();
 
     const indexedArgsWithExpand = currentStack.callContext.indexedArgs;
@@ -1631,7 +1634,7 @@ export class RunContext extends RunContextBase {
       if (func.newNativeFunction) {
         ret = func.newNativeFunction(currentStack.callContext, this);
       } else {
-        ret = callNativeFunction(func.nativeFunction, parent);
+        ret = func.nativeFunction.apply(parent);
       }
       currentStack.callContext.indexedArgs = [];
       currentStack.callContext.namedArgs = {};
@@ -1647,11 +1650,11 @@ export class RunContext extends RunContextBase {
     let returnParent = false;
     if (func instanceof PyClass) {
       const initFunc = func.getAttribute('__init__');
-      const classInstance = this.instantiateClass(func.context, func as PyClass);
+      const classInstance = this.instantiateClass(func);
       if (!classInstance) {
         return;
       }
-      if (!initFunc || !(initFunc instanceof CallableObject)) {
+      if (!initFunc || !(initFunc instanceof Callable)) {
         if (indexedArgs.length > 0 || Object.keys(namedArgs).length > 0) {
           this.raiseFunctionTooManyArgumentsError();
           return;
@@ -1668,9 +1671,9 @@ export class RunContext extends RunContextBase {
       indexedArgs = [parent, ...indexedArgs];
     }
 
-    const runContext = this.getFunctionRunContext(func);
+    const runContext = func.context;
     const args: PyObject[] = [];
-    const functionBody = runContext.func;
+    const functionBody = func.body as FunctionBody;
     if (!(func instanceof PyClass)) {
       args.length = functionBody.arguments.length;
     }
@@ -1741,6 +1744,7 @@ export class RunContext extends RunContextBase {
     }
     this.enterFunction(
       runContext,
+      functionBody,
       (ret: PyObject, exception: ExceptionObject) => onFinish(returnParent && !exception ? parent : ret, exception),
       args,
       parent,
@@ -1750,7 +1754,7 @@ export class RunContext extends RunContextBase {
   private exitFunction(value: PyObject) {
     const context = new ContinueContext();
     context.stack = this.getCurrentFunctionStack();
-    context.instruction = context.stack.code.length;
+    context.instruction = context.stack.functionBody.code.length;
     context.returnValue = value;
     if (value instanceof NoneObject && context.stack.defaultReturnValue) {
       context.returnValue = context.stack.defaultReturnValue;
@@ -1789,7 +1793,7 @@ export class RunContext extends RunContextBase {
       case ContinueContextType.Exit: {
         const onFinish = this._currentStack.onFinish;
         if (this.onLeaveFunction) {
-          this.onLeaveFunction(this._currentStack.func.func.name, this._currentStack.scope);
+          this.onLeaveFunction(this._currentStack.functionBody.name, this._currentStack.scope);
         }
         const previousStack = this._currentStack;
         this.leaveStack(this._continueContext.returnValue, false);
@@ -1831,7 +1835,7 @@ export class RunContext extends RunContextBase {
     if (!this._currentStack.trySection || this._currentStack.finallyHandled) {
       return false;
     }
-    const instruction = functionStack.code[this._currentStack.endInstruction];
+    const instruction = functionStack.functionBody.code[this._currentStack.endInstruction];
     if (instruction.type !== InstructionType.GotoFinally) {
       return false;
     }
@@ -1861,7 +1865,7 @@ export class RunContext extends RunContextBase {
         continue;
       }
       const functionStack = entry.functionEntry;
-      const code = functionStack.code;
+      const code = functionStack.functionBody.code;
       let from = entry.endInstruction;
       if (code[from].type === InstructionType.GotoFinally) {
         from++;
@@ -1873,7 +1877,7 @@ export class RunContext extends RunContextBase {
           suitableLabel = code[from].arg2;
           break;
         }
-        const classObject = this.getObject(functionStack.func.func.module.identifiers[id], undefined, true);
+        const classObject = this.getObject(functionStack.functionBody.module.identifiers[id], undefined, true);
         if (!classObject) {
           // cannot get object from the stack, better is to ignore the exception handler otherwise it is easy to get into infinite loop
           from++;
@@ -1928,7 +1932,7 @@ export class RunContext extends RunContextBase {
         continue;
       }
       const id = format.substr(open + 1, close - open - 1);
-      const obj = this.getCurrentFunctionStack().func.scope.getObject(id);
+      const obj = this.getCurrentFunctionStack().functionContext.scope.getObject(id);
       if (obj) {
         ret += obj.toString();
         pos = close + 1;
@@ -2041,12 +2045,12 @@ export class RunContext extends RunContextBase {
     switch (op) {
       case InstructionType.Equal:
       case InstructionType.NotEq: {
-        let compare: CallableObject;
+        let compare: Callable;
         let self: PyObject;
         let other: PyObject;
         let invert: boolean;
         let func = leftObj.getAttribute('__eq__');
-        if (func && func instanceof CallableObject) {
+        if (func && func instanceof Callable) {
           compare = func;
           self = leftObj;
           other = rightObj;
@@ -2054,7 +2058,7 @@ export class RunContext extends RunContextBase {
         }
         if (!compare) {
           func = rightObj.getAttribute('__eq__');
-          if (func && func instanceof CallableObject) {
+          if (func && func instanceof Callable) {
             compare = func;
             self = rightObj;
             other = leftObj;

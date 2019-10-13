@@ -7,11 +7,7 @@ import { PyBreakpoint } from './Breakpoint';
 import { PyMachine } from './Machine';
 import { PyObject } from './Object';
 import { getObjectUtils } from './ObjectUtils';
-
-export interface CompileOptions {
-  wrapWithPrint?: boolean;
-  preserveTokens?: boolean;
-}
+import { CompileOptions } from './CompileOptions';
 
 export class LittlePy {
   public static compileModule(text: string, name = 'main', options?: CompileOptions): { module: PyModule; rows: RowDescriptor[] } {

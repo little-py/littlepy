@@ -29,7 +29,7 @@ import {
   isRightBracket,
   isSemicolon,
 } from './TokenUtils';
-import { CompileOptions } from '../api/LittlePy';
+import { CompileOptions } from '../api/CompileOptions';
 
 function getAssignmentInstruction(assignmentOperator: Token): InstructionType {
   let opType = InstructionType.Pass;

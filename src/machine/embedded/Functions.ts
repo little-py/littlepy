@@ -5,7 +5,7 @@ import { IterableObject } from '../objects/IterableObject';
 import { CallableIgnore, RunContextBase } from '../NativeTypes';
 import { RunContext } from '../RunContext';
 import { ReferenceObject } from '../objects/ReferenceObject';
-import { CallableObject } from '../objects/CallableObject';
+import { Callable } from '../../api/Callable';
 import { CallableContext } from '../CallableContext';
 import { IteratorObject } from '../objects/IteratorObject';
 import { SetObject } from '../objects/SetObject';
@@ -186,7 +186,7 @@ class ExportedFunctions {
       return obj.getCount();
     }
     const len = obj.getAttribute('__len__');
-    if (!len || !(len instanceof CallableObject)) {
+    if (!len || !(len instanceof Callable)) {
       throw new ExceptionObject(ExceptionType.TypeError);
     } else {
       callContext.indexedArgs = [];

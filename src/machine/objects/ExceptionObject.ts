@@ -137,7 +137,7 @@ const EXCEPTION_DESCRIPTION: { [key: string]: string } = {
 
 export class ExceptionObject extends PyException {
   public constructor(t: ExceptionType, inherits?: PyInheritance[], ...params: string[]) {
-    super(inherits || [], null);
+    super(inherits || []);
     this.exceptionType = t;
     this.message = EXCEPTION_DESCRIPTION[this.exceptionType] || '';
     if (params.length) {

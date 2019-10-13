@@ -1,8 +1,9 @@
-import { CallableObject } from './CallableObject';
-import { FunctionRunContext } from '../FunctionRunContext';
+import { Callable } from '../../api/Callable';
+import { FunctionContext } from '../../api/FunctionContext';
+import { FunctionBody } from '../../common/FunctionBody';
 
-export class FunctionObject extends CallableObject {
-  public constructor(context: FunctionRunContext = null, nativeFunction: Function = null) {
-    super(context, nativeFunction);
+export class FunctionObject extends Callable {
+  public constructor(body: FunctionBody = null, context: FunctionContext = null, nativeFunction: Function = null) {
+    super(body, context, nativeFunction);
   }
 }

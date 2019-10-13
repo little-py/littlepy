@@ -4,13 +4,13 @@ import { PyObject } from '../api/Object';
 
 export class ObjectScope implements PyScope {
   private static idGen = 1;
-  public constructor(name: string, parent: ObjectScope = null) {
+  public constructor(name: string, parent: PyScope = null) {
     this.parent = parent;
     this.name = name;
     this.id = ObjectScope.idGen++;
   }
 
-  public readonly parent: ObjectScope;
+  public readonly parent: PyScope;
   public readonly objects: { [key: string]: PyObject } = {};
   public readonly id: number;
   public readonly name: string;
@@ -33,7 +33,7 @@ export class ObjectScope implements PyScope {
     return null;
   }
 
-  public getObjectParent(name: string): ObjectScope {
+  public getObjectParent(name: string): PyScope {
     if (this.objects.hasOwnProperty(name)) {
       return this;
     }

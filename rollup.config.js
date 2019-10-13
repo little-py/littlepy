@@ -2,7 +2,7 @@ import replace from 'rollup-plugin-replace';
 import { terser } from 'rollup-plugin-terser';
 
 export default {
-  input: 'build/api/LittlePy.js',
+  input: 'build/api/Main.js',
   output: {
     format: 'cjs',
     file: process.env.DEBUG === 'true' ? 'lib/littlepy.js' : 'lib/littlepy.min.js',

@@ -1,7 +1,6 @@
 import { RunContext } from '../RunContext';
 import { ListObject } from './ListObject';
 import { StringObject } from './StringObject';
-import { ObjectScope } from '../ObjectScope';
 import { DictionaryObject } from './DictionaryObject';
 import { IterableObject } from './IterableObject';
 import { ReferenceScope } from '../../common/ReferenceScope';
@@ -12,6 +11,7 @@ import { ExceptionObject } from './ExceptionObject';
 import { PyObject } from '../../api/Object';
 import { getObjectUtils } from '../../api/ObjectUtils';
 import { NumberObject } from './NumberObject';
+import { PyScope } from '../../api/Scope';
 
 export enum ReferenceType {
   Index = 'Index',
@@ -87,7 +87,7 @@ export class ReferenceObject extends PyObject {
     }
   }
 
-  private getTargetScope(runContext: RunContext, name: string): ObjectScope {
+  private getTargetScope(runContext: RunContext, name: string): PyScope {
     const functionScope = runContext.getCurrentFunctionStack().scope;
     switch (this.scopeType) {
       case ReferenceScope.Global:

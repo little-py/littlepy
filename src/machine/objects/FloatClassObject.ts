@@ -1,13 +1,14 @@
-import { FunctionRunContext } from '../FunctionRunContext';
+import { FunctionContext } from '../../api/FunctionContext';
 import { ExceptionType } from '../../api/ExceptionType';
 import { PyObject } from '../../api/Object';
 import { getObjectUtils } from '../../api/ObjectUtils';
 import { pyFunction, pyParam } from '../../api/Decorators';
 import { PyClass } from '../../api/Class';
+import { PyFunction } from '../../api/Function';
 
 export class FloatClassObject extends PyClass {
-  public constructor(context: FunctionRunContext) {
-    super(context, []);
+  public constructor(body: PyFunction, context: FunctionContext) {
+    super(body, context, []);
   }
 
   @pyFunction

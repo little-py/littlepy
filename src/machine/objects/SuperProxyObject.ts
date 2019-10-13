@@ -1,8 +1,8 @@
-import { CallableObject } from './CallableObject';
+import { Callable } from '../../api/Callable';
 import { PyObject } from '../../api/Object';
 import { PyClassInstance } from '../../api/Instance';
 
-export class SuperProxyObject extends CallableObject {
+export class SuperProxyObject extends Callable {
   public readonly classInstance: PyClassInstance;
   public constructor(classInstance: PyClassInstance) {
     super();
