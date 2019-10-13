@@ -1,9 +1,9 @@
-import { ClassInheritance, ClassObject } from './ClassObject';
+import { PyInheritance, PyClass } from '../../api/Class';
 import { FunctionRunContext } from '../FunctionRunContext';
 import { ExceptionType } from '../../api/ExceptionType';
 
-export class ExceptionClassObject extends ClassObject {
-  public constructor(context: FunctionRunContext, exceptionType: ExceptionType, inheritsFrom?: ClassInheritance[]) {
+export class ExceptionClassObject extends PyClass {
+  public constructor(context: FunctionRunContext, exceptionType: ExceptionType, inheritsFrom?: PyInheritance[]) {
     super(context, inheritsFrom || []);
     this.exceptionType = exceptionType;
   }

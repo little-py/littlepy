@@ -1,10 +1,9 @@
-import { ClassInstanceObject } from './ClassInstanceObject';
-import { ClassInheritance } from './ClassObject';
 import { ExceptionClassObject } from './ExceptionClassObject';
 import { StringObject } from './StringObject';
 import { ExceptionType } from '../../api/ExceptionType';
 import { PyException } from '../../api/Exception';
 import { PyObject } from '../../api/Object';
+import { PyInheritance } from '../../api/Class';
 
 const MAP_PUBLIC_EXCEPTION_NAME_TO_CODE = {
   BaseException: ExceptionType.Base,
@@ -136,8 +135,8 @@ const EXCEPTION_DESCRIPTION: { [key: string]: string } = {
   [ExceptionType.CannotReRaise]: 'Cannot re-raise exception',
 };
 
-export class ExceptionObject extends ClassInstanceObject implements PyException {
-  public constructor(t: ExceptionType, inherits?: ClassInheritance[], ...params: string[]) {
+export class ExceptionObject extends PyException {
+  public constructor(t: ExceptionType, inherits?: PyInheritance[], ...params: string[]) {
     super(inherits || [], null);
     this.exceptionType = t;
     this.message = EXCEPTION_DESCRIPTION[this.exceptionType] || '';

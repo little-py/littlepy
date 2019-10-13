@@ -48,7 +48,9 @@ describe('Customize runContext', () => {
       10 * 2
     `,
       'main',
-      true,
+      {
+        wrapWithPrint: true,
+      },
     );
     const runContext = runModules(
       {

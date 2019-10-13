@@ -1,9 +1,9 @@
-import { ClassInheritance } from './ClassObject';
-import { FunctionRunContext } from '../FunctionRunContext';
-import { PyObject } from '../../api/Object';
+import { PyInheritance } from './Class';
+import { FunctionRunContext } from '../machine/FunctionRunContext';
+import { PyObject } from './Object';
 
-export class ClassInstanceObject extends PyObject {
-  public readonly classInheritance: ClassInheritance[];
+export class PyClassInstance extends PyObject {
+  public readonly classInheritance: PyInheritance[];
 
   public getAttribute(name: string): PyObject {
     let ret = this.attributes[name];
@@ -19,7 +19,7 @@ export class ClassInstanceObject extends PyObject {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public constructor(classInheritance: ClassInheritance[], context: FunctionRunContext) {
+  public constructor(classInheritance: PyInheritance[], context: FunctionRunContext) {
     super();
     if (classInheritance.length) {
       this.classInheritance = classInheritance;

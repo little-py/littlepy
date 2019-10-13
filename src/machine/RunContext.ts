@@ -22,8 +22,8 @@ import { SetObject } from './objects/SetObject';
 import { DictionaryObject } from './objects/DictionaryObject';
 import { BooleanObject } from './objects/BooleanObject';
 import { InstanceMethodObject } from './objects/InstanceMethodObject';
-import { ClassInheritance, ClassObject } from './objects/ClassObject';
-import { ClassInstanceObject } from './objects/ClassInstanceObject';
+import { PyInheritance, PyClass } from '../api/Class';
+import { PyClassInstance } from '../api/Instance';
 import { SuperProxyObject } from './objects/SuperProxyObject';
 import { GeneratorObject } from './objects/GeneratorObject';
 import { calculateResolutionOrder } from './CalculateResolutionOrder';
@@ -399,8 +399,8 @@ export class RunContext extends RunContextBase {
     }
   }
 
-  private createClassWithHierarchy(context: FunctionRunContext, scope: ObjectScope): ClassObject {
-    const inheritsFrom: ClassInheritance[] = [];
+  private createClassWithHierarchy(context: FunctionRunContext, scope: ObjectScope): PyClass {
+    const inheritsFrom: PyInheritance[] = [];
     let isException = false;
     let exceptionType: ExceptionType;
     for (const id of context.func.inheritsFrom) {
@@ -408,7 +408,7 @@ export class RunContext extends RunContextBase {
       if (!obj) {
         return;
       }
-      if (!(obj instanceof ClassObject)) {
+      if (!(obj instanceof PyClass)) {
         this.raiseTypeConversion();
         return;
       }
@@ -416,12 +416,12 @@ export class RunContext extends RunContextBase {
         isException = true;
         exceptionType = obj.exceptionType;
       }
-      inheritsFrom.push(new ClassInheritance(id, obj));
+      inheritsFrom.push(new PyInheritance(id, obj));
     }
     if (isException) {
       return new ExceptionClassObject(context, exceptionType, inheritsFrom);
     } else {
-      return new ClassObject(context, inheritsFrom);
+      return new PyClass(context, inheritsFrom);
     }
   }
 
@@ -1445,7 +1445,7 @@ export class RunContext extends RunContextBase {
     }
   }
 
-  private createSuperFunction(instance: ClassInstanceObject) {
+  private createSuperFunction(instance: PyClassInstance) {
     let superInstance: SuperProxyObject;
     return new FunctionObject(null, () => {
       // TODO: handle arguments
@@ -1477,12 +1477,12 @@ export class RunContext extends RunContextBase {
       if (
         func.func.type === FunctionType.ClassMember &&
         parent &&
-        (parent instanceof ClassInstanceObject || parent instanceof ExceptionObject || parent instanceof SuperProxyObject)
+        (parent instanceof PyClassInstance || parent instanceof ExceptionObject || parent instanceof SuperProxyObject)
       ) {
         let superFunction: FunctionObject;
-        let instance: ClassInstanceObject;
-        if (parent instanceof ClassInstanceObject) {
-          instance = parent as ClassInstanceObject;
+        let instance: PyClassInstance;
+        if (parent instanceof PyClassInstance) {
+          instance = parent as PyClassInstance;
         } else {
           instance = (parent as SuperProxyObject).classInstance;
         }
@@ -1568,8 +1568,8 @@ export class RunContext extends RunContextBase {
     return this._functions[func.context.func.id];
   }
 
-  private instantiateClass(context: FunctionRunContext, classObject: ClassObject): ClassInstanceObject {
-    const inherits = calculateResolutionOrder(new ClassInheritance(classObject.name, classObject));
+  private instantiateClass(context: FunctionRunContext, classObject: PyClass): PyClassInstance {
+    const inherits = calculateResolutionOrder(new PyInheritance(classObject.name, classObject));
     if (!inherits) {
       this.raiseException(new ExceptionObject(ExceptionType.ResolutionOrder));
       return;
@@ -1579,12 +1579,12 @@ export class RunContext extends RunContextBase {
       this.raiseException(new ExceptionObject(ExceptionType.CannotDeriveFromMultipleException));
       return;
     }
-    let ret: ClassInstanceObject;
+    let ret: PyClassInstance;
     if (coreExceptions.length) {
       const exception = coreExceptions[0].object as ExceptionClassObject;
       ret = new ExceptionObject(exception.exceptionType, inherits);
     } else {
-      ret = new ClassInstanceObject(inherits, context);
+      ret = new PyClassInstance(inherits, context);
     }
     ret.setAttribute('__class__', classObject);
     return ret;
@@ -1645,9 +1645,9 @@ export class RunContext extends RunContextBase {
     const namedArgs = currentStack.callContext.namedArgs;
 
     let returnParent = false;
-    if (func instanceof ClassObject) {
+    if (func instanceof PyClass) {
       const initFunc = func.getAttribute('__init__');
-      const classInstance = this.instantiateClass(func.context, func as ClassObject);
+      const classInstance = this.instantiateClass(func.context, func as PyClass);
       if (!classInstance) {
         return;
       }
@@ -1671,13 +1671,13 @@ export class RunContext extends RunContextBase {
     const runContext = this.getFunctionRunContext(func);
     const args: PyObject[] = [];
     const functionBody = runContext.func;
-    if (!(func instanceof ClassObject)) {
+    if (!(func instanceof PyClass)) {
       args.length = functionBody.arguments.length;
     }
     let i: number;
     for (i = 0; i < indexedArgs.length; i++) {
       if (i >= args.length) {
-        if (func instanceof ClassObject) {
+        if (func instanceof PyClass) {
           // function class initializer (called before __init__) has no arguments
           break;
         }

@@ -8,9 +8,14 @@ import { PyMachine } from './Machine';
 import { PyObject } from './Object';
 import { getObjectUtils } from './ObjectUtils';
 
+export interface CompileOptions {
+  wrapWithPrint?: boolean;
+  preserveTokens?: boolean;
+}
+
 export class LittlePy {
-  public static compileModule(text: string, name = 'main', wrapWithPrint = false): { module: PyModule; rows: RowDescriptor[] } {
-    const { code, rows } = Compiler.compileModule(name, name, text, wrapWithPrint);
+  public static compileModule(text: string, name = 'main', options?: CompileOptions): { module: PyModule; rows: RowDescriptor[] } {
+    const { code, rows } = Compiler.compileModule(name, name, text, options);
     return {
       module: code,
       rows,
@@ -45,3 +50,5 @@ export * from './Module';
 export * from './Machine';
 export * from './RowDescriptor';
 export * from './MachinePosition';
+export * from './Exception';
+export * from './Breakpoint';

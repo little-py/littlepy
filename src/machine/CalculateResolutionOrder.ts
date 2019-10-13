@@ -1,10 +1,10 @@
-import { ClassInheritance } from './objects/ClassObject';
+import { PyInheritance } from '../api/Class';
 
-export function calculateResolutionOrder(classDef: ClassInheritance): ClassInheritance[] {
+export function calculateResolutionOrder(classDef: PyInheritance): PyInheritance[] {
   if (!classDef.object.inheritsFrom.length) {
     return [classDef];
   }
-  let secondLevelList: ClassInheritance[][] = [];
+  let secondLevelList: PyInheritance[][] = [];
   for (const parent of classDef.object.inheritsFrom) {
     const order = calculateResolutionOrder(parent);
     if (!order) {
@@ -13,9 +13,9 @@ export function calculateResolutionOrder(classDef: ClassInheritance): ClassInher
     secondLevelList.push(order);
   }
   secondLevelList.push(classDef.object.inheritsFrom);
-  const ret: ClassInheritance[] = [classDef];
+  const ret: PyInheritance[] = [classDef];
   while (secondLevelList.length > 0) {
-    let candidate: ClassInheritance;
+    let candidate: PyInheritance;
     let good = true;
     for (let i = 0; i < secondLevelList.length; i++) {
       good = true;

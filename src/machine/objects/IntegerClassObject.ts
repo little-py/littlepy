@@ -1,11 +1,11 @@
-import { ClassObject } from './ClassObject';
 import { FunctionRunContext } from '../FunctionRunContext';
 import { ExceptionType } from '../../api/ExceptionType';
 import { PyObject } from '../../api/Object';
 import { getObjectUtils } from '../../api/ObjectUtils';
 import { pyFunction, pyParam } from '../../api/Decorators';
+import { PyClass } from '../../api/Class';
 
-export class IntegerClassObject extends ClassObject {
+export class IntegerClassObject extends PyClass {
   public constructor(context: FunctionRunContext) {
     super(context, []);
   }
