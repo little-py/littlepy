@@ -16,6 +16,6 @@ export class ObjectWrapperObject extends PyObject {
   }
 
   public setAttribute(name: string, value: PyObject) {
-    this.object[name] = getObjectUtils().fromPyObject(value, true);
+    this.object[name] = getObjectUtils().fromPyObject(value);
   }
 }

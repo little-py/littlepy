@@ -14,7 +14,12 @@ import { IterableObject } from '../../src/machine/objects/IterableObject';
 import { nativeWrapper } from '../../src/machine/embedded/NativeWrapper';
 import { PyObject } from '../../src/api/Object';
 import { NumberObject } from '../../src/machine/objects/NumberObject';
-import { pyFunction, pyParam, pyParamArgs, pyParamCallback, pyParamKwargs } from '../../src/api/Decorators';
+import { pyFunction, pyGetter, pyParam, pyParamArgs, pyParamCallback, pyParamKwargs, pySetter } from '../../src/api/Decorators';
+import { setObjectUtils } from '../../src/api/ObjectUtils';
+import { objectUtils } from '../../src/machine/ObjectUtilsImpl';
+import { PropertyType } from '../../src/api/Native';
+
+setObjectUtils(objectUtils);
 
 function createCallContext({
   indexed,
@@ -51,7 +56,7 @@ describe('Native function', () => {
   let callableContext: CallableContext;
   let runContext: RunContext;
 
-  class NativeTest {
+  class NativeTest extends PyObject {
     @pyFunction
     public testWithInteger(@pyParam('param1', NumberObject) param1: number): number {
       callNumber = param1;
@@ -147,6 +152,18 @@ describe('Native function', () => {
     @pyFunction
     public testThrowError() {
       throw Error();
+    }
+
+    public visibleInstance: boolean;
+
+    @pyGetter()
+    public getVisible() {
+      return this.visibleInstance;
+    }
+
+    @pySetter(PropertyType.Boolean)
+    public setVisible(newValue: boolean) {
+      this.visibleInstance = newValue;
     }
   }
 
@@ -440,5 +457,15 @@ describe('Native function', () => {
       }),
     );
     expect(raisedException.exceptionType).toEqual(ExceptionType.SystemError);
+  });
+
+  it('should update properties', () => {
+    const test = new NativeTest();
+    test.visibleInstance = false;
+    let visible = test.getAttribute('visible');
+    expect(visible instanceof BooleanObject && visible.value).toBeFalsy();
+    test.setAttribute('visible', new BooleanObject(true));
+    visible = test.getAttribute('visible');
+    expect(visible instanceof BooleanObject && visible.value).toBeTruthy();
   });
 });

@@ -29,7 +29,7 @@ export class LittlePy {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static toJsObject(object: PyObject): any {
-    return getObjectUtils().fromPyObject(object, true);
+    return getObjectUtils().fromPyObject(object);
   }
 }
 
@@ -48,3 +48,4 @@ export * from './RowDescriptor';
 export * from './MachinePosition';
 export * from './Exception';
 export * from './Breakpoint';
+export * from './Native';

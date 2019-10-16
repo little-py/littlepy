@@ -91,9 +91,9 @@ describe('Customize runContext', () => {
     const b = z.getAttribute('b');
     expect(b instanceof NumberObject && b.value).toEqual(20);
 
-    const unwrapped = getObjectUtils().fromPyObject(wrapped, true);
+    const unwrapped = getObjectUtils().fromPyObject(wrapped);
     expect(unwrapped.z.b).toEqual(20);
-    expect(getObjectUtils().fromPyObject(x, true)).toEqual(10);
-    expect(getObjectUtils().fromPyObject(y, true)).toEqual('test');
+    expect(getObjectUtils().fromPyObject(x)).toEqual(10);
+    expect(getObjectUtils().fromPyObject(y)).toEqual('test');
   });
 });
