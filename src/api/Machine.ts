@@ -20,8 +20,8 @@ export abstract class PyMachine {
   abstract debugOut(): void;
   abstract debugOver(): void;
   abstract isFinished(): boolean;
-  abstract startCallModule(name: string, finishCallback: FinishCallback);
-  abstract startCallFunction(moduleName: string, funcName: string, args: PyObject[], finishCallback: FinishCallback);
+  abstract startCallModule(name: string, finishCallback?: FinishCallback);
+  abstract startCallFunction(moduleName: string, funcName: string, args: PyObject[], finishCallback?: FinishCallback);
   abstract getOutput(): string[];
   abstract getOutputText(): string;
   abstract getStackEntries(): PyStackEntry[];

@@ -2,6 +2,9 @@ import { compileAndStartModule, compileModule } from './Utils';
 import { RunContext } from '../../src/machine/RunContext';
 import { NumberObject } from '../../src/machine/objects/NumberObject';
 import { PyScope } from '../../src/api/Scope';
+import { PyObject } from '../../src/api/Object';
+import { ExceptionObject } from '../../src/machine/objects/ExceptionObject';
+import { ExceptionType } from '../../src/api/ExceptionType';
 
 describe('Debug flow', () => {
   it('should step from first to second line and initialize two variables', () => {
@@ -176,5 +179,21 @@ describe('Debug flow', () => {
     const entries = runContext.getStackEntries();
     expect(entries).toHaveLength(2);
     expect(entries.map(e => e.instruction)).toEqual([0, 5]);
+  });
+
+  it('should call exit function on unhandled exception', done => {
+    const source = 'arg1.arg2 = 10';
+    const code = compileModule(source, 'main');
+    const runContext = new RunContext({
+      main: code,
+    });
+    runContext.startCallModule('main', (returnValue: PyObject, error: ExceptionObject) => {
+      expect(runContext.isFinished()).toBeTruthy();
+      expect(error.exceptionType).toEqual(ExceptionType.UnknownIdentifier);
+      expect(error.params).toEqual(['arg1']);
+      done();
+    });
+    runContext.run();
+    expect(runContext.isFinished()).toBeTruthy();
   });
 });

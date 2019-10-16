@@ -1436,14 +1436,14 @@ export class RunContext extends RunContextBase {
     return this._currentStack;
   }
 
-  private leaveStack(returnValue: PyObject, useCallback: boolean) {
+  private leaveStack(returnValue: PyObject, useCallback: boolean, exception: ExceptionObject = null) {
     const onFinish = this._currentStack.onFinish;
     if (this._currentStack.exceptionVariable) {
       delete this.getCurrentFunctionStack().scope.objects[this._currentStack.exceptionVariable];
     }
     this._currentStack = this._currentStack.parent;
     if (onFinish && useCallback) {
-      onFinish(returnValue, null);
+      onFinish(returnValue, exception);
     }
     if (!this._currentStack) {
       this.onLastStackFinished();
@@ -2177,8 +2177,10 @@ export class RunContext extends RunContextBase {
   }
 
   public onUnhandledException(exception: ExceptionObject) {
-    // console.log('Unhandled exception', exception);
     this._unhandledException = exception;
+    while (this._currentStack) {
+      this.leaveStack(null, true, this._unhandledException);
+    }
   }
 
   private realToObject(value: number): PyObject {

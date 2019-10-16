@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { PyMachine } from '../api/Machine';
+import { PropertyType } from '../api/Native';
 
 export abstract class RunContextBase extends PyMachine {
   abstract raiseException(exception: any): void;
@@ -24,6 +25,12 @@ export interface NativeParam {
 
 export interface NativeMethod {
   name: string;
+}
+
+export interface NativeProperty {
+  getter: Function;
+  setter: Function;
+  type: PropertyType;
 }
 
 export interface MemberWithMetadata extends Function {
