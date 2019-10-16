@@ -113,6 +113,7 @@ class ObjectUtilsImpl implements ObjectUtils {
   }
 
   writeNativeProperty(instance: PyObject, property: NativeProperty, value: PyObject) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let newValue: any;
     switch (property.type) {
       case PropertyType.Boolean:
