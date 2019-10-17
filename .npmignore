@@ -6,3 +6,9 @@ types
 jest.config.js
 rollup.config.js
 tsconfig.json
+config
+scripts
+.eslintrc.js
+.gitlab-ci.yml
+.nvmrc
+.prettierrc.js
