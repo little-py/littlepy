@@ -63,7 +63,7 @@ export class ListObject extends ContainerObject {
   }
 
   @pyFunction
-  public append(@pyParam('element', PyObject) element: PyObject) {
+  public append(@pyParam('element') element: PyObject) {
     this.items.push(element);
   }
 }

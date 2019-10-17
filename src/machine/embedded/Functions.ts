@@ -2,7 +2,7 @@ import { ExceptionObject } from '../objects/ExceptionObject';
 import { ExceptionType } from '../../api/ExceptionType';
 import { NumberObject } from '../objects/NumberObject';
 import { IterableObject } from '../objects/IterableObject';
-import { CallableIgnore, RunContextBase } from '../NativeTypes';
+import { CallableIgnore } from '../NativeTypes';
 import { RunContext } from '../RunContext';
 import { ReferenceObject } from '../objects/ReferenceObject';
 import { Callable } from '../../api/Callable';
@@ -14,6 +14,8 @@ import { FrozenSetObject } from '../objects/FrozenSetObject';
 import { DictionaryObject } from '../objects/DictionaryObject';
 import { PyObject } from '../../api/Object';
 import { pyFunction, pyParam, pyParamArgs, pyParamKwargs } from '../../api/Decorators';
+import { PropertyType } from '../../api/Native';
+import { getObjectUtils } from '../../api/ObjectUtils';
 
 class RangeObject extends IterableObject {
   private readonly items: number[];
@@ -42,7 +44,7 @@ class ExportedFunctions {
   }
 
   @pyFunction
-  all(@pyParam('x', IterableObject) x: IterableObject): boolean {
+  all(@pyParam('x', PropertyType.Iterable) x: IterableObject): boolean {
     let ret = true;
     for (let i = 0; i < x.getCount(); i++) {
       if (!x.getItem(i).toBoolean()) {
@@ -54,7 +56,7 @@ class ExportedFunctions {
   }
 
   @pyFunction
-  any(@pyParam('x', IterableObject) x: IterableObject): boolean {
+  any(@pyParam('x', PropertyType.Iterable) x: IterableObject): boolean {
     let ret = false;
     for (let i = 0; i < x.getCount(); i++) {
       if (x.getItem(i).toBoolean()) {
@@ -66,7 +68,7 @@ class ExportedFunctions {
   }
 
   @pyFunction
-  chr(@pyParam('x', NumberObject) x: number) {
+  chr(@pyParam('x', PropertyType.Number) x: number) {
     return String.fromCharCode(x);
   }
 
@@ -75,9 +77,9 @@ class ExportedFunctions {
     if (args.length === 0) {
       throw new ExceptionObject(ExceptionType.ValueError);
     }
-    let ret = NumberObject.toNumber(args[0], 'args');
+    let ret = getObjectUtils().toNumber(args[0], 'args');
     for (let i = 1; i < args.length; i++) {
-      const next = NumberObject.toNumber(args[i], 'args');
+      const next = getObjectUtils().toNumber(args[i], 'args');
       if (next < ret) {
         ret = next;
       }
@@ -90,9 +92,9 @@ class ExportedFunctions {
     if (args.length === 0) {
       throw new ExceptionObject(ExceptionType.ValueError);
     }
-    let ret = NumberObject.toNumber(args[0], 'args');
+    let ret = getObjectUtils().toNumber(args[0], 'args');
     for (let i = 1; i < args.length; i++) {
-      const next = NumberObject.toNumber(args[i], 'args');
+      const next = getObjectUtils().toNumber(args[i], 'args');
       if (next > ret) {
         ret = next;
       }
@@ -107,14 +109,18 @@ class ExportedFunctions {
     }
     let ret = 0;
     for (let i = 0; i < args.length; i++) {
-      const next = NumberObject.toNumber(args[i], 'args');
+      const next = getObjectUtils().toNumber(args[i], 'args');
       ret += next;
     }
     return new NumberObject(ret);
   }
 
   @pyFunction
-  print(@pyParamArgs args: PyObject[], @pyParamKwargs kwargs: { [key: string]: PyObject }, @pyParam('', RunContextBase) runContext: RunContext) {
+  print(
+    @pyParamArgs args: PyObject[],
+    @pyParamKwargs kwargs: { [key: string]: PyObject },
+    @pyParam('', PropertyType.Machine) runContext: RunContext,
+  ) {
     let output = '';
     for (let i = 0; i < args.length; i++) {
       if (i > 0) {
@@ -147,9 +153,9 @@ class ExportedFunctions {
 
   @pyFunction
   range(
-    @pyParam('start', NumberObject) start: number,
-    @pyParam('end', NumberObject, null) end: number,
-    @pyParam('step', NumberObject, null) step: number,
+    @pyParam('start', PropertyType.Number) start: number,
+    @pyParam('end', PropertyType.Number, null) end: number,
+    @pyParam('step', PropertyType.Number, null) step: number,
   ): PyObject {
     if (step === null) {
       step = 1;
@@ -179,8 +185,8 @@ class ExportedFunctions {
   @pyFunction
   len(
     @pyParam('object') obj: PyObject,
-    @pyParam('', CallableContext) callContext: CallableContext,
-    @pyParam('', RunContextBase) runContext: RunContext,
+    @pyParam('', PropertyType.CallContext) callContext: CallableContext,
+    @pyParam('', PropertyType.Machine) runContext: RunContext,
   ) {
     if (obj instanceof IterableObject) {
       return obj.getCount();
@@ -199,17 +205,17 @@ class ExportedFunctions {
 
   @pyFunction
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  hash(@pyParam('object', PyObject) object: PyObject) {
+  hash(@pyParam('object', PropertyType.Object) object: PyObject) {
     throw new ExceptionObject(ExceptionType.NotImplementedError, [], 'hash');
   }
 
   @pyFunction
-  iter(@pyParam('object', IterableObject) object: IterableObject) {
+  iter(@pyParam('object', PropertyType.Iterable) object: IterableObject) {
     return new IteratorObject(object);
   }
 
   @pyFunction
-  set(@pyParam('source', PyObject, null) source: PyObject) {
+  set(@pyParam('source', PropertyType.Object, null) source: PyObject) {
     if (!source) {
       return new SetObject();
     }
@@ -225,7 +231,7 @@ class ExportedFunctions {
   }
 
   @pyFunction
-  frozenset(@pyParam('source', PyObject, null) source: PyObject) {
+  frozenset(@pyParam('source', PropertyType.Object, null) source: PyObject) {
     if (!source) {
       return new FrozenSetObject();
     }
@@ -250,7 +256,7 @@ class ExportedFunctions {
   }
 
   @pyFunction
-  list(@pyParam('source', PyObject, null) source: PyObject) {
+  list(@pyParam('source', PropertyType.Object, null) source: PyObject) {
     if (!source) {
       return new SetObject();
     }

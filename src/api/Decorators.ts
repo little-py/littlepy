@@ -1,8 +1,15 @@
 import { MemberWithMetadata, NativeProperty } from '../machine/NativeTypes';
 import { PropertyType } from './Native';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function pyParam(name: string, type: any = undefined, defaultValue: any = undefined, callback = false, args = false, kwargs = false) {
+export function pyParam(
+  name: string,
+  type: PropertyType = PropertyType.Object,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  defaultValue: any = undefined,
+  callback = false,
+  args = false,
+  kwargs = false,
+) {
   // eslint-disable-next-line
   return (target: any, propertyKey: string, parameterIndex: number) => {
     const member = target[propertyKey] as MemberWithMetadata;

@@ -5,6 +5,7 @@ import { BooleanObject } from './BooleanObject';
 import { IterableObject } from './IterableObject';
 import { PyObject } from '../../api/Object';
 import { pyFunction, pyParam } from '../../api/Decorators';
+import { PropertyType } from '../../api/Native';
 
 export class FrozenSetObject extends ContainerObject {
   public constructor(items: PyObject[] = []) {
@@ -36,7 +37,7 @@ export class FrozenSetObject extends ContainerObject {
   }
 
   @pyFunction
-  public isdisjoint(@pyParam('other', IterableObject) other: IterableObject) {
+  public isdisjoint(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
     let found = false;
     for (const item of this.items) {
       for (let i = 0; i < other.getCount(); i++) {
@@ -70,12 +71,12 @@ export class FrozenSetObject extends ContainerObject {
   }
 
   @pyFunction
-  public issubset(@pyParam('other', IterableObject) other: IterableObject) {
+  public issubset(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
     return new BooleanObject(FrozenSetObject.issubset(this, other));
   }
 
   @pyFunction
-  issuperset(@pyParam('other', IterableObject) other: IterableObject) {
+  issuperset(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
     return new BooleanObject(FrozenSetObject.issubset(other, this));
   }
 
@@ -93,7 +94,7 @@ export class FrozenSetObject extends ContainerObject {
   }
 
   @pyFunction
-  public union(@pyParam('other', IterableObject) other: IterableObject) {
+  public union(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
     return this.unionBase(new FrozenSetObject(), other);
   }
 
@@ -108,7 +109,7 @@ export class FrozenSetObject extends ContainerObject {
   }
 
   @pyFunction
-  public intersection(@pyParam('other', IterableObject) other: IterableObject) {
+  public intersection(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
     return this.intersectionBase(new FrozenSetObject(), other);
   }
 
@@ -129,7 +130,7 @@ export class FrozenSetObject extends ContainerObject {
   }
 
   @pyFunction
-  public difference(@pyParam('other', IterableObject) other: IterableObject) {
+  public difference(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
     return this.differenceBase(new FrozenSetObject(), other);
   }
 
@@ -146,7 +147,7 @@ export class FrozenSetObject extends ContainerObject {
 
   @pyFunction
   // eslint-disable-next-line @typescript-eslint/camelcase
-  public symmetric_difference(@pyParam('other', IterableObject) other: IterableObject) {
+  public symmetric_difference(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
     return this.symmetricDifferenceBase(new FrozenSetObject(), other);
   }
 

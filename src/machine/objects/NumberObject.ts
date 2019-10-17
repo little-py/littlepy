@@ -9,15 +9,6 @@ export class NumberObject extends PyObject {
     this.value = value;
   }
 
-  public static toNumber(value: PyObject, name = ''): number {
-    if (!(value instanceof NumberObject)) {
-      getObjectUtils().throwException(ExceptionType.TypeError, name);
-      /* istanbul ignore next */
-      return;
-    }
-    return value.value;
-  }
-
   equals(to: PyObject): boolean {
     if (to instanceof NumberObject) {
       return this.value === to.value;
@@ -42,7 +33,7 @@ export class NumberObject extends PyObject {
 
   @pyFunction
   // eslint-disable-next-line @typescript-eslint/camelcase,@typescript-eslint/no-unused-vars
-  public to_bytes(@pyParam('bytes', PyObject) bytes: PyObject) {
+  public to_bytes(@pyParam('bytes') bytes: PyObject) {
     getObjectUtils().throwException(ExceptionType.NotImplementedError, 'to_bytes');
   }
 }

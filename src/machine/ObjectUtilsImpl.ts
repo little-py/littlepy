@@ -143,6 +143,24 @@ class ObjectUtilsImpl implements ObjectUtils {
     }
     property.setter.call(instance, newValue);
   }
+
+  public toNumber(value: PyObject, name?: string): number {
+    if (!(value instanceof NumberObject)) {
+      this.throwException(ExceptionType.TypeError, name || '');
+      /* istanbul ignore next */
+      return;
+    }
+    return value.value;
+  }
+
+  public toString(value: PyObject, name?: string): string {
+    if (!(value instanceof StringObject)) {
+      this.throwException(ExceptionType.TypeError, name || '');
+      /* istanbul ignore next */
+      return;
+    }
+    return value.value;
+  }
 }
 
 export const objectUtils = new ObjectUtilsImpl();

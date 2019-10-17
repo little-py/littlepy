@@ -171,8 +171,8 @@ export class ReferenceObject extends PyObject {
           runContext.raiseTypeConversion();
           return;
         }
-        const from = NumberObject.toNumber(this.indexer, 'from');
-        const to = NumberObject.toNumber(this.indexTo, 'to');
+        const from = getObjectUtils().toNumber(this.indexer, 'from');
+        const to = getObjectUtils().toNumber(this.indexTo, 'to');
         const step = this.indexInterval ? (this.indexInterval as NumberObject).value : 1;
         if (step === 0) {
           runContext.raiseFunctionArgumentError();

@@ -1,11 +1,12 @@
 import { RunContext } from '../RunContext';
 import { StackEntry } from '../StackEntry';
 import { CallableContext } from '../CallableContext';
-import { CallableIgnore, RunContextBase } from '../NativeTypes';
+import { CallableIgnore } from '../NativeTypes';
 import { ExceptionType } from '../../api/ExceptionType';
 import { PyObject } from '../../api/Object';
 import { getObjectUtils } from '../../api/ObjectUtils';
 import { pyFunction, pyParam } from '../../api/Decorators';
+import { PropertyType } from '../../api/Native';
 
 export class GeneratorObject extends PyObject {
   public constructor(stackHead: StackEntry, stackTail: StackEntry) {
@@ -25,7 +26,7 @@ export class GeneratorObject extends PyObject {
   }
 
   @pyFunction
-  public __next__(@pyParam('', RunContextBase) runContext: RunContext, @pyParam('', CallableContext) callContext: CallableContext) {
+  public __next__(@pyParam('', PropertyType.Machine) runContext: RunContext, @pyParam('', PropertyType.CallContext) callContext: CallableContext) {
     if (this.finished) {
       getObjectUtils().throwException(ExceptionType.StopIteration);
       /* istanbul ignore next */

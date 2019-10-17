@@ -2,8 +2,8 @@ import { IteratorObject } from './IteratorObject';
 import { ExceptionType } from '../../api/ExceptionType';
 import { PyObject } from '../../api/Object';
 import { getObjectUtils } from '../../api/ObjectUtils';
-import { NumberObject } from './NumberObject';
 import { pyFunction, pyParam } from '../../api/Decorators';
+import { PropertyType } from '../../api/Native';
 
 export abstract class IterableObject extends PyObject {
   protected constructor() {
@@ -20,9 +20,9 @@ export abstract class IterableObject extends PyObject {
 
   @pyFunction
   public index(
-    @pyParam('element', PyObject) element: PyObject,
-    @pyParam('start', NumberObject, 0) start: number,
-    @pyParam('end', NumberObject, -1) end: number,
+    @pyParam('element') element: PyObject,
+    @pyParam('start', PropertyType.Number, 0) start: number,
+    @pyParam('end', PropertyType.Number, -1) end: number,
   ) {
     if (end === -1) {
       end = this.getCount();

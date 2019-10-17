@@ -3,8 +3,8 @@ import { ExceptionType } from '../../api/ExceptionType';
 import { IterableObject } from './IterableObject';
 import { PyObject } from '../../api/Object';
 import { getObjectUtils } from '../../api/ObjectUtils';
-import { NumberObject } from './NumberObject';
 import { pyFunction, pyParam, pyParamArgs, pyParamKwargs } from '../../api/Decorators';
+import { PropertyType } from '../../api/Native';
 
 function isSpace(c: string): boolean {
   return c === ' ' || c === '\t' || c === '\r' || c === '\n';
@@ -12,15 +12,6 @@ function isSpace(c: string): boolean {
 
 export class StringObject extends ContainerObject {
   public readonly value: string;
-
-  public static toString(value: PyObject, name = ''): string {
-    if (!(value instanceof StringObject)) {
-      getObjectUtils().throwException(ExceptionType.TypeError, name);
-      /* istanbul ignore next */
-      return;
-    }
-    return value.value;
-  }
 
   public constructor(value: string) {
     super();
@@ -65,8 +56,8 @@ export class StringObject extends ContainerObject {
 
   @pyFunction
   public center(
-    @pyParam('width', NumberObject) width: number, //
-    @pyParam('fillchar', StringObject, ' ') fillchar: string,
+    @pyParam('width', PropertyType.Number) width: number, //
+    @pyParam('fillchar', PropertyType.String, ' ') fillchar: string,
   ): string {
     if (this.value.length >= width) {
       return this.value;
@@ -77,9 +68,9 @@ export class StringObject extends ContainerObject {
 
   @pyFunction
   public count(
-    @pyParam('sub', StringObject) sub: string,
-    @pyParam('start', NumberObject, 0) start: number,
-    @pyParam('end', NumberObject, -1) end: number,
+    @pyParam('sub', PropertyType.String) sub: string,
+    @pyParam('start', PropertyType.Number, 0) start: number,
+    @pyParam('end', PropertyType.Number, -1) end: number,
   ): number {
     const from = start;
     const to = (end < 0 ? this.value.length : end) - sub.length;
@@ -93,20 +84,20 @@ export class StringObject extends ContainerObject {
   }
 
   @pyFunction
-  public endswith(@pyParam('sub', StringObject) sub: string): boolean {
+  public endswith(@pyParam('sub', PropertyType.String) sub: string): boolean {
     return this.value.substr(this.value.length - sub.length) === sub;
   }
 
   @pyFunction
-  public startswith(@pyParam('sub', StringObject) sub: string): boolean {
+  public startswith(@pyParam('sub', PropertyType.String) sub: string): boolean {
     return this.value.substr(0, sub.length) === sub;
   }
 
   @pyFunction
   public find(
-    @pyParam('sub', StringObject) sub: string,
-    @pyParam('start', NumberObject, 0) start: number,
-    @pyParam('end', NumberObject, -1) end: number,
+    @pyParam('sub', PropertyType.String) sub: string,
+    @pyParam('start', PropertyType.Number, 0) start: number,
+    @pyParam('end', PropertyType.Number, -1) end: number,
   ): number {
     if (end === -1) {
       end = this.value.length;
@@ -191,9 +182,9 @@ export class StringObject extends ContainerObject {
   @pyFunction
   public index(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    @pyParam('sub', StringObject) sub: any,
-    @pyParam('start', NumberObject, 0) start: number,
-    @pyParam('end', NumberObject, -1) end: number,
+    @pyParam('sub', PropertyType.String) sub: any,
+    @pyParam('start', PropertyType.Number, 0) start: number,
+    @pyParam('end', PropertyType.Number, -1) end: number,
   ) {
     if (end === -1) {
       end = this.value.length;
@@ -331,7 +322,7 @@ export class StringObject extends ContainerObject {
   }
 
   @pyFunction
-  public join(@pyParam('list', IterableObject) list: IterableObject): string {
+  public join(@pyParam('list', PropertyType.Iterable) list: IterableObject): string {
     if (list.getCount() === 0) {
       return '';
     }
@@ -348,12 +339,12 @@ export class StringObject extends ContainerObject {
   }
 
   @pyFunction
-  public ljust(@pyParam('width', NumberObject) width: number, @pyParam('separator', StringObject, ' ') separator: string) {
+  public ljust(@pyParam('width', PropertyType.Number) width: number, @pyParam('separator', PropertyType.String, ' ') separator: string) {
     return this.justifyAny(width, separator, true);
   }
 
   @pyFunction
-  public rjust(@pyParam('width', NumberObject) width: number, @pyParam('separator', StringObject, ' ') separator: string) {
+  public rjust(@pyParam('width', PropertyType.Number) width: number, @pyParam('separator', PropertyType.String, ' ') separator: string) {
     return this.justifyAny(width, separator, false);
   }
 
@@ -375,17 +366,17 @@ export class StringObject extends ContainerObject {
   }
 
   @pyFunction
-  public lstrip(@pyParam('sep', StringObject, ' \t\r\n') sep: string) {
+  public lstrip(@pyParam('sep', PropertyType.String, ' \t\r\n') sep: string) {
     return this.stripAny(this.value, sep, true);
   }
 
   @pyFunction
-  public rstrip(@pyParam('sep', StringObject, ' \t\r\n') sep: string) {
+  public rstrip(@pyParam('sep', PropertyType.String, ' \t\r\n') sep: string) {
     return this.stripAny(this.value, sep, false);
   }
 
   @pyFunction
-  public strip(@pyParam('sep', StringObject, ' \t\r\n') sep: string) {
+  public strip(@pyParam('sep', PropertyType.String, ' \t\r\n') sep: string) {
     return this.stripAny(this.stripAny(this.value, sep, false), sep, true);
   }
 
@@ -407,20 +398,20 @@ export class StringObject extends ContainerObject {
   }
 
   @pyFunction
-  public partition(@pyParam('part', StringObject) part: string) {
+  public partition(@pyParam('part', PropertyType.String) part: string) {
     return this.partitionAny(part, true);
   }
 
   @pyFunction
-  public rpartition(@pyParam('part', StringObject) part: string) {
+  public rpartition(@pyParam('part', PropertyType.String) part: string) {
     return this.partitionAny(part, false);
   }
 
   @pyFunction
   public replace(
-    @pyParam('from', StringObject) from: string,
-    @pyParam('to', StringObject) to: string,
-    @pyParam('count', NumberObject, 1) count: number,
+    @pyParam('from', PropertyType.String) from: string,
+    @pyParam('to', PropertyType.String) to: string,
+    @pyParam('count', PropertyType.Number, 1) count: number,
   ): string {
     let newValue = this.value;
     let replaced = 0;
@@ -441,9 +432,9 @@ export class StringObject extends ContainerObject {
 
   @pyFunction
   public rfind(
-    @pyParam('sub', StringObject) sub: string,
-    @pyParam('start', NumberObject, 0) start: number,
-    @pyParam('end', NumberObject, -1) end: number,
+    @pyParam('sub', PropertyType.String) sub: string,
+    @pyParam('start', PropertyType.Number, 0) start: number,
+    @pyParam('end', PropertyType.Number, -1) end: number,
   ): number {
     end = (end === -1 ? this.value.length : end) - sub.length;
     const newPos = this.value.lastIndexOf(sub, end);
@@ -455,9 +446,9 @@ export class StringObject extends ContainerObject {
 
   @pyFunction
   public rindex(
-    @pyParam('sub', StringObject) sub: string,
-    @pyParam('start', NumberObject, 0) start: number,
-    @pyParam('end', NumberObject, -1) end: number,
+    @pyParam('sub', PropertyType.String) sub: string,
+    @pyParam('start', PropertyType.Number, 0) start: number,
+    @pyParam('end', PropertyType.Number, -1) end: number,
   ): number {
     const pos = this.rfind(sub, start, end);
     if (pos === -1) {
@@ -549,12 +540,12 @@ export class StringObject extends ContainerObject {
   }
 
   @pyFunction
-  public split(@pyParam('sep', StringObject, '') sep: string, @pyParam('maxsplit', NumberObject, -1) maxsplit: number) {
+  public split(@pyParam('sep', PropertyType.String, '') sep: string, @pyParam('maxsplit', PropertyType.Number, -1) maxsplit: number) {
     return this.splitAny(sep, maxsplit, true);
   }
 
   @pyFunction
-  public rsplit(@pyParam('sep', StringObject, '') sep: string, @pyParam('maxsplit', NumberObject, -1) maxsplit: number) {
+  public rsplit(@pyParam('sep', PropertyType.String, '') sep: string, @pyParam('maxsplit', PropertyType.Number, -1) maxsplit: number) {
     return this.splitAny(sep, maxsplit, false);
   }
 
@@ -625,7 +616,7 @@ export class StringObject extends ContainerObject {
   }
 
   @pyFunction
-  public zfill(@pyParam('width', NumberObject) width: number): string {
+  public zfill(@pyParam('width', PropertyType.Number) width: number): string {
     if (width <= this.value.length) {
       return this.value;
     }

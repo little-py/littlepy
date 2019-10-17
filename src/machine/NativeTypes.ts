@@ -16,7 +16,7 @@ export class CallableIgnore {}
 
 export interface NativeParam {
   name: string;
-  type: any;
+  type: PropertyType;
   defaultValue: any;
   isCallback: boolean;
   args: boolean;

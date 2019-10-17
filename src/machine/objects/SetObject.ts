@@ -5,6 +5,7 @@ import { ExceptionType } from '../../api/ExceptionType';
 import { PyObject } from '../../api/Object';
 import { getObjectUtils } from '../../api/ObjectUtils';
 import { pyFunction, pyParam, pyParamArgs } from '../../api/Decorators';
+import { PropertyType } from '../../api/Native';
 
 export class SetObject extends FrozenSetObject {
   public constructor(items: PyObject[] = []) {
@@ -22,33 +23,33 @@ export class SetObject extends FrozenSetObject {
   }
 
   @pyFunction
-  public union(@pyParam('other', IterableObject) other: IterableObject) {
+  public union(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
     return this.unionBase(new SetObject(), other);
   }
 
   @pyFunction
-  public intersection(@pyParam('other', IterableObject) other: IterableObject) {
+  public intersection(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
     return this.intersectionBase(new SetObject(), other);
   }
 
   @pyFunction
-  public difference(@pyParam('other', IterableObject) other: IterableObject) {
+  public difference(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
     return this.differenceBase(new SetObject(), other);
   }
 
   @pyFunction
   // eslint-disable-next-line @typescript-eslint/camelcase
-  public symmetric_difference(@pyParam('other', IterableObject) other: IterableObject) {
+  public symmetric_difference(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
     return this.symmetricDifferenceBase(new SetObject(), other);
   }
 
   @pyFunction
-  public add(@pyParam('obj', PyObject) obj: PyObject) {
+  public add(@pyParam('obj') obj: PyObject) {
     this.addItem(obj);
   }
 
   @pyFunction
-  public remove(@pyParam('obj', PyObject) obj: PyObject) {
+  public remove(@pyParam('obj') obj: PyObject) {
     const pos = this.items.findIndex(r => r.equals(obj));
     if (pos >= 0) {
       this.items.splice(pos, 1);
@@ -58,7 +59,7 @@ export class SetObject extends FrozenSetObject {
   }
 
   @pyFunction
-  public discard(@pyParam('obj', PyObject) obj: PyObject) {
+  public discard(@pyParam('obj') obj: PyObject) {
     const pos = this.items.findIndex(r => r.equals(obj));
     if (pos >= 0) {
       this.items.splice(pos, 1);
