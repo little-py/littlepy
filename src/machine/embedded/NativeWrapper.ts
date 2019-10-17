@@ -10,6 +10,8 @@ import { DictionaryObject } from '../objects/DictionaryObject';
 import { TupleObject } from '../objects/TupleObject';
 import { IterableObject } from '../objects/IterableObject';
 import { PyObject } from '../../api/Object';
+import { PropertyType } from '../../api/Native';
+import { getObjectUtils } from '../../api/ObjectUtils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function nativeWrapper(instance: any, member: MemberWithMetadata) {
@@ -39,11 +41,11 @@ export function nativeWrapper(instance: any, member: MemberWithMetadata) {
         if (kwargs) {
           return callContext.namedArgs;
         }
-        if (type === CallableContext) {
+        if (type === PropertyType.CallContext) {
           ignoreParams = true;
           return callContext;
         }
-        if (type === RunContextBase) {
+        if (type === PropertyType.Machine) {
           return runContext;
         }
         let sourceArg: PyObject;
@@ -58,31 +60,31 @@ export function nativeWrapper(instance: any, member: MemberWithMetadata) {
             throw new ExceptionObject(ExceptionType.FunctionArgumentError, [], name);
           }
         }
-        if (type === NumberObject) {
-          return NumberObject.toNumber(sourceArg, name);
+        if (type === PropertyType.Number) {
+          return getObjectUtils().toNumber(sourceArg, name);
         }
-        if (type === StringObject) {
-          return StringObject.toString(sourceArg, name);
+        if (type === PropertyType.String) {
+          return getObjectUtils().toString(sourceArg, name);
         }
-        if (type === BooleanObject) {
+        if (type === PropertyType.Boolean) {
           if (!(sourceArg instanceof BooleanObject)) {
             throw new ExceptionObject(ExceptionType.TypeError, [], name);
           }
           return sourceArg.value !== 0;
         }
-        if (type === ListObject) {
+        if (type === PropertyType.List) {
           if (!(sourceArg instanceof ListObject)) {
             throw new ExceptionObject(ExceptionType.TypeError, [], name);
           }
-        } else if (type === DictionaryObject) {
+        } else if (type === PropertyType.Dictionary) {
           if (!(sourceArg instanceof DictionaryObject)) {
             throw new ExceptionObject(ExceptionType.TypeError, [], name);
           }
-        } else if (type === TupleObject) {
+        } else if (type === PropertyType.Tuple) {
           if (!(sourceArg instanceof TupleObject)) {
             throw new ExceptionObject(ExceptionType.TypeError, [], name);
           }
-        } else if (type === IterableObject) {
+        } else if (type === PropertyType.Iterable) {
           if (!(sourceArg instanceof IterableObject)) {
             throw new ExceptionObject(ExceptionType.TypeError, [], name);
           }

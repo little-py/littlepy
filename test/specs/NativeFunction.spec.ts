@@ -1,4 +1,4 @@
-import { CallableIgnore, MemberWithMetadata, NativeFinishCallback, RunContextBase } from '../../src/machine/NativeTypes';
+import { CallableIgnore, MemberWithMetadata, NativeFinishCallback } from '../../src/machine/NativeTypes';
 import { StringObject } from '../../src/machine/objects/StringObject';
 import { CallableContext } from '../../src/machine/CallableContext';
 import { RunContext } from '../../src/machine/RunContext';
@@ -15,7 +15,7 @@ import { nativeWrapper } from '../../src/machine/embedded/NativeWrapper';
 import { PyObject } from '../../src/api/Object';
 import { NumberObject } from '../../src/machine/objects/NumberObject';
 import { pyFunction, pyGetter, pyParam, pyParamArgs, pyParamCallback, pyParamKwargs, pySetter } from '../../src/api/Decorators';
-import { setObjectUtils } from '../../src/api/ObjectUtils';
+import { getObjectUtils, setObjectUtils } from '../../src/api/ObjectUtils';
 import { objectUtils } from '../../src/machine/ObjectUtilsImpl';
 import { PropertyType } from '../../src/api/Native';
 
@@ -58,54 +58,54 @@ describe('Native function', () => {
 
   class NativeTest extends PyObject {
     @pyFunction
-    public testWithInteger(@pyParam('param1', NumberObject) param1: number): number {
+    public testWithInteger(@pyParam('param1', PropertyType.Number) param1: number): number {
       callNumber = param1;
       return 1;
     }
 
     @pyFunction
-    public testWithString(@pyParam('param1', StringObject) param1: string) {
+    public testWithString(@pyParam('param1', PropertyType.String) param1: string) {
       callString = param1;
       return true;
     }
 
     @pyFunction
-    public testWithBoolean(@pyParam('param1', BooleanObject) param1: boolean) {
+    public testWithBoolean(@pyParam('param1', PropertyType.Boolean) param1: boolean) {
       callBool = param1;
       return false;
     }
 
     @pyFunction
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    public testWithList(@pyParam('param1', ListObject) param1: ListObject) {
+    public testWithList(@pyParam('param1', PropertyType.List) param1: ListObject) {
       return new CallableIgnore();
     }
 
     @pyFunction
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    public testWithDictionary(@pyParam('dictionaryParam', DictionaryObject) param1: TupleObject) {
+    public testWithDictionary(@pyParam('dictionaryParam', PropertyType.Dictionary) param1: TupleObject) {
       return new CallableIgnore();
     }
 
     @pyFunction
-    public testWithSome(@pyParam('someParam', FrozenSetObject) param1: FrozenSetObject) {
+    public testWithSome(@pyParam('someParam') param1: FrozenSetObject) {
       callFrozenSet = param1;
     }
 
     @pyFunction
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    public testWithTuple(@pyParam('tupleParam', TupleObject) param1: TupleObject) {
+    public testWithTuple(@pyParam('tupleParam', PropertyType.Tuple) param1: TupleObject) {
       return new CallableIgnore();
     }
 
     @pyFunction
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    public testWithIterable(@pyParam('iterable', IterableObject) param1: IterableObject) {
+    public testWithIterable(@pyParam('iterable', PropertyType.Iterable) param1: IterableObject) {
       return new CallableIgnore();
     }
 
     @pyFunction
-    public testWithCallback(@pyParam('param1', NumberObject) param1: number, @pyParamCallback callback: NativeFinishCallback) {
+    public testWithCallback(@pyParam('param1', PropertyType.Number) param1: number, @pyParamCallback callback: NativeFinishCallback) {
       callback(new StringObject('abc'), null);
     }
 
@@ -122,19 +122,19 @@ describe('Native function', () => {
     }
 
     @pyFunction
-    public testWithDefault(@pyParam('param2', NumberObject, 20) param1: number) {
+    public testWithDefault(@pyParam('param2', PropertyType.Number, 20) param1: number) {
       callNumber = param1;
       return new CallableIgnore();
     }
 
     @pyFunction
-    public testWithCallableContext(@pyParam('context', CallableContext) ctx: CallableContext) {
+    public testWithCallableContext(@pyParam('context', PropertyType.CallContext) ctx: CallableContext) {
       callableContext = ctx;
       return new CallableIgnore();
     }
 
     @pyFunction
-    public testWithRunContext(@pyParam('context', RunContextBase) ctx: RunContext) {
+    public testWithRunContext(@pyParam('context', PropertyType.Machine) ctx: RunContext) {
       runContext = ctx;
       return new CallableIgnore();
     }
@@ -302,7 +302,7 @@ describe('Native function', () => {
       null,
     );
     expect(kwargsArgument).toBeTruthy();
-    expect(NumberObject.toNumber(kwargsArgument['test1'], 'test1')).toEqual(100);
+    expect(getObjectUtils().toNumber(kwargsArgument['test1'], 'test1')).toEqual(100);
   });
 
   it('should give default value', () => {

@@ -13,7 +13,7 @@ export class IntegerClassObject extends PyClass {
 
   @pyFunction
   // eslint-disable-next-line @typescript-eslint/camelcase,@typescript-eslint/no-unused-vars
-  public from_bytes(@pyParam('bytes', PyObject) bytes: PyObject) {
+  public from_bytes(@pyParam('bytes') bytes: PyObject) {
     getObjectUtils().throwException(ExceptionType.NotImplementedError, 'from_bytes');
   }
 }

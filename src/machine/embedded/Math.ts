@@ -1,10 +1,12 @@
 import { ModuleObject } from '../objects/ModuleObject';
-import { NumberObject } from '../objects/NumberObject';
 import { ExceptionObject } from '../objects/ExceptionObject';
 import { ExceptionType } from '../../api/ExceptionType';
 import { IterableObject } from '../objects/IterableObject';
 import { createNativeModule } from './Utils';
 import { pyFunction, pyParam } from '../../api/Decorators';
+import { PropertyType } from '../../api/Native';
+import { getObjectUtils } from '../../api/ObjectUtils';
+import { NumberObject } from '../objects/NumberObject';
 
 class PythonMath {
   precision(a: number): number {
@@ -19,59 +21,59 @@ class PythonMath {
   }
 
   @pyFunction
-  pow(@pyParam('x', NumberObject) x: number, @pyParam('y', NumberObject) y: number) {
-    return new NumberObject(Math.pow(x, y));
+  pow(@pyParam('x', PropertyType.Number) x: number, @pyParam('y', PropertyType.Number) y: number) {
+    return Math.pow(x, y);
   }
 
   @pyFunction
-  ceil(@pyParam('x', NumberObject) x: number) {
-    return new NumberObject(Math.ceil(x));
+  ceil(@pyParam('x', PropertyType.Number) x: number) {
+    return Math.ceil(x);
   }
 
   @pyFunction
-  copysign(@pyParam('x', NumberObject) x: number, @pyParam('y', NumberObject) y: number) {
-    return new NumberObject(y < 0 ? -x : x);
+  copysign(@pyParam('x', PropertyType.Number) x: number, @pyParam('y', PropertyType.Number) y: number) {
+    return y < 0 ? -x : x;
   }
 
   @pyFunction
-  fabs(@pyParam('x', NumberObject) x: number) {
-    return new NumberObject(Math.abs(x));
+  fabs(@pyParam('x', PropertyType.Number) x: number) {
+    return Math.abs(x);
   }
 
   @pyFunction
-  factorial(@pyParam('x', NumberObject) x: number) {
+  factorial(@pyParam('x', PropertyType.Number) x: number) {
     let ret = 1;
     for (let i = 1; i <= x; i++) {
       ret *= i;
     }
-    return new NumberObject(ret);
+    return ret;
   }
 
   @pyFunction
-  floor(@pyParam('x', NumberObject) x: number) {
-    return new NumberObject(Math.floor(x));
+  floor(@pyParam('x', PropertyType.Number) x: number) {
+    return Math.floor(x);
   }
 
   @pyFunction
-  fmod(@pyParam('x', NumberObject) x: number, @pyParam('y', NumberObject) y: number) {
+  fmod(@pyParam('x', PropertyType.Number) x: number, @pyParam('y', PropertyType.Number) y: number) {
     if (y === 0) {
       throw new ExceptionObject(ExceptionType.ZeroDivisionError);
     }
-    return new NumberObject(x % y);
+    return x % y;
   }
 
   @pyFunction
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  frexp(@pyParam('x', NumberObject) x: number) {
+  frexp(@pyParam('x', PropertyType.Number) x: number) {
     throw new ExceptionObject(ExceptionType.NotImplementedError);
   }
 
   @pyFunction
-  fsum(@pyParam('x', IterableObject) x: IterableObject) {
+  fsum(@pyParam('x', PropertyType.Iterable) x: IterableObject) {
     const values: number[] = [];
     let maxP = 0;
     for (let i = 0; i < x.getCount(); i++) {
-      values[i] = NumberObject.toNumber(x.getItem(i), 'x');
+      values[i] = getObjectUtils().toNumber(x.getItem(i), 'x');
       const p = this.precision(values[i]);
       if (p > maxP) {
         maxP = p;
@@ -82,92 +84,92 @@ class PythonMath {
     for (const x of values) {
       ret += x * sum;
     }
-    return new NumberObject(ret / sum);
+    return ret / sum;
   }
 
   @pyFunction
-  exp(@pyParam('x', NumberObject) x: number) {
-    return new NumberObject(Math.exp(x));
+  exp(@pyParam('x', PropertyType.Number) x: number) {
+    return Math.exp(x);
   }
 
   @pyFunction
-  expm1(@pyParam('x', NumberObject) x: number) {
-    return new NumberObject(Math.expm1(x));
+  expm1(@pyParam('x', PropertyType.Number) x: number) {
+    return Math.expm1(x);
   }
 
   @pyFunction
-  log(@pyParam('x', NumberObject) x: number) {
-    return new NumberObject(Math.log(x));
+  log(@pyParam('x', PropertyType.Number) x: number) {
+    return Math.log(x);
   }
 
   @pyFunction
-  log1p(@pyParam('x', NumberObject) x: number) {
-    return new NumberObject(Math.log1p(x));
+  log1p(@pyParam('x', PropertyType.Number) x: number) {
+    return Math.log1p(x);
   }
 
   @pyFunction
-  log2(@pyParam('x', NumberObject) x: number) {
-    return new NumberObject(Math.log2(x));
+  log2(@pyParam('x', PropertyType.Number) x: number) {
+    return Math.log2(x);
   }
 
   @pyFunction
-  log10(@pyParam('x', NumberObject) x: number) {
-    return new NumberObject(Math.log10(x));
+  log10(@pyParam('x', PropertyType.Number) x: number) {
+    return Math.log10(x);
   }
 
   @pyFunction
-  sqrt(@pyParam('x', NumberObject) x: number) {
-    return new NumberObject(Math.sqrt(x));
+  sqrt(@pyParam('x', PropertyType.Number) x: number) {
+    return Math.sqrt(x);
   }
 
   @pyFunction
-  acos(@pyParam('x', NumberObject) x: number) {
-    return new NumberObject(Math.acos(x));
+  acos(@pyParam('x', PropertyType.Number) x: number) {
+    return Math.acos(x);
   }
 
   @pyFunction
-  asin(@pyParam('x', NumberObject) x: number) {
-    return new NumberObject(Math.asin(x));
+  asin(@pyParam('x', PropertyType.Number) x: number) {
+    return Math.asin(x);
   }
 
   @pyFunction
-  atan(@pyParam('x', NumberObject) x: number) {
-    return new NumberObject(Math.atan(x));
+  atan(@pyParam('x', PropertyType.Number) x: number) {
+    return Math.atan(x);
   }
 
   @pyFunction
-  atan2(@pyParam('x', NumberObject) x: number, @pyParam('y', NumberObject) y: number) {
-    return new NumberObject(Math.atan2(x, y));
+  atan2(@pyParam('x', PropertyType.Number) x: number, @pyParam('y', PropertyType.Number) y: number) {
+    return Math.atan2(x, y);
   }
 
   @pyFunction
-  cos(@pyParam('x', NumberObject) x: number) {
-    return new NumberObject(Math.cos(x));
+  cos(@pyParam('x', PropertyType.Number) x: number) {
+    return Math.cos(x);
   }
 
   @pyFunction
-  hypot(@pyParam('x', NumberObject) x: number, @pyParam('y', NumberObject) y: number) {
-    return new NumberObject(Math.sqrt(x * x + y * y));
+  hypot(@pyParam('x', PropertyType.Number) x: number, @pyParam('y', PropertyType.Number) y: number) {
+    return Math.sqrt(x * x + y * y);
   }
 
   @pyFunction
-  sin(@pyParam('x', NumberObject) x: number) {
-    return new NumberObject(Math.sin(x));
+  sin(@pyParam('x', PropertyType.Number) x: number) {
+    return Math.sin(x);
   }
 
   @pyFunction
-  tan(@pyParam('x', NumberObject) x: number) {
-    return new NumberObject(Math.tan(x));
+  tan(@pyParam('x', PropertyType.Number) x: number) {
+    return Math.tan(x);
   }
 
   @pyFunction
-  degrees(@pyParam('x', NumberObject) x: number) {
-    return new NumberObject(x * 57.29577951308232);
+  degrees(@pyParam('x', PropertyType.Number) x: number) {
+    return x * 57.29577951308232;
   }
 
   @pyFunction
-  radians(@pyParam('x', NumberObject) x: number) {
-    return new NumberObject(x * 0.017453292519943295);
+  radians(@pyParam('x', PropertyType.Number) x: number) {
+    return x * 0.017453292519943295;
   }
 }
 

@@ -6,6 +6,7 @@ import { SetObject } from './SetObject';
 import { PyObject } from '../../api/Object';
 import { getObjectUtils } from '../../api/ObjectUtils';
 import { pyFunction, pyParam } from '../../api/Decorators';
+import { PropertyType } from '../../api/Native';
 
 export class DictionaryObject extends ContainerObject {
   public constructor() {
@@ -55,7 +56,7 @@ export class DictionaryObject extends ContainerObject {
   }
 
   @pyFunction
-  public pop(@pyParam('key', StringObject) key: string, @pyParam('def', PyObject, null) def: PyObject) {
+  public pop(@pyParam('key', PropertyType.String) key: string, @pyParam('def', PropertyType.Object, null) def: PyObject) {
     const pos = this._keys.findIndex(k => k.value === key);
     if (pos < 0) {
       if (def) {
@@ -89,7 +90,7 @@ export class DictionaryObject extends ContainerObject {
   }
 
   @pyFunction
-  public get(@pyParam('key', StringObject) key: string, @pyParam('default', PyObject, null) def: PyObject) {
+  public get(@pyParam('key', PropertyType.String) key: string, @pyParam('default', PropertyType.Object, null) def: PyObject) {
     const pos = this._keys.findIndex(k => k.value === key);
     if (pos < 0) {
       if (def) {

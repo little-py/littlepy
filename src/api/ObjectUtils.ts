@@ -14,6 +14,8 @@ export interface ObjectUtils {
   toPyObject(val: any, useObjectWrapper);
   readNativeProperty(instance: PyObject, property: NativeProperty): PyObject;
   writeNativeProperty(instance: PyObject, property: NativeProperty, value: PyObject);
+  toNumber(value: PyObject, name?: string): number;
+  toString(value: PyObject, name?: string): string;
 }
 
 let objectUtils: ObjectUtils;

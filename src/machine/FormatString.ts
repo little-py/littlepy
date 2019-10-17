@@ -4,7 +4,7 @@ import { ExceptionType } from '../api/ExceptionType';
 import { StringObject } from './objects/StringObject';
 import { ExceptionObject } from './objects/ExceptionObject';
 import { PyObject } from '../api/Object';
-import { NumberObject } from './objects/NumberObject';
+import { getObjectUtils } from '../api/ObjectUtils';
 
 export const stringFormat = (self: StringObject, format: PyObject) => {
   let dictionary: DictionaryObject;
@@ -65,7 +65,7 @@ export const stringFormat = (self: StringObject, format: PyObject) => {
         case 'F':
         case 'g':
         case 'G': {
-          const number = NumberObject.toNumber(arg, 'arg');
+          const number = getObjectUtils().toNumber(arg, 'arg');
           const intValue = Math.floor(number);
           const left = intValue.toString();
           let right = (number - intValue).toString().substr(2);
