@@ -5,32 +5,33 @@ import { GeneratedCode } from '../common/Instructions';
 import { KeywordType } from '../api/Keyword';
 import { CodeGenerator } from './CodeGenerator';
 import { CompiledModule } from './CompiledModule';
-import { LiteralType } from './Literal';
+import { Literal, LiteralType } from './Literal';
 import { InstructionType } from '../common/InstructionType';
 import { PyErrorType } from '../api/ErrorType';
 import { ArgumentType, FunctionArgument, FunctionBody, FunctionType } from '../common/FunctionBody';
 import { ReferenceScope } from '../common/ReferenceScope';
 import { CompilerBlockContext, CompilerBlockType } from './CompilerBlockContext';
 import {
-  isBinaryOperator,
-  isIfOperator,
-  isUnaryOperator,
-  isExpressionEnd,
-  isComma,
-  isLeftBracket,
-  isPoint,
-  isLeftSquareBracket,
-  isIdentifier,
   getTokenOperatorPriority,
-  isDelimiterEqual,
-  isRightBracket,
+  isBinaryOperator,
   isColon,
-  isRightSquareBracket,
-  isKeywordIn,
-  isRightFigureBracket,
-  isLiteral,
+  isComma,
+  isDelimiterEqual,
+  isExpressionEnd,
+  isIdentifier,
+  isIfOperator,
   isKeywordElse,
+  isKeywordIn,
+  isLeftBracket,
+  isLeftSquareBracket,
+  isLiteral,
+  isPoint,
+  isRightBracket,
+  isRightFigureBracket,
+  isRightSquareBracket,
+  isUnaryOperator,
 } from './TokenUtils';
+import { LexicalAnalyzer } from './LexicalAnalyzer';
 
 export class ExpressionCompiler {
   private _from: number;
@@ -849,7 +850,44 @@ export class ExpressionCompiler {
       return ret;
     }
     const literal = this._compiledCode.literals[token.literal];
-    ret = CodeGenerator.literal(literal, this._compilerContext, token.getPosition());
+    if (literal.type === LiteralType.FormattedString) {
+      let hasErrors = false;
+      const values: GeneratedCode[] = [];
+      const newValue = literal.string.replace(/{([^}]+)}/g, (_, arg) => {
+        const savedTokens = this._compiledCode.tokens;
+        this._compiledCode.tokens = [];
+        const lexicalAnalyzer = new LexicalAnalyzer(this._compiledCode);
+        const lexicalContext = new LexicalContext(this._compiledCode);
+        lexicalAnalyzer.parse(arg, lexicalContext);
+        this._compilerContext.update();
+        const tokens = this._compiledCode.tokens.filter(
+          t => t.type !== TokenType.Indent && t.type !== TokenType.Dedent && t.type !== TokenType.NewLine,
+        );
+        this._compiledCode.tokens = savedTokens;
+        const compiler = new ExpressionCompiler(tokens, tokens.length, this._compilerContext, this._lexicalContext, this._compiledCode);
+        const value = compiler.compileInternal(0, true, true, true);
+        const ret = `{${values.length.toString()}}`;
+        values.push(value);
+        if (!value.success) {
+          hasErrors = true;
+        }
+        return ret;
+      });
+      if (hasErrors) {
+        ret = new GeneratedCode();
+        ret.success = false;
+        return ret;
+      }
+      const newLiteral: Literal = {
+        ...literal,
+        string: newValue,
+      };
+      this._compiledCode.literals.push(newLiteral);
+      this._compilerContext.update();
+      ret = CodeGenerator.formattedLiteral(newLiteral, values, this._compilerContext, token.getPosition());
+    } else {
+      ret = CodeGenerator.literal(literal, this._compilerContext, token.getPosition());
+    }
     if (ret.success) {
       ret.finish = from + 1;
     }

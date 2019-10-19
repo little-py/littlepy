@@ -637,6 +637,23 @@ export class CodeGenerator {
     return ret;
   }
 
+  public static formattedLiteral(
+    literal: Literal,
+    values: GeneratedCode[],
+    compilerContext: CompilerContext,
+    position: TokenPosition,
+  ): GeneratedCode {
+    const ret = new GeneratedCode();
+    const litId = compilerContext.getLiteral(literal);
+    let reg = 0;
+    for (const value of values) {
+      CodeGenerator.appendTo(ret, value, reg++);
+    }
+    ret.add(InstructionType.Literal, position, 0, litId);
+    ret.success = true;
+    return ret;
+  }
+
   public static bool(value: number, position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();
     ret.add(InstructionType.Bool, position, value, 0);

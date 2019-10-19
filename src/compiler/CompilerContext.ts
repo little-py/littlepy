@@ -71,26 +71,32 @@ export class CompilerContext {
   public readonly rowDescriptors: RowDescriptor[] = [];
   public row: number;
   private lambdaFunctionIndex = 1;
+  private parsedLiterals = 0;
+  private parsedIdentifiers = 0;
 
   public constructor(code: CompiledModule) {
     this.compiledCode = code;
-    for (let i = 0; i < code.literals.length; i++) {
-      const literal = code.literals[i];
+    this.update();
+  }
+
+  public update() {
+    for (; this.parsedLiterals < this.compiledCode.literals.length; this.parsedLiterals++) {
+      const literal = this.compiledCode.literals[this.parsedLiterals];
       switch (literal.type & LiteralType.LiteralMask) {
         case LiteralType.String:
         case LiteralType.FormattedString:
         case LiteralType.Bytes:
         case LiteralType.Unicode:
-          this.stringLiterals[literal.string] = i;
+          this.stringLiterals[literal.string] = this.parsedLiterals;
           break;
         default:
           const array = literal.type === LiteralType.Integer ? this.intLiterals : this.realLiterals;
-          array[literal.integer.toString()] = i;
+          array[literal.integer.toString()] = this.parsedLiterals;
           break;
       }
     }
-    for (let i = 0; i < code.identifiers.length; i++) {
-      this.identifierMap[code.identifiers[i]] = i;
+    for (; this.parsedIdentifiers < this.compiledCode.identifiers.length; this.parsedIdentifiers++) {
+      this.identifierMap[this.compiledCode.identifiers[this.parsedIdentifiers]] = this.parsedIdentifiers;
     }
   }
 
