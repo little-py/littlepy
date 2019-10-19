@@ -55,6 +55,8 @@ describe('Native function', () => {
   let kwargsArgument: { [key: string]: PyObject };
   let callableContext: CallableContext;
   let runContext: RunContext;
+  let stringProperty = '';
+  let numberProperty = 0;
 
   class NativeTest extends PyObject {
     @pyFunction
@@ -165,6 +167,26 @@ describe('Native function', () => {
     public setVisible(newValue: boolean) {
       this.visibleInstance = newValue;
     }
+
+    @pyGetter()
+    public getString() {
+      return stringProperty;
+    }
+
+    @pySetter(PropertyType.String)
+    public setString(newValue: string) {
+      stringProperty = newValue;
+    }
+
+    @pyGetter()
+    public getNumber() {
+      return numberProperty;
+    }
+
+    @pySetter(PropertyType.Number)
+    public setNumber(newValue: number) {
+      numberProperty = newValue;
+    }
   }
 
   beforeEach(() => {
@@ -176,6 +198,8 @@ describe('Native function', () => {
     callableContext = undefined;
     kwargsArgument = undefined;
     runContext = undefined;
+    stringProperty = '';
+    numberProperty = 0;
   });
 
   it('should use number argument', () => {
@@ -462,10 +486,56 @@ describe('Native function', () => {
   it('should update properties', () => {
     const test = new NativeTest();
     test.visibleInstance = false;
-    let visible = test.getAttribute('visible');
-    expect(visible instanceof BooleanObject && visible.value).toBeFalsy();
+    let value = test.getAttribute('visible');
+    expect(value instanceof BooleanObject && value.value).toBeFalsy();
     test.setAttribute('visible', new BooleanObject(true));
-    visible = test.getAttribute('visible');
-    expect(visible instanceof BooleanObject && visible.value).toBeTruthy();
+    value = test.getAttribute('visible');
+    expect(value instanceof BooleanObject && value.value).toBeTruthy();
+    stringProperty = 'test1';
+    value = test.getAttribute('string');
+    expect(value instanceof StringObject && value.value).toEqual('test1');
+    test.setAttribute('string', new StringObject('test2'));
+    expect(stringProperty).toEqual('test2');
+    numberProperty = 10;
+    value = test.getAttribute('number');
+    expect(value instanceof NumberObject && value.value).toEqual(10);
+    test.setAttribute('number', new NumberObject(30));
+    expect(numberProperty).toEqual(30);
+  });
+
+  it('should throw exception on non-boolean value', () => {
+    try {
+      const test = new NativeTest();
+      test.setAttribute('visible', new StringObject('a'));
+      fail();
+    } catch (e) {
+      expect(e instanceof ExceptionObject && e.exceptionType).toEqual(ExceptionType.TypeError);
+    }
+  });
+
+  it('should throw exception on non-string value', () => {
+    try {
+      const test = new NativeTest();
+      test.setAttribute('string', new BooleanObject(true));
+      fail();
+    } catch (e) {
+      expect(e instanceof ExceptionObject && e.exceptionType).toEqual(ExceptionType.TypeError);
+    }
+  });
+
+  it('should throw exception on non-number value', () => {
+    try {
+      const test = new NativeTest();
+      test.setAttribute('number', new StringObject('a'));
+      fail();
+    } catch (e) {
+      expect(e instanceof ExceptionObject && e.exceptionType).toEqual(ExceptionType.TypeError);
+    }
+  });
+
+  it('should return correct object on toPyObject() call', () => {
+    let value = getObjectUtils().toPyObject(false, false);
+    expect(value instanceof BooleanObject && value.value).toBeFalsy();
+    value = getObjectUtils().toPyObject(10, false);
   });
 });

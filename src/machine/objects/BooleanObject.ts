@@ -10,4 +10,10 @@ export class BooleanObject extends NumberObject {
   }
 
   public readonly value: number;
+
+  public static TRUE = new BooleanObject(true);
+  public static FALSE = new BooleanObject(false);
+  public static toBoolean(value: boolean | number): BooleanObject {
+    return value ? BooleanObject.TRUE : BooleanObject.FALSE;
+  }
 }

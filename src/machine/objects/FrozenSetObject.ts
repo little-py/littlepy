@@ -50,7 +50,7 @@ export class FrozenSetObject extends ContainerObject {
         break;
       }
     }
-    return new BooleanObject(!found);
+    return BooleanObject.toBoolean(!found);
   }
 
   public static issubset(first: IterableObject, other: IterableObject): boolean {
@@ -72,12 +72,12 @@ export class FrozenSetObject extends ContainerObject {
 
   @pyFunction
   public issubset(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
-    return new BooleanObject(FrozenSetObject.issubset(this, other));
+    return BooleanObject.toBoolean(FrozenSetObject.issubset(this, other));
   }
 
   @pyFunction
   issuperset(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
-    return new BooleanObject(FrozenSetObject.issubset(other, this));
+    return BooleanObject.toBoolean(FrozenSetObject.issubset(other, this));
   }
 
   protected unionBase(ret: FrozenSetObject, other: IterableObject) {
