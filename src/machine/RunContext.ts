@@ -910,7 +910,7 @@ export class RunContext extends RunContextBase {
     }
     const value = obj.toBoolean();
     const invertedValue = value ? 0 : 1;
-    functionStack.setReg(current.arg2, new BooleanObject(invertedValue));
+    functionStack.setReg(current.arg2, BooleanObject.toBoolean(invertedValue));
   }
 
   private ensureAtModuleLevel(functionStack: StackEntry) {
@@ -1013,7 +1013,7 @@ export class RunContext extends RunContextBase {
       });
       return;
     }
-    functionStack.setReg(current.arg2, new BooleanObject(obj.toBoolean() ? 1 : 0));
+    functionStack.setReg(current.arg2, BooleanObject.toBoolean(obj.toBoolean() ? 1 : 0));
   }
 
   private stepLogicalOr(current: Instruction, functionStack: StackEntry) {
@@ -1022,7 +1022,7 @@ export class RunContext extends RunContextBase {
       return;
     }
     if (obj.toBoolean()) {
-      functionStack.setReg(current.arg2, new BooleanObject(1));
+      functionStack.setReg(current.arg2, BooleanObject.toBoolean(1));
       functionStack.instruction += current.arg3;
     }
   }
@@ -1033,13 +1033,13 @@ export class RunContext extends RunContextBase {
       return;
     }
     if (!obj.toBoolean()) {
-      functionStack.setReg(current.arg2, new BooleanObject(0));
+      functionStack.setReg(current.arg2, BooleanObject.toBoolean(0));
       functionStack.instruction += current.arg3;
     }
   }
 
   private stepBool(current: Instruction, functionStack: StackEntry) {
-    const obj = new BooleanObject(current.arg1);
+    const obj = BooleanObject.toBoolean(current.arg1);
     functionStack.setReg(current.arg2, obj);
   }
 
@@ -1059,9 +1059,9 @@ export class RunContext extends RunContextBase {
     }
     if (container instanceof ContainerObject) {
       if (container.contains(value)) {
-        functionStack.setReg(current.arg3, new BooleanObject(invert ? 0 : 1));
+        functionStack.setReg(current.arg3, BooleanObject.toBoolean(!invert));
       } else {
-        functionStack.setReg(current.arg3, new BooleanObject(invert ? 1 : 0));
+        functionStack.setReg(current.arg3, BooleanObject.toBoolean(invert));
       }
       return;
     }
@@ -1077,7 +1077,7 @@ export class RunContext extends RunContextBase {
           return;
         }
         if (invert) {
-          ret = new BooleanObject(ret.toBoolean());
+          ret = BooleanObject.toBoolean(ret.toBoolean());
         }
         stack.callContext.indexedArgs = savedIndexedArgs;
         stack.callContext.namedArgs = savedNamedArgs;
@@ -1968,9 +1968,9 @@ export class RunContext extends RunContextBase {
     const op: InstructionType = instruction.type === InstructionType.AugmentedCopy ? instruction.arg4 : instruction.type;
     switch (op) {
       case InstructionType.Is:
-        return new BooleanObject(leftObj === rightObj);
+        return BooleanObject.toBoolean(leftObj === rightObj);
       case InstructionType.IsNot:
-        return new BooleanObject(leftObj !== rightObj);
+        return BooleanObject.toBoolean(leftObj !== rightObj);
     }
     if (leftObj instanceof NumberObject && rightObj instanceof NumberObject) {
       const left = leftObj.value;
@@ -2013,19 +2013,19 @@ export class RunContext extends RunContextBase {
         case InstructionType.BinXor:
           return this.realToObject(left ^ right);
         case InstructionType.Less:
-          return new BooleanObject(left < right);
+          return BooleanObject.toBoolean(left < right);
         case InstructionType.Greater:
-          return new BooleanObject(left > right);
+          return BooleanObject.toBoolean(left > right);
         case InstructionType.LessEq:
-          return new BooleanObject(left <= right);
+          return BooleanObject.toBoolean(left <= right);
         case InstructionType.GreaterEq:
-          return new BooleanObject(left >= right);
+          return BooleanObject.toBoolean(left >= right);
         case InstructionType.Equal:
           // eslint-disable-next-line eqeqeq
-          return new BooleanObject(left == right);
+          return BooleanObject.toBoolean(left == right);
         case InstructionType.NotEq:
           // eslint-disable-next-line eqeqeq
-          return new BooleanObject(left != right);
+          return BooleanObject.toBoolean(left != right);
         default:
           break;
       }
@@ -2035,9 +2035,9 @@ export class RunContext extends RunContextBase {
       const right = rightObj.value;
       switch (op) {
         case InstructionType.Equal:
-          return new BooleanObject(left === right);
+          return BooleanObject.toBoolean(left === right);
         case InstructionType.NotEq:
-          return new BooleanObject(left !== right);
+          return BooleanObject.toBoolean(left !== right);
         case InstructionType.Add:
           return new StringObject(left + right);
       }
@@ -2078,7 +2078,7 @@ export class RunContext extends RunContextBase {
             currentStack.callContext.indexedArgs = savedIndexedArgs;
             currentStack.callContext.namedArgs = savedNamedArgs;
             if (invert) {
-              ret = new BooleanObject(!ret.toBoolean());
+              ret = BooleanObject.toBoolean(!ret.toBoolean());
             }
             currentStack.setReg(instruction.arg3, ret);
           });
@@ -2115,9 +2115,9 @@ export class RunContext extends RunContextBase {
     }
     switch (op) {
       case InstructionType.Equal:
-        return new BooleanObject(leftObj.equals(rightObj));
+        return BooleanObject.toBoolean(leftObj.equals(rightObj));
       case InstructionType.NotEq:
-        return new BooleanObject(leftObj !== rightObj);
+        return BooleanObject.toBoolean(!leftObj.equals(rightObj));
       case InstructionType.Mod:
         if (leftObj instanceof StringObject) {
           return stringFormat(leftObj, rightObj);
@@ -2125,22 +2125,22 @@ export class RunContext extends RunContextBase {
         break;
       case InstructionType.Less:
         if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
-          return new BooleanObject(FrozenSetObject.issubset(leftObj, rightObj) && !FrozenSetObject.issubset(rightObj, leftObj));
+          return BooleanObject.toBoolean(FrozenSetObject.issubset(leftObj, rightObj) && !FrozenSetObject.issubset(rightObj, leftObj));
         }
         break;
       case InstructionType.LessEq:
         if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
-          return new BooleanObject(FrozenSetObject.issubset(leftObj, rightObj));
+          return BooleanObject.toBoolean(FrozenSetObject.issubset(leftObj, rightObj));
         }
         break;
       case InstructionType.Greater:
         if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
-          return new BooleanObject(FrozenSetObject.issubset(rightObj, leftObj) && !FrozenSetObject.issubset(leftObj, rightObj));
+          return BooleanObject.toBoolean(FrozenSetObject.issubset(rightObj, leftObj) && !FrozenSetObject.issubset(leftObj, rightObj));
         }
         break;
       case InstructionType.GreaterEq:
         if (leftObj instanceof FrozenSetObject && rightObj instanceof IterableObject) {
-          return new BooleanObject(FrozenSetObject.issubset(rightObj, leftObj));
+          return BooleanObject.toBoolean(FrozenSetObject.issubset(rightObj, leftObj));
         }
         break;
       case InstructionType.BinOr:

@@ -72,7 +72,7 @@ class ObjectUtilsImpl implements ObjectUtils {
           return new ObjectWrapperObject(val);
         }
       } else if (typeof val === 'boolean') {
-        return new BooleanObject(val);
+        return BooleanObject.toBoolean(val);
       }
 
       if (val instanceof PyObject) {
@@ -89,7 +89,7 @@ class ObjectUtilsImpl implements ObjectUtils {
         if (typeof value !== 'boolean') {
           this.throwException(ExceptionType.TypeError);
         }
-        return new BooleanObject(value);
+        return BooleanObject.toBoolean(value);
       case PropertyType.Number:
         if (typeof value !== 'number') {
           this.throwException(ExceptionType.TypeError);

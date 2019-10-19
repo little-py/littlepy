@@ -113,7 +113,7 @@ export function nativeWrapper(instance: any, member: MemberWithMetadata) {
         case 'string':
           return new StringObject(ret);
         case 'boolean':
-          return new BooleanObject(ret ? 1 : 0);
+          return BooleanObject.toBoolean(ret);
         default:
           if (!(ret instanceof PyObject)) {
             runContext.raiseException(new ExceptionObject(ExceptionType.TypeError));
