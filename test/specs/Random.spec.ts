@@ -1,6 +1,6 @@
 import { PythonRandom } from '../../src/machine/embedded/Random';
-import {ListObject} from "../../src/machine/objects/ListObject";
-import {NumberObject} from "../../src/machine/objects/NumberObject";
+import { ListObject } from '../../src/machine/objects/ListObject';
+import { NumberObject } from '../../src/machine/objects/NumberObject';
 
 describe('Random', () => {
   it('random()', () => {
@@ -33,5 +33,5 @@ describe('Random', () => {
     }
     const choice = random.choice(list);
     expect(choice instanceof NumberObject && choice.value).toEqual(3);
-  })
+  });
 });
