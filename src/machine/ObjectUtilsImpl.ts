@@ -66,11 +66,7 @@ class ObjectUtilsImpl implements ObjectUtils {
       } else if (typeof val === 'string') {
         return new StringObject(val);
       } else if (typeof val === 'number') {
-        if (Math.floor(val) === val) {
-          return new NumberObject(val);
-        } else {
-          return new NumberObject(val);
-        }
+        return new NumberObject(val);
       } else if (typeof val === 'object') {
         if (useObjectWrapper) {
           return new ObjectWrapperObject(val);

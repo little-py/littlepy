@@ -3770,6 +3770,13 @@ line2"""
     `,
     output: ['1.858729691979481'],
   },
+  {
+    input: `
+      import random
+      print(random.random() >= 0)
+    `,
+    output: ['True'],
+  },
 ];
 
 export default scenarios;
