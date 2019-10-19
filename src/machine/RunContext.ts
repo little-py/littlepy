@@ -470,7 +470,7 @@ export class RunContext extends RunContextBase {
   }
 
   private stepLiteral(current: Instruction, functionStack: StackEntry) {
-    const literal = this.createLiteral(current.arg2);
+    const literal = this.createLiteral(current.arg2, functionStack, current.arg1);
     functionStack.setReg(current.arg1, literal);
   }
 
@@ -1551,14 +1551,14 @@ export class RunContext extends RunContextBase {
     return this.getCurrentFunctionStack().functionBody.module;
   }
 
-  private createLiteral(literalId: number): PyObject {
+  private createLiteral(literalId: number, functionStack: StackEntry, startReg: number): PyObject {
     const module = this.getCurrentModule();
     const literalDef = module.literals[literalId];
     switch (literalDef.type & LiteralType.LiteralMask) {
       case LiteralType.String:
         return new StringObject(literalDef.string);
       case LiteralType.FormattedString:
-        return new StringObject(this.applyFormat(literalDef.string));
+        return new StringObject(this.applyFormat(literalDef.string, functionStack, startReg));
       case LiteralType.Bytes:
         return new BytesObject(literalDef.string);
       case LiteralType.Integer:
@@ -1907,39 +1907,25 @@ export class RunContext extends RunContextBase {
     this.runContinueContext();
   }
 
-  private applyFormat(format: string): string {
-    let ret = '';
-    let pos = 0;
-    while (pos < format.length) {
-      const open = format.indexOf('{', pos);
-      if (open < 0) {
-        ret += format.substr(pos);
-        break;
+  private applyFormat(format: string, functionStack: StackEntry, startReg: number): string {
+    let hasError = false;
+    const ret = format.replace(/{([0-9]+)}/g, (_, arg: string) => {
+      if (hasError) {
+        return;
       }
-      if (open > pos) {
-        ret += format.substr(pos, open - pos);
-        pos = open;
+      const reg = Number(arg);
+      if (isNaN(reg)) {
+        return '';
       }
-      const close = format.indexOf('}', pos + 1);
-      if (close < 0) {
-        ret += format.substr(pos);
-        break;
+      const value = functionStack.getReg(reg + startReg, true, this);
+      if (!value) {
+        hasError = true;
+        return;
       }
-      const nextOpen = format.indexOf('{', pos + 1);
-      if (nextOpen >= 0 && nextOpen < close) {
-        ret += '{';
-        pos++;
-        continue;
-      }
-      const id = format.substr(open + 1, close - open - 1);
-      const obj = this.getCurrentFunctionStack().functionContext.scope.getObject(id);
-      if (obj) {
-        ret += obj.toString();
-        pos = close + 1;
-      } else {
-        ret += '{';
-        pos++;
-      }
+      return value.toString();
+    });
+    if (hasError) {
+      return;
     }
     return ret;
   }

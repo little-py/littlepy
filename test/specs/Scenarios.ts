@@ -819,7 +819,7 @@ const scenarios: TestScenario[] = [
       event = 'Party'
       print(f'Results of the {year {event}.')
     `,
-    output: ['Results of the {year Party.'],
+    expectedCompilerError: PyErrorType.ExpectedBinaryOperator,
   },
   {
     input: `
@@ -833,7 +833,8 @@ const scenarios: TestScenario[] = [
       year = 2018
       print(f'Results of the {year} {event}.')
     `,
-    output: ['Results of the 2018 {event}.'],
+    expectedException: ExceptionType.UnknownIdentifier,
+    exceptionArgs: ['event'],
   },
   {
     input: `
@@ -3776,6 +3777,13 @@ line2"""
       print(random.random() >= 0)
     `,
     output: ['True'],
+  },
+  {
+    input: `
+      a = 10
+      print(f'value: {a+5}')
+    `,
+    output: ['value: 15'],
   },
 ];
 
