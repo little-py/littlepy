@@ -96,4 +96,21 @@ describe('Customize runContext', () => {
     expect(getObjectUtils().fromPyObject(x)).toEqual(10);
     expect(getObjectUtils().fromPyObject(y)).toEqual('test');
   });
+
+  it('should handle user input', () => {
+    const runContext = compileAndStartModule(
+      `
+      a = input('test1')
+      print(a)
+    `,
+    );
+    let prompt = '';
+    runContext.onReadLine = (p: string, callback: (result: string) => void) => {
+      prompt = p;
+      callback('test2');
+    };
+    runContext.run();
+    expect(prompt).toEqual('test1');
+    expect(runContext.getOutputText()).toEqual('test2');
+  });
 });

@@ -270,6 +270,14 @@ class ExportedFunctions {
 
     return new ListObject(values);
   }
+
+  @pyFunction
+  input(@pyParam('', PropertyType.CallContext) callContext: CallContext, @pyParam('', PropertyType.Machine) machine: RunContext) {
+    machine.onReadLine(callContext.indexedArgs[0] ? getObjectUtils().toString(callContext.indexedArgs[0].object, 'prompt') : '', (result: string) => {
+      callContext.onFinish(getObjectUtils().toPyObject(result, false), null);
+    });
+    return new CallableIgnore();
+  }
 }
 
 export const exportedFunctions = new ExportedFunctions();
