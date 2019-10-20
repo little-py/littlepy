@@ -1,4 +1,4 @@
-import { CallableContext } from '../CallableContext';
+import { CallContext } from '../../api/CallContext';
 import { CallableIgnore, MemberWithMetadata, NativeFinishCallback, NativeParam, RunContextBase } from '../NativeTypes';
 import { ExceptionObject } from '../objects/ExceptionObject';
 import { ExceptionType } from '../../api/ExceptionType';
@@ -15,7 +15,7 @@ import { getObjectUtils } from '../../api/ObjectUtils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function nativeWrapper(instance: any, member: MemberWithMetadata) {
-  return function(callContext: CallableContext, runContext: RunContextBase) {
+  return function(callContext: CallContext, runContext: RunContextBase) {
     let ignoreParams = false;
     let hasCallback = false;
     try {
@@ -26,7 +26,7 @@ export function nativeWrapper(instance: any, member: MemberWithMetadata) {
         | boolean
         | PyObject
         | NativeFinishCallback
-        | CallableContext
+        | CallContext
         | PyObject[]
         | { [key: string]: PyObject }
         | RunContextBase => {

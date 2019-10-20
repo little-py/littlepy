@@ -49,3 +49,4 @@ export * from './MachinePosition';
 export * from './Exception';
 export * from './Breakpoint';
 export * from './Native';
+export * from './CallContext';

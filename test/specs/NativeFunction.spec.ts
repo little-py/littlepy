@@ -1,6 +1,6 @@
 import { CallableIgnore, MemberWithMetadata, NativeFinishCallback } from '../../src/machine/NativeTypes';
 import { StringObject } from '../../src/machine/objects/StringObject';
-import { CallableContext } from '../../src/machine/CallableContext';
+import { CallContext } from '../../src/api/CallContext';
 import { RunContext } from '../../src/machine/RunContext';
 import { ExceptionObject } from '../../src/machine/objects/ExceptionObject';
 import { ExceptionType } from '../../src/api/ExceptionType';
@@ -29,7 +29,7 @@ function createCallContext({
   indexed?: PyObject[];
   named?: { [key: string]: PyObject };
   onFinish?: (ret: PyObject, exception: ExceptionObject) => boolean | void | undefined;
-}): CallableContext {
+}): CallContext {
   return {
     setIndexedArg: () => {},
     setNamedArg: () => {},
@@ -53,7 +53,7 @@ describe('Native function', () => {
   let callFrozenSet: FrozenSetObject;
   let argsArgument: PyObject[];
   let kwargsArgument: { [key: string]: PyObject };
-  let callableContext: CallableContext;
+  let callableContext: CallContext;
   let runContext: RunContext;
   let stringProperty = '';
   let numberProperty = 0;
@@ -130,7 +130,7 @@ describe('Native function', () => {
     }
 
     @pyFunction
-    public testWithCallableContext(@pyParam('context', PropertyType.CallContext) ctx: CallableContext) {
+    public testWithCallableContext(@pyParam('context', PropertyType.CallContext) ctx: CallContext) {
       callableContext = ctx;
       return new CallableIgnore();
     }
