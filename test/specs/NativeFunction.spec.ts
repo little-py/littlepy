@@ -31,8 +31,6 @@ function createCallContext({
   onFinish?: (ret: PyObject, exception: ExceptionObject) => boolean | void | undefined;
 }): CallContext {
   return {
-    setIndexedArg: () => {},
-    setNamedArg: () => {},
     onFinish,
     indexedArgs: (indexed || []).map(object => ({
       object,
