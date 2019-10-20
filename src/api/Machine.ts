@@ -28,4 +28,5 @@ export abstract class PyMachine {
 
   onWriteLine: (line: string) => void;
   onLeaveFunction: (name: string, scope: PyScope) => void;
+  onReadLine: (prompt: string, callback: (result: string) => void) => void;
 }

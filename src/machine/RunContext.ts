@@ -65,6 +65,7 @@ export class RunContext extends RunContextBase {
   private _position: PyMachinePosition;
   public onWriteLine: (line: string) => void = null;
   public onLeaveFunction: (name: string, scope: PyScope) => void;
+  public onReadLine: (prompt: string, callback: (result: string) => void) => void = (prompt, callback) => callback('');
   private _cachedOutputLine = '';
 
   private prepareStart() {
