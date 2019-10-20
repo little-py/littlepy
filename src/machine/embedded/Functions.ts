@@ -6,7 +6,7 @@ import { CallableIgnore } from '../NativeTypes';
 import { RunContext } from '../RunContext';
 import { ReferenceObject } from '../objects/ReferenceObject';
 import { Callable } from '../../api/Callable';
-import { CallableContext } from '../CallableContext';
+import { CallContext } from '../../api/CallContext';
 import { IteratorObject } from '../objects/IteratorObject';
 import { SetObject } from '../objects/SetObject';
 import { ListObject } from '../objects/ListObject';
@@ -185,7 +185,7 @@ class ExportedFunctions {
   @pyFunction
   len(
     @pyParam('object') obj: PyObject,
-    @pyParam('', PropertyType.CallContext) callContext: CallableContext,
+    @pyParam('', PropertyType.CallContext) callContext: CallContext,
     @pyParam('', PropertyType.Machine) runContext: RunContext,
   ) {
     if (obj instanceof IterableObject) {

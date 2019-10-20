@@ -585,7 +585,7 @@ export class RunContext extends RunContextBase {
     if (!arg) {
       return;
     }
-    functionStack.callContext.setIndexedArg(current.arg2, arg, current.arg3 !== 0);
+    functionStack.setIndexedArg(current.arg2, arg, current.arg3 !== 0);
   }
 
   private stepRegArgName(current: Instruction, module: CompiledModule, functionStack: StackEntry) {
@@ -593,7 +593,7 @@ export class RunContext extends RunContextBase {
     if (!arg) {
       return;
     }
-    functionStack.callContext.setNamedArg(module.identifiers[current.arg2], arg);
+    functionStack.setNamedArg(module.identifiers[current.arg2], arg);
   }
 
   private stepCallFunc(current: Instruction, module: CompiledModule, functionStack: StackEntry) {

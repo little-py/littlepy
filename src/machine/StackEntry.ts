@@ -1,4 +1,4 @@
-import { CallableContext } from './CallableContext';
+import { CallContext } from '../api/CallContext';
 import { InstructionType } from '../common/InstructionType';
 import { RunContext } from './RunContext';
 import { ReferenceObject } from './objects/ReferenceObject';
@@ -24,6 +24,17 @@ export class StackEntry implements PyStackEntry {
     this.parent = parent;
     this.name = name;
     this.functionEntry = t === StackEntryType.Function ? this : parent && parent.functionEntry;
+  }
+
+  public setIndexedArg(index: number, object: PyObject, expand: boolean) {
+    this.callContext.indexedArgs[index] = {
+      object,
+      expand,
+    };
+  }
+
+  public setNamedArg(name: string, obj: PyObject) {
+    this.callContext.namedArgs[name] = obj;
   }
 
   public setReg(num: number, value: PyObject) {
@@ -69,7 +80,7 @@ export class StackEntry implements PyStackEntry {
   public trySection: boolean;
   private regs: PyObject[] = [];
   public onFinish: (ret: PyObject, exception: ExceptionObject) => boolean | void | undefined;
-  public callContext: CallableContext = new CallableContext();
+  public callContext: CallContext = new CallContext();
   public finallyHandled: boolean;
   public exceptHandled: boolean;
   public defaultReturnValue: PyObject;

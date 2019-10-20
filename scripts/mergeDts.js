@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const DIR = './build/types/api';
-const DEPENDENCIES = ['Main', 'Decorators'];
+const DEPENDENCIES = ['Main', 'Decorators', 'CallContext'];
 const MODULE = 'littlepy';
 const OUTPUT_FILE = './lib/littlepy.d.ts';
 
@@ -29,7 +29,7 @@ for (const name of fs.readdirSync(DIR)) {
       file.depends.push(match[1]);
       continue;
     }
-    if (/^export \*/.test(line)) {
+    if (/^export (\*|{})/.test(line)) {
       continue;
     }
     match = line.match(/^export (?:declare )?(.+)$/);
