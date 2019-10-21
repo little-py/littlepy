@@ -3560,6 +3560,13 @@ line2"""
   {
     input: `
       import math
+      print(math.fmod(12, 0))
+    `,
+    expectedException: ExceptionType.ZeroDivisionError,
+  },
+  {
+    input: `
+      import math
       print(math.frexp(12))
     `,
     expectedException: ExceptionType.NotImplementedError,

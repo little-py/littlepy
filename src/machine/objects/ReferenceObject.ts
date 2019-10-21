@@ -215,8 +215,7 @@ export class ReferenceObject extends PyObject {
         const scope = this.getTargetScope(runContext, name.value);
         const value = scope && scope.getObject(name.value);
         if (!value) {
-          runContext.raiseUnknownIdentifier(name.value);
-          return;
+          throw new ExceptionObject(ExceptionType.UnknownIdentifier, UniqueErrorCode.UnknownIdentifier, [], name.value);
         }
         return value;
       }
@@ -224,8 +223,7 @@ export class ReferenceObject extends PyObject {
         const indexer = this.indexer as StringObject;
         const ret = this.parent.getAttribute(indexer.value);
         if (!ret) {
-          runContext.raiseUnknownIdentifier(indexer.value);
-          return;
+          throw new ExceptionObject(ExceptionType.UnknownIdentifier, UniqueErrorCode.UnknownIdentifier, [], indexer.value);
         }
         return ret;
       }
@@ -242,7 +240,7 @@ export class ReferenceObject extends PyObject {
           if (this.parent instanceof IterableObject && this.indexer instanceof StringObject) {
             const ret = this.parent.getItem(this.indexer.value);
             if (!ret) {
-              runContext.raiseUnknownIdentifier(this.indexer.value);
+              throw new ExceptionObject(ExceptionType.UnknownIdentifier, UniqueErrorCode.UnknownIdentifier, [], this.indexer.value);
             }
             return ret;
           } else if (this.parent instanceof IterableObject && this.indexer instanceof NumberObject) {
@@ -260,8 +258,7 @@ export class ReferenceObject extends PyObject {
         const to = (this.indexTo as NumberObject).value;
         const step = this.indexInterval ? (this.indexInterval as NumberObject).value : 1;
         if (step === 0) {
-          runContext.raiseException(new ExceptionObject(ExceptionType.FunctionArgumentError, UniqueErrorCode.StepCannotBeZero));
-          return;
+          throw new ExceptionObject(ExceptionType.FunctionArgumentError, UniqueErrorCode.StepCannotBeZero);
         }
         if (this.parent instanceof TupleObject) {
           const value = new TupleObject([]);

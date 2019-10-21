@@ -6,8 +6,7 @@ import { PyObject } from '../../src/api/Object';
 import { getObjectUtils } from '../../src/api/ObjectUtils';
 import { StringObject } from '../../src/machine/objects/StringObject';
 import { NumberObject } from '../../src/machine/objects/NumberObject';
-import {ExceptionType} from "../../src/api/ExceptionType";
-import {PyErrorType} from "../../src/api/ErrorType";
+import { PyErrorType } from '../../src/api/ErrorType';
 
 describe('Customize runContext', () => {
   it('should write to callback instead of internal buffer', () => {

@@ -586,9 +586,6 @@ export class RunContext extends RunContextBase {
 
   private stepReadProperty(current: Instruction, module: CompiledModule, functionStack: StackEntry) {
     const object = functionStack.getReg(current.arg2, true, this);
-    if (!object) {
-      return;
-    }
     const id = module.identifiers[current.arg1];
     const prop = object.getAttribute(id);
     if (!prop) {
@@ -600,45 +597,24 @@ export class RunContext extends RunContextBase {
 
   private stepMathOperation(current: Instruction, functionStack: StackEntry) {
     const left = functionStack.getReg(current.arg1, true, this);
-    if (!left) {
-      return;
-    }
     const right = functionStack.getReg(current.arg2, true, this);
-    if (!right) {
-      return;
-    }
     const ret = this.mathOperation(left, right, current);
-    if (!ret) {
-      return;
-    }
     functionStack.setReg(current.arg3, ret);
   }
 
   private stepInvert(current: Instruction, functionStack: StackEntry) {
     const arg = functionStack.getReg(current.arg1, true, this);
-    if (!arg) {
-      return;
-    }
     const ret = this.unaryOperation(arg, current.type);
-    if (!ret) {
-      return;
-    }
     functionStack.setReg(current.arg2, ret);
   }
 
   private stepRegArg(current: Instruction, functionStack: StackEntry) {
     const arg = functionStack.getReg(current.arg1, true, this);
-    if (!arg) {
-      return;
-    }
     functionStack.setIndexedArg(current.arg2, arg, current.arg3 !== 0);
   }
 
   private stepRegArgName(current: Instruction, module: CompiledModule, functionStack: StackEntry) {
     const arg = functionStack.getReg(current.arg1, true, this);
-    if (!arg) {
-      return;
-    }
     functionStack.setNamedArg(module.identifiers[current.arg2], arg);
   }
 
@@ -661,9 +637,6 @@ export class RunContext extends RunContextBase {
 
   private stepCallMethod(current: Instruction, module: CompiledModule, functionStack: StackEntry) {
     const functionObj = functionStack.getReg(current.arg2, true, this);
-    if (!functionObj) {
-      return;
-    }
     if (!(functionObj instanceof Callable)) {
       throw new ExceptionObject(ExceptionType.NotAFunction, UniqueErrorCode.ExpectedCallableObject, [], functionObj.toString());
     }
@@ -684,9 +657,6 @@ export class RunContext extends RunContextBase {
     let arg: PyObject;
     if (current.arg1 !== -1) {
       arg = functionStack.getReg(current.arg1, true, this);
-      if (!arg) {
-        return;
-      }
     } else {
       arg = this.getNoneObject();
     }
@@ -703,9 +673,6 @@ export class RunContext extends RunContextBase {
       return;
     }
     const arg = functionStack.getReg(current.arg1, true, this);
-    if (!arg) {
-      return;
-    }
     if (!(arg instanceof ExceptionObject)) {
       throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedException, [], arg.toString());
     }
@@ -739,9 +706,6 @@ export class RunContext extends RunContextBase {
     const obj = functionStack.getReg(current.arg2, true, this);
     const listObject = obj as ListObject;
     let listItem = functionStack.getReg(current.arg1, true, this);
-    if (!listItem) {
-      return;
-    }
     if (listItem instanceof TupleObject && listItem.items.findIndex(t => t instanceof ReferenceObject) >= 0) {
       listItem = new TupleObject(listItem.items.map(r => (r instanceof ReferenceObject ? r.getValue(this) : r)));
     }
@@ -825,36 +789,18 @@ export class RunContext extends RunContextBase {
 
   private stepAugmentedCopy(current: Instruction, functionStack: StackEntry) {
     const sourceObject = functionStack.getReg(current.arg1, true, this);
-    if (!sourceObject) {
-      return;
-    }
     const targetObject = functionStack.getReg(current.arg2, false, this);
-    if (!targetObject) {
-      return;
-    }
     if (!(targetObject instanceof ReferenceObject)) {
       throw new ExceptionObject(ExceptionType.ExpectedReference, UniqueErrorCode.ExpectedReferenceObject);
     }
     const targetValue = targetObject.getValue(this);
-    if (!targetValue) {
-      return;
-    }
     const newValue = this.mathOperation(targetValue, sourceObject, current);
-    if (!newValue) {
-      return;
-    }
     targetObject.setValue(newValue, this);
   }
 
   private stepCopyValue(current: Instruction, functionStack: StackEntry) {
     const sourceObject = functionStack.getReg(current.arg1, true, this);
-    if (!sourceObject) {
-      return;
-    }
     const targetObject = functionStack.getReg(current.arg2, false, this);
-    if (!targetObject) {
-      return;
-    }
     if (targetObject instanceof TupleObject) {
       // special case of unpacking source sequence into tuple values which should be references
       if (targetObject.getCount() === 0) {
@@ -902,9 +848,6 @@ export class RunContext extends RunContextBase {
     const obj = functionStack.getReg(current.arg2, true, this);
     const tuple = obj as TupleObject;
     const value = functionStack.getReg(current.arg1, false, this);
-    if (!value) {
-      return;
-    }
     tuple.addItem(value);
   }
 
@@ -916,9 +859,6 @@ export class RunContext extends RunContextBase {
     const obj = functionStack.getReg(current.arg2, true, this);
     const set = obj as SetObject;
     const value = functionStack.getReg(current.arg1, true, this);
-    if (!value) {
-      return;
-    }
     set.addItem(value);
   }
 
@@ -931,9 +871,6 @@ export class RunContext extends RunContextBase {
     const obj = functionStack.getReg(current.arg3, true, this);
     const dictionary = obj as DictionaryObject;
     const value = functionStack.getReg(current.arg1, false, this);
-    if (!value) {
-      return;
-    }
     dictionary.setItem(id, value);
   }
 
@@ -946,9 +883,6 @@ export class RunContext extends RunContextBase {
 
   private stepLogicalNot(current: Instruction, functionStack: StackEntry) {
     const obj = functionStack.getReg(current.arg1, true, this);
-    if (!obj) {
-      return;
-    }
     const value = obj.toBoolean();
     const invertedValue = value ? 0 : 1;
     functionStack.setReg(current.arg2, BooleanObject.toBoolean(invertedValue));
@@ -962,9 +896,7 @@ export class RunContext extends RunContextBase {
   }
 
   private stepImport(current: Instruction, currentModule: CompiledModule, functionStack: StackEntry) {
-    if (!this.ensureAtModuleLevel(functionStack)) {
-      return;
-    }
+    this.ensureAtModuleLevel(functionStack);
     const name = currentModule.identifiers[current.arg1];
     this.importModule(name, importedModule => {
       functionStack.scope.objects[name] = importedModule;
@@ -972,9 +904,7 @@ export class RunContext extends RunContextBase {
   }
 
   private stepImportAs(current: Instruction, currentModule: CompiledModule, functionStack: StackEntry) {
-    if (!this.ensureAtModuleLevel(functionStack)) {
-      return;
-    }
+    this.ensureAtModuleLevel(functionStack);
     const rename = currentModule.identifiers[current.arg2];
     const name = currentModule.identifiers[current.arg1];
     this.importModule(name, importedModule => {
@@ -983,9 +913,7 @@ export class RunContext extends RunContextBase {
   }
 
   private stepImportFrom(current: Instruction, currentModule: CompiledModule, functionStack: StackEntry) {
-    if (!this.ensureAtModuleLevel(functionStack)) {
-      return;
-    }
+    this.ensureAtModuleLevel(functionStack);
     const id = currentModule.identifiers[current.arg1];
     const module = currentModule.identifiers[current.arg2];
     this.importModule(module, importedModule => {
@@ -1032,9 +960,6 @@ export class RunContext extends RunContextBase {
 
   private stepGetBool(current: Instruction, functionStack: StackEntry) {
     const obj = functionStack.getReg(current.arg1, true, this);
-    if (!obj) {
-      return;
-    }
     const boolFunc = obj.getAttribute('__bool__');
     if (boolFunc && boolFunc instanceof Callable) {
       this.callFunction(boolFunc as Callable, obj, (ret, exception) => {
@@ -1058,9 +983,6 @@ export class RunContext extends RunContextBase {
 
   private stepLogicalOr(current: Instruction, functionStack: StackEntry) {
     const obj = functionStack.getReg(current.arg1, true, this);
-    if (!obj) {
-      return;
-    }
     if (obj.toBoolean()) {
       functionStack.setReg(current.arg2, BooleanObject.toBoolean(1));
       functionStack.instruction += current.arg3;
@@ -1069,9 +991,6 @@ export class RunContext extends RunContextBase {
 
   private stepLogicalAnd(current: Instruction, functionStack: StackEntry) {
     const obj = functionStack.getReg(current.arg1, true, this);
-    if (!obj) {
-      return;
-    }
     if (!obj.toBoolean()) {
       functionStack.setReg(current.arg2, BooleanObject.toBoolean(0));
       functionStack.instruction += current.arg3;
@@ -1090,13 +1009,7 @@ export class RunContext extends RunContextBase {
 
   private stepIn(current: Instruction, functionStack: StackEntry, invert: boolean) {
     const container = functionStack.getReg(current.arg2, true, this);
-    if (!container) {
-      return;
-    }
     const value = functionStack.getReg(current.arg1, true, this);
-    if (!value) {
-      return;
-    }
     if (container instanceof ContainerObject) {
       if (container.contains(value)) {
         functionStack.setReg(current.arg3, BooleanObject.toBoolean(!invert));
@@ -1130,9 +1043,6 @@ export class RunContext extends RunContextBase {
 
   private stepDel(current: Instruction, functionStack: StackEntry) {
     const reference = functionStack.getReg(current.arg1, false, this);
-    if (!reference) {
-      return;
-    }
     if (!(reference instanceof ReferenceObject)) {
       throw new ExceptionObject(ExceptionType.ReferenceError, UniqueErrorCode.ExpectedReferenceObject, [], reference.toString());
     }
@@ -1141,9 +1051,6 @@ export class RunContext extends RunContextBase {
 
   private stepYield(current: Instruction, functionStack: StackEntry) {
     const value = functionStack.getReg(current.arg1, true, this);
-    if (!value) {
-      return;
-    }
     if (functionStack.generatorObject) {
       this._currentStack = functionStack.parent;
       functionStack.parent = null;
@@ -1160,13 +1067,7 @@ export class RunContext extends RunContextBase {
 
   private stepReadArrayIndex(current: Instruction, functionStack: StackEntry) {
     const obj = functionStack.getReg(current.arg1, true, this);
-    if (!obj) {
-      return;
-    }
     const index = functionStack.getReg(current.arg2, true, this);
-    if (!index) {
-      return;
-    }
     if (obj instanceof ListObject) {
       if (!(index instanceof NumberObject)) {
         throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedNumberObject, [], index.toString());
@@ -1186,10 +1087,6 @@ export class RunContext extends RunContextBase {
 
   private stepReadArrayRange(current: Instruction, functionStack: StackEntry) {
     const list = functionStack.getReg(current.arg1, true, this);
-    if (!list) {
-      return;
-    }
-
     const indexFromObject = functionStack.getReg(current.arg2, true, this);
     const indexToObject = functionStack.getReg(current.arg3, true, this);
     const indexIntervalObject: PyObject = current.arg5 === -1 ? null : functionStack.getReg(current.arg5, true, this);
