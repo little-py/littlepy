@@ -7,6 +7,7 @@ import { getObjectUtils } from '../../src/api/ObjectUtils';
 import { StringObject } from '../../src/machine/objects/StringObject';
 import { NumberObject } from '../../src/machine/objects/NumberObject';
 import { PyErrorType } from '../../src/api/ErrorType';
+import { UniqueErrorCode } from '../../src/api/UniqueErrorCode';
 
 describe('Customize runContext', () => {
   it('should write to callback instead of internal buffer', () => {
@@ -161,5 +162,27 @@ describe('Customize runContext', () => {
     runContext.resume();
     expect(prompt).toEqual('test1');
     expect(runContext.getOutputText()).toEqual('test2');
+  });
+
+  it('should generate module not found exception', () => {
+    const code = compileModule('', 'main');
+    const runContext = new RunContext({
+      main: code,
+    });
+    runContext.startCallFunction('module', 'function', [], () => {});
+    const exception = runContext.getUnhandledException();
+    expect(exception && exception.uniqueError).toEqual(UniqueErrorCode.ModuleNotFound);
+  });
+
+  it('should generate function not found exception', () => {
+    const code = compileModule('', 'main');
+    const runContext = new RunContext({
+      main: code,
+    });
+    runContext.startCallModule('main');
+    runContext.run();
+    runContext.startCallFunction('main', 'function', [], () => {});
+    const exception = runContext.getUnhandledException();
+    expect(exception && exception.uniqueError).toEqual(UniqueErrorCode.FunctionNotFound);
   });
 });

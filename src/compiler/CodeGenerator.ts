@@ -313,6 +313,13 @@ export class CodeGenerator {
     return ret;
   }
 
+  public static raiseEmpty(position: TokenPosition): GeneratedCode {
+    const ret = new GeneratedCode();
+    ret.add(InstructionType.Raise, position, -1);
+    ret.success = true;
+    return ret;
+  }
+
   public static returnEmpty(position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();
     ret.add(InstructionType.Ret, position, -1);
@@ -503,7 +510,7 @@ export class CodeGenerator {
     /* istanbul ignore next */
     if (opType === InstructionType.Pass) {
       ret.success = false;
-      compilerContext.addError(PyErrorType.UnknownBinaryOperator, op);
+      compilerContext.addError(PyErrorType.ErrorUnexpectedScenario05, op);
       return ret;
     }
     ret.add(opType, op.getPosition(), 0, 1, 0);

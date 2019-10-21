@@ -1,13 +1,9 @@
-import { PyErrorType } from '../../src/api/ErrorType';
 import { ExceptionType } from '../../src/api/ExceptionType';
 
 export interface TestScenario {
   input: string;
   output?: string[];
   onlyThis?: boolean;
-  expectedException?: ExceptionType;
-  expectedCompilerError?: PyErrorType;
-  exceptionArgs?: string[];
 }
 
 const scenarios: TestScenario[] = [
@@ -357,79 +353,11 @@ const scenarios: TestScenario[] = [
   },
   {
     input: `
-      a = 10
-      class Some(a): pass
-    `,
-    expectedException: ExceptionType.TypeError,
-  },
-  {
-    input: `
       a = [1]
       a[0] = 5
       print(a[0])
     `,
     output: ['5'],
-  },
-  {
-    input: `
-      b.c = a
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-  },
-  {
-    input: `
-      b = 10
-      b.c = 100
-      a = b.c.d
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-  },
-  {
-    input: `
-      b = 10
-      b.c(100)
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['c'],
-  },
-  {
-    input: `
-      b = 10
-      b.c.d(100)
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['c'],
-  },
-  {
-    input: `
-      a = 10
-      class Some(a.b): pass
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['a.b'],
-  },
-  {
-    input: `
-      a = 10
-      a.b = 20
-      class Some(a.b.c): pass
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['a.b.c'],
-  },
-  {
-    input: `
-      a = 10 + x
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['x'],
-  },
-  {
-    input: `
-      a = x + 10
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['x'],
   },
   {
     input: `
@@ -439,52 +367,10 @@ const scenarios: TestScenario[] = [
   },
   {
     input: `
-      print(-x)
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['x'],
-  },
-  {
-    input: `
-      print(-'abc')
-    `,
-    expectedException: ExceptionType.TypeError,
-  },
-  {
-    input: `
       x = 10
       print(-x)
     `,
     output: ['-10'],
-  },
-  {
-    input: `
-      print(x)
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['x'],
-  },
-  {
-    input: `
-      print(end=x)
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['x'],
-  },
-  {
-    input: `
-      test = 5
-      test(10)
-    `,
-    expectedException: ExceptionType.NotAFunction,
-  },
-  {
-    input: `
-      test = 5
-      test.sub = 10
-      test.sub(10)
-    `,
-    expectedException: ExceptionType.NotAFunction,
   },
   {
     input: `
@@ -499,26 +385,6 @@ const scenarios: TestScenario[] = [
         except B: print("B")
     `,
     output: ['B', 'C', 'D'],
-  },
-  {
-    input: `
-      raise x
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['x'],
-  },
-  {
-    input: `
-      raise 5
-    `,
-    expectedException: ExceptionType.TypeError,
-  },
-  {
-    input: `
-      a = [y]
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['y'],
   },
   {
     input: `
@@ -554,55 +420,6 @@ const scenarios: TestScenario[] = [
   },
   {
     input: `
-     2 += 3
-    `,
-    expectedException: ExceptionType.ExpectedReference,
-  },
-  {
-    input: `
-     x += 10
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['x'],
-  },
-  {
-    input: `
-     x = 5
-     x += y
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['y'],
-  },
-  {
-    input: `
-      c = 10
-      a, b = c
-    `,
-    expectedException: ExceptionType.UnpackSourceIsNotSequence,
-  },
-  {
-    input: `
-      c, d = 10, 20
-      a, b, e = c, d
-    `,
-    expectedException: ExceptionType.UnpackCountDoesntMatch,
-  },
-  {
-    input: `
-      c, d = 10, 20
-      a, 10 = c, d
-    `,
-    expectedException: ExceptionType.ExpectedReference,
-  },
-  {
-    input: `
-      c, d = 10, 20
-      () = c, d
-    `,
-    expectedException: ExceptionType.CannotUnpackToEmptyTuple,
-  },
-  {
-    input: `
       a = { 'apple', 'banana' }
       print(a)
     `,
@@ -615,12 +432,6 @@ const scenarios: TestScenario[] = [
       print(dict)
     `,
     output: ["{'first': 10, 'second': 'secondvalue'}"],
-  },
-  {
-    input: `
-      break
-    `,
-    expectedException: ExceptionType.BreakOrContinueOutsideOfCycle,
   },
   {
     input: `
@@ -640,38 +451,6 @@ const scenarios: TestScenario[] = [
   },
   {
     input: `
-      def test():
-        return x
-      test()
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['x'],
-  },
-  {
-    input: `
-      x.y(10)
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['x'],
-  },
-  {
-    input: `
-      while x:
-        print(10)
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['x'],
-  },
-  {
-    input: `
-      a = { unk }
-      print(a)
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['unk'],
-  },
-  {
-    input: `
       a = 1
       if not a >= 0:
         print('1')
@@ -679,46 +458,6 @@ const scenarios: TestScenario[] = [
         print('2')
     `,
     output: ['2'],
-  },
-  {
-    input: `
-      a = 10
-      if not x:
-        print('ok')
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['x'],
-  },
-  {
-    input: `
-      def func():
-        import abc
-      func()
-    `,
-    expectedException: ExceptionType.ImportAllowedOnlyOnModuleLevel,
-  },
-  {
-    input: `
-      def func():
-        import abc as d
-      func()
-    `,
-    expectedException: ExceptionType.ImportAllowedOnlyOnModuleLevel,
-  },
-  {
-    input: `
-      def func():
-        from a import d
-      func()
-    `,
-    expectedException: ExceptionType.ImportAllowedOnlyOnModuleLevel,
-  },
-  {
-    input: `
-      import u
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['u'],
   },
   {
     input: `
@@ -781,13 +520,6 @@ const scenarios: TestScenario[] = [
   },
   {
     input: `
-      if x or y:
-        print('x')
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-  },
-  {
-    input: `
       class Lie:
         def __len__(self):
           print('lie')
@@ -830,24 +562,9 @@ const scenarios: TestScenario[] = [
   {
     input: `
       event = 'Party'
-      print(f'Results of the {year {event}.')
-    `,
-    expectedCompilerError: PyErrorType.ExpectedBinaryOperator,
-  },
-  {
-    input: `
-      event = 'Party'
       print(f'Results of the {year {event.')
     `,
     output: ['Results of the {year {event.'],
-  },
-  {
-    input: `
-      year = 2018
-      print(f'Results of the {year} {event}.')
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['event'],
   },
   {
     input: `
@@ -935,38 +652,6 @@ const scenarios: TestScenario[] = [
   },
   {
     input: `
-      print('1' > '2')
-    `,
-    expectedException: ExceptionType.TypeError,
-  },
-  {
-    input: `
-      def func(arg):
-        print(arg)
-        
-      func(1, 2)
-    `,
-    expectedException: ExceptionType.FunctionTooManyArguments,
-  },
-  {
-    input: `
-      class Example:
-        def __init__(self):
-          print('init')
-          
-      r = Example(10)
-    `,
-    expectedException: ExceptionType.FunctionTooManyArguments,
-  },
-  {
-    input: `
-      class Example: pass
-      r = Example(10)
-    `,
-    expectedException: ExceptionType.FunctionTooManyArguments,
-  },
-  {
-    input: `
       def func(a, *other):
         print(a)
         print(other)
@@ -986,52 +671,6 @@ const scenarios: TestScenario[] = [
       func(a=20)
     `,
     output: ['10', '{}', '10', "{'test': 20}", '20', '{}'],
-  },
-  {
-    input: `
-      def func():
-        print('a')
-      func(x=10)
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-  },
-  {
-    input: `
-      def func(a):
-        print(a)
-      func(10, a=20)
-    `,
-    expectedException: ExceptionType.FunctionDuplicateArgumentError,
-  },
-  {
-    input: `
-      def func(a):
-        print(a)
-      func()
-    `,
-    expectedException: ExceptionType.FunctionMissingArgument,
-  },
-  {
-    input: `
-      def func(**a):
-        print(a)
-      func(10)
-    `,
-    expectedException: ExceptionType.FunctionTooManyArguments,
-  },
-  {
-    input: `
-      class Test(Exception, Exception): pass
-      e = Test()
-    `,
-    expectedException: ExceptionType.ResolutionOrder,
-  },
-  {
-    input: `
-      class Test(Exception, ArithmeticError): pass
-      e = Test()
-    `,
-    expectedException: ExceptionType.CannotDeriveFromMultipleException,
   },
   {
     input: `
@@ -1087,13 +726,6 @@ const scenarios: TestScenario[] = [
   },
   {
     input: `
-      else:
-        print('a')
-    `,
-    expectedCompilerError: PyErrorType.CannotFindIfOrElifForElse,
-  },
-  {
-    input: `
       a = 10; print(a); print(a+10)
     `,
     output: ['10', '20'],
@@ -1107,103 +739,6 @@ const scenarios: TestScenario[] = [
   },
   {
     input: `
-      a = 10
-      a += 20; if a < 40: print(a)
-    `,
-    expectedCompilerError: PyErrorType.BlockInCombinedLine,
-  },
-  {
-    input: `
-      a = 10
-      if a + 20 = 10 print(a)
-    `,
-    expectedCompilerError: PyErrorType.BlockExpectedColon,
-  },
-  {
-    input: `
-      for a:
-        print(a)
-    `,
-    expectedCompilerError: PyErrorType.IncompleteForDefinition,
-  },
-  {
-    input: `
-      for 10 in [10]:
-        print(10)
-    `,
-    expectedCompilerError: PyErrorType.ForExpectedArgument,
-  },
-  {
-    input: `
-      for x on [50]:
-        print(x)
-    `,
-    expectedCompilerError: PyErrorType.ForExpectedIn,
-  },
-  {
-    input: `
-      a = 10 20
-    `,
-    expectedCompilerError: PyErrorType.ExpectedBinaryOperator,
-  },
-  {
-    input: `
-      while:
-        print('a')
-    `,
-    expectedCompilerError: PyErrorType.IncompleteWhileDefinition,
-  },
-  {
-    input: `
-      def:
-        print('a')
-    `,
-    expectedCompilerError: PyErrorType.IncompleteFunctionDeclaration,
-  },
-  {
-    input: `
-      def 10():
-        print('a')
-    `,
-    expectedCompilerError: PyErrorType.ExpectedFunctionName,
-  },
-  {
-    input: `
-      def func[]:
-        print('a')
-    `,
-    expectedCompilerError: PyErrorType.ExpectedFunctionArgumentList,
-  },
-  {
-    input: `
-      def func(10):
-        print('a')
-    `,
-    expectedCompilerError: PyErrorType.ExpectedArgumentName,
-  },
-  {
-    input: `
-      def func(a + 5):
-        print('a')
-    `,
-    expectedCompilerError: PyErrorType.ExpectedArgumentName,
-  },
-  {
-    input: `
-      def func(a = 5 * 2
-        print('a')
-    `,
-    expectedCompilerError: PyErrorType.IncompleteFunctionArgumentList,
-  },
-  {
-    input: `
-      def func(a = ):
-        print('a')
-    `,
-    expectedCompilerError: PyErrorType.ExpectedExpressionValue,
-  },
-  {
-    input: `
       def func(a = 10, b = 20):
         print(a, b)
         
@@ -1213,167 +748,12 @@ const scenarios: TestScenario[] = [
   },
   {
     input: `
-      def func(a = 20 = 30):
-        print('a')
-    `,
-    expectedCompilerError: PyErrorType.ExpectedEndOfFunctionDef,
-  },
-  {
-    input: `
-      class:
-    `,
-    expectedCompilerError: PyErrorType.IncompleteClassDeclaration,
-  },
-  {
-    input: `
-      class 10: pass
-    `,
-    expectedCompilerError: PyErrorType.ExpectedClassName,
-  },
-  {
-    input: `
-      class Test(10): pass
-    `,
-    expectedCompilerError: PyErrorType.IncorrectInheritanceList,
-  },
-  {
-    input: `
-      class Test(A + B): pass
-    `,
-    expectedCompilerError: PyErrorType.IncorrectInheritanceList,
-  },
-  {
-    input: `
-      class Test(A,
-    `,
-    expectedCompilerError: PyErrorType.IncorrectInheritanceList,
-  },
-  {
-    input: `
-      elif x > 3:
-        print('x')
-    `,
-    expectedCompilerError: PyErrorType.CannotFindIfOrElifForElif,
-  },
-  {
-    input: `
-      try:
-        print('a')
-      elif x > 3:
-        print('x')
-    `,
-    expectedCompilerError: PyErrorType.CannotFindIfOrElifForElif,
-  },
-  {
-    input: `
-      x = 10
-      if x < 10:
-        print('a')
-      elif x 10:
-        print('b')
-    `,
-    expectedCompilerError: PyErrorType.ExpectedBinaryOperator,
-  },
-  {
-    input: 'import',
-    expectedCompilerError: PyErrorType.IncompleteImportDefinition,
-  },
-  {
-    input: 'import a b',
-    expectedCompilerError: PyErrorType.ImportDefinitionIsTooLong,
-  },
-  {
-    input: 'import 10',
-    expectedCompilerError: PyErrorType.ImportExpectedIdentifier,
-  },
-  {
-    input: 'import a as 10',
-    expectedCompilerError: PyErrorType.ImportExpectedAsIdentifier,
-  },
-  {
-    input: 'from x',
-    expectedCompilerError: PyErrorType.IncompleteImportFromDefinition,
-  },
-  {
-    input: 'from x import a b',
-    expectedCompilerError: PyErrorType.ImportFromDefinitionIsTooLong,
-  },
-  {
-    input: 'from x a b',
-    expectedCompilerError: PyErrorType.ImportFromExpectedImport,
-  },
-  {
-    input: 'from 10 import a',
-    expectedCompilerError: PyErrorType.ImportFromExpectedIdentifier,
-  },
-  {
-    input: 'from a import 10',
-    expectedCompilerError: PyErrorType.ImportFromExpectedIdentifier,
-  },
-  {
-    input: `
-      for a in [1, 2]:
-        print(a)
-        break a
-    `,
-    expectedCompilerError: PyErrorType.BreakHasNoArguments,
-  },
-  {
-    input: `
-      for a in [1, 2]:
-        print(a)
-        continue a
-    `,
-    expectedCompilerError: PyErrorType.ContinueHasNoArguments,
-  },
-  {
-    input: 'pass 100',
-    expectedCompilerError: PyErrorType.PassHasNoArguments,
-  },
-  {
-    input: 'raise 10 20',
-    expectedCompilerError: PyErrorType.ExpectedBinaryOperator,
-  },
-  {
-    input: 'raise 10]',
-    expectedCompilerError: PyErrorType.RaiseExpectedEndOfLine,
-  },
-  {
-    input: `
       def func():
         for x in [2]:
           return
       func()
     `,
     output: [],
-  },
-  {
-    input: `
-      def func():
-        yield
-      func()
-    `,
-    expectedCompilerError: PyErrorType.ExpectedYieldExpression,
-  },
-  {
-    input: `
-      def func():
-        yield 10 20
-      func()
-    `,
-    expectedCompilerError: PyErrorType.ExpectedBinaryOperator,
-  },
-  {
-    input: `
-      def func():
-        yield 10]
-      func()
-    `,
-    expectedCompilerError: PyErrorType.ReturnOrYieldExpectedEndOfLine,
-  },
-  {
-    input: 'except:',
-    expectedCompilerError: PyErrorType.ExceptExpectedTry,
   },
   {
     input: `
@@ -1397,57 +777,11 @@ const scenarios: TestScenario[] = [
   },
   {
     input: `
-      try:
-        raise NotImplementedError()
-      except 10:
-        print('ok')
+      a = [20]
+      del a[0]
+      print(a)
     `,
-    expectedCompilerError: PyErrorType.ExceptExpectedIdentifier,
-  },
-  {
-    input: `
-      try:
-        raise NotImplementedError()
-      except a.
-        print('ok')
-    `,
-    expectedCompilerError: PyErrorType.ExceptExpectedIdentifier,
-  },
-  {
-    input: `
-      try:
-        raise NotImplementedError()
-      except x as
-        print('ok')
-    `,
-    expectedCompilerError: PyErrorType.ExceptExpectedIdentifierAfterAs,
-  },
-  {
-    input: `
-      try:
-        raise NotImplementedError()
-      except E
-        print('ok')
-    `,
-    expectedCompilerError: PyErrorType.BlockExpectedColon,
-  },
-  {
-    input: `
-      try:
-        raise NotImplementedError()
-      except (E
-        print('ok')
-    `,
-    expectedCompilerError: PyErrorType.ExceptExpectedRightBracket,
-  },
-  {
-    input: `
-      try:
-        raise NotImplementedError()
-      except (E]
-        print('ok')
-    `,
-    expectedCompilerError: PyErrorType.ExceptExpectedRightBracket,
+    output: ['[]'],
   },
   {
     input: `
@@ -1460,139 +794,10 @@ const scenarios: TestScenario[] = [
   },
   {
     input: `
-      try:
-        raise NotImplementedError()
-      except E as 10:
-        print('ok')
-    `,
-    expectedCompilerError: PyErrorType.ExceptExpectedIdentifierAfterAs,
-  },
-  {
-    input: `
-      finally:
-        print(10)
-    `,
-    expectedCompilerError: PyErrorType.FinallyCannotFindTry,
-  },
-  {
-    input: `
-      a = 10
-      a += 10 += 20
-    `,
-    expectedCompilerError: PyErrorType.MixingAugmentedOperators,
-  },
-  {
-    input: `
-      del 10
-    `,
-    expectedException: ExceptionType.ReferenceError,
-  },
-  {
-    input: `
-      del
-    `,
-    expectedCompilerError: PyErrorType.ExpectedIdentifierForDel,
-  },
-  {
-    input: `
-      with 1
-    `,
-    expectedCompilerError: PyErrorType.WithExpectedAs,
-  },
-  {
-    input: `
-      with
-    `,
-    expectedCompilerError: PyErrorType.ExpectedExpressionValue,
-  },
-  {
-    input: `
-      nonlocal
-    `,
-    expectedCompilerError: PyErrorType.ExpectedOnlyIdentifier,
-  },
-  {
-    input: `
-      a =
-    `,
-    expectedCompilerError: PyErrorType.ExpectedExpressionValue,
-  },
-  {
-    input: `
-      a = 20
-      del a
-      print(a)
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['a'],
-  },
-  {
-    input: `
-      a = 20
-      del a
-      del a
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['a'],
-  },
-  {
-    input: `
-      a = [20]
-      del a['x']
-    `,
-    expectedException: ExceptionType.TypeError,
-  },
-  {
-    input: `
-      a = [20]
-      del a[0]
-      print(a)
-    `,
-    output: ['[]'],
-  },
-  {
-    input: `
-      del x.10
-    `,
-    expectedCompilerError: PyErrorType.ExpectedBinaryOperator,
-  },
-  {
-    input: `
-      x = .
-    `,
-    expectedCompilerError: PyErrorType.ExpectedExpressionValue,
-  },
-  {
-    input: `
-      x = ;
-    `,
-    expectedCompilerError: PyErrorType.ExpectedExpressionValue,
-  },
-  {
-    input: `
-      x = def
-    `,
-    expectedCompilerError: PyErrorType.ExpectedLiteral,
-  },
-  {
-    input: `
-      x = +
-    `,
-    expectedCompilerError: PyErrorType.ExpectedUnaryOperatorOrArgument,
-  },
-  {
-    input: `
       a = 10
       print(a < 20 if 5 else 6)
     `,
     output: ['5'],
-  },
-  {
-    input: `
-      a = 10
-      print(a < 20 if 5)
-    `,
-    expectedCompilerError: PyErrorType.IfExpressionExpectedElse,
   },
   {
     input: `
@@ -1605,40 +810,6 @@ const scenarios: TestScenario[] = [
       print(10 - 2 * 3)
     `,
     output: ['4'],
-  },
-  {
-    input: `
-      def func():
-        pass
-      
-      func(10
-    `,
-    expectedCompilerError: PyErrorType.ExpectedEndOfFunctionCall,
-  },
-  {
-    input: `
-      def func():
-        pass
-      
-      func(a=
-    `,
-    expectedCompilerError: PyErrorType.UnexpectedEndOfCall,
-  },
-  {
-    input: `
-      def func():
-        pass
-      
-      func(a=10, b)
-    `,
-    expectedCompilerError: PyErrorType.OrderedArgumentAfterNamed,
-  },
-  {
-    input: `
-      a = [1, 2]
-      print(a[1)
-    `,
-    expectedCompilerError: PyErrorType.ExpectedEndOfIndexer,
   },
   {
     input: `
@@ -1657,28 +828,10 @@ const scenarios: TestScenario[] = [
   },
   {
     input: `
-      a = [
-    `,
-    expectedCompilerError: PyErrorType.ExpectedListDefinition,
-  },
-  {
-    input: `
-      a = (
-    `,
-    expectedCompilerError: PyErrorType.ExpectedTupleBody,
-  },
-  {
-    input: `
       b = (5, 7)
       print(b)
     `,
     output: ['(5, 7)'],
-  },
-  {
-    input: `
-      a = (5,3,10=
-    `,
-    expectedCompilerError: PyErrorType.ExpectedTupleEnd,
   },
   {
     input: `
@@ -1696,12 +849,6 @@ const scenarios: TestScenario[] = [
   },
   {
     input: `
-      a = {
-    `,
-    expectedCompilerError: PyErrorType.ExpectedSetBody,
-  },
-  {
-    input: `
       b = {}
       print(b)
     `,
@@ -1716,43 +863,11 @@ const scenarios: TestScenario[] = [
   },
   {
     input: `
-      a = {'x': 10, 20}
-    `,
-    expectedCompilerError: PyErrorType.SetMixedWithAndWithoutColon,
-  },
-  {
-    input: `
-      a = {20, 'x': 10}
-    `,
-    expectedCompilerError: PyErrorType.SetMixedWithAndWithoutColon,
-  },
-  {
-    input: `
-      a = {10
-    `,
-    expectedCompilerError: PyErrorType.ExpectedSetEnd,
-  },
-  {
-    input: `
       a = 10
 \t  b = 20
       print(a, b)
     `,
     output: ['10 20'],
-  },
-  {
-    input: `
-      a = 10
-          b = 20
-        c = 30
-    `,
-    expectedCompilerError: PyErrorType.MismatchedIndent,
-  },
-  {
-    input: `
-      a = x ? y
-    `,
-    expectedCompilerError: PyErrorType.UnknownChar,
   },
   {
     input: `
@@ -2091,13 +1206,6 @@ const scenarios: TestScenario[] = [
   },
   {
     input: `
-      a = [10]
-      print(a['test'])
-    `,
-    expectedException: ExceptionType.TypeError,
-  },
-  {
-    input: `
       for x in range(1, 4, 2):
         print(x)
     `,
@@ -2109,20 +1217,6 @@ const scenarios: TestScenario[] = [
         print(x)
     `,
     output: ['0', '1', '2'],
-  },
-  {
-    input: `
-      for x in range(3, 4, 5, 6):
-        print(x)
-    `,
-    expectedException: ExceptionType.FunctionArgumentCountMismatch,
-  },
-  {
-    input: `
-      for x in range(3, 4, 0):
-        print(x)
-    `,
-    expectedException: ExceptionType.FunctionArgumentError,
   },
   {
     input: `
@@ -2168,19 +1262,6 @@ const scenarios: TestScenario[] = [
         print('not found')
     `,
     output: ['found', 'not found'],
-  },
-  {
-    input: `
-      x = 10
-      try:
-        1/0
-      except Exception as x:
-        print(x)
-      print(x)
-    `,
-    // exception 'as' parameter is undefined after except clause is finished
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['x'],
   },
   {
     input: `
@@ -2396,13 +1477,6 @@ line2"""
   },
   {
     input: `
-      a = 'test'
-      print(a['x'])
-    `,
-    expectedException: ExceptionType.TypeError,
-  },
-  {
-    input: `
       a = b'1122'
       print(a)
     `,
@@ -2479,16 +1553,6 @@ line2"""
   },
   {
     input: `
-      def func():
-        print('test')
-        
-      print(func.__name)
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['__name'],
-  },
-  {
-    input: `
       x = 10
       def func1():
         nonlocal x
@@ -2506,61 +1570,6 @@ line2"""
       print(y)
     `,
     output: ['20', '20', '40'],
-  },
-  {
-    input: `
-      n = -37
-      n.bit_length()
-    `,
-    // TBD: binary operations aren't supported
-    // output: ['-0b100101', '6'],
-    expectedException: ExceptionType.NotImplementedError,
-    exceptionArgs: ['bit_length'],
-  },
-  {
-    input: `
-      print((1024).to_bytes(2, byteorder='big'))
-      print((1024).to_bytes(10, byteorder='big'))
-      print((-1024).to_bytes(10, byteorder='big', signed=True))
-      x = 1000
-      print(x.to_bytes((x.bit_length() + 7) // 8, byteorder='little'))
-    `,
-    expectedException: ExceptionType.NotImplementedError,
-    exceptionArgs: ['to_bytes'],
-    // TBD: binary operations aren't supported
-    // output: ["b'\x04\x00'", "b'\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00'", "b'\xff\xff\xff\xff\xff\xff\xff\xff\xfc\x00'", "b'\xe8\x03'"],
-  },
-  {
-    input: `
-      print(int.from_bytes(b'\x00\x10', byteorder='big'))
-      print(int.from_bytes(b'\x00\x10', byteorder='little'))
-      print(int.from_bytes(b'\xfc\x00', byteorder='big', signed=True))
-      print(int.from_bytes(b'\xfc\x00', byteorder='big', signed=False))
-      print(int.from_bytes([255, 0, 0], byteorder='big'))
-    `,
-    // TBD: binary operations aren't supported
-    // output: ['16', '4096', '-1024', '64512', '16711680'],
-    expectedException: ExceptionType.NotImplementedError,
-    exceptionArgs: ['from_bytes'],
-  },
-  {
-    input: `
-      # print((3.12).hex())
-      print(float.fromhex('0x1.8f5c28f5c28f6p+1'))
-    `,
-    // TBD: binary operations aren't supported
-    // output: ["'0x1.8f5c28f5c28f6p+1'", '3.12'],
-    expectedException: ExceptionType.NotImplementedError,
-    exceptionArgs: ['fromhex'],
-  },
-  {
-    input: `
-      print(hash(30.2) == hash(30.2))
-    `,
-    // TBD: hash operations aren't supported
-    // output: ['True'],
-    expectedException: ExceptionType.NotImplementedError,
-    exceptionArgs: ['hash'],
   },
   {
     input: `
@@ -2599,49 +1608,6 @@ line2"""
   },
   {
     input: `
-      s = (1,2,3,4,5)
-      print(s['a'])
-    `,
-    expectedException: ExceptionType.UnknownIdentifier,
-    exceptionArgs: ['a'],
-  },
-  {
-    input: `
-      s = (1,2,3,4,5)
-      print(s['a'][0])
-    `,
-    expectedException: ExceptionType.TypeError,
-  },
-  {
-    input: `
-      s = [1,2,3,4,5]
-      print(s['a'][0])
-    `,
-    expectedException: ExceptionType.TypeError,
-  },
-  {
-    input: `
-      s = { 'first': 10, 'second': 20 }
-      print(s[10][0])
-    `,
-    expectedException: ExceptionType.TypeError,
-  },
-  {
-    input: `
-      s = (1,2,3,4,5)
-      print(s[1:3:0][0])
-    `,
-    expectedException: ExceptionType.FunctionArgumentError,
-  },
-  {
-    input: `
-      s = (1,2,3,4,5)
-      print(s['a':3:0][0])
-    `,
-    expectedException: ExceptionType.TypeError,
-  },
-  {
-    input: `
       s = (1,2,3,4,5,6,7)
       print(s[2:7:2])
     `,
@@ -2660,13 +1626,6 @@ line2"""
       print(s[5:2:-2])
     `,
     output: ['[6, 4]'],
-  },
-  {
-    input: `
-      s = (1,2,3,4,5,6,7)
-      print(s[2:7:0])
-    `,
-    expectedException: ExceptionType.FunctionArgumentError,
   },
   {
     input: `
@@ -2699,13 +1658,6 @@ line2"""
   },
   {
     input: `
-      s = (1,2,3)*4
-      print(s.index(2, 5, 6))
-    `,
-    expectedException: ExceptionType.ValueError,
-  },
-  {
-    input: `
       lists = [[]]*3
       lists[0].append(3)
       print(lists)
@@ -2723,20 +1675,6 @@ line2"""
       print('test'.center(20, '-'))
     `,
     output: ['--------test--------'],
-  },
-  {
-    input: `
-      print('test'.center('a', '-'))
-    `,
-    expectedException: ExceptionType.TypeError,
-    exceptionArgs: ['width'],
-  },
-  {
-    input: `
-      print('test'.center(20, 10))
-    `,
-    expectedException: ExceptionType.TypeError,
-    exceptionArgs: ['fillchar'],
   },
   {
     input: `
@@ -3153,12 +2091,6 @@ line2"""
   },
   {
     input: `
-      print(frozenset({10,20}).isdisjoint(50))
-    `,
-    expectedException: ExceptionType.TypeError,
-  },
-  {
-    input: `
       print({10,20}.isdisjoint({20,30}))
     `,
     output: ['False'],
@@ -3207,12 +2139,6 @@ line2"""
   },
   {
     input: `
-      print(frozenset({10,20,30}).issuperset(5))
-    `,
-    expectedException: ExceptionType.TypeError,
-  },
-  {
-    input: `
       print({10,20,30} > {10,20})
     `,
     output: ['True'],
@@ -3237,21 +2163,9 @@ line2"""
   },
   {
     input: `
-      print({10,20}.union(1))
-    `,
-    expectedException: ExceptionType.TypeError,
-  },
-  {
-    input: `
       print(frozenset({10,20}).union({20,30}))
     `,
     output: ['frozenset({10, 20, 30})'],
-  },
-  {
-    input: `
-      print(frozenset({10,20}).union(10))
-    `,
-    expectedException: ExceptionType.TypeError,
   },
   {
     input: `
@@ -3273,21 +2187,9 @@ line2"""
   },
   {
     input: `
-      print({10,20}.intersection(1))
-    `,
-    expectedException: ExceptionType.TypeError,
-  },
-  {
-    input: `
       print(frozenset({10,20}).intersection({20,30}))
     `,
     output: ['frozenset({20})'],
-  },
-  {
-    input: `
-      print(frozenset({10,20}).intersection(10))
-    `,
-    expectedException: ExceptionType.TypeError,
   },
   {
     input: `
@@ -3303,21 +2205,9 @@ line2"""
   },
   {
     input: `
-      print({10,20}.difference(1))
-    `,
-    expectedException: ExceptionType.TypeError,
-  },
-  {
-    input: `
       print(frozenset({10,20}).difference({20,30}))
     `,
     output: ['frozenset({10})'],
-  },
-  {
-    input: `
-      print(frozenset({10,20}).difference(1))
-    `,
-    expectedException: ExceptionType.TypeError,
   },
   {
     input: `
@@ -3333,21 +2223,9 @@ line2"""
   },
   {
     input: `
-      print({10,20}.symmetric_difference(1))
-    `,
-    expectedException: ExceptionType.TypeError,
-  },
-  {
-    input: `
       print(frozenset({10,20}).symmetric_difference({20,30}))
     `,
     output: ['frozenset({10, 30})'],
-  },
-  {
-    input: `
-      print(frozenset({10,20}).symmetric_difference(10))
-    `,
-    expectedException: ExceptionType.TypeError,
   },
   {
     input: `
@@ -3369,12 +2247,6 @@ line2"""
   },
   {
     input: `
-      print(frozenset([10,20]).issubset(19))
-    `,
-    expectedException: ExceptionType.TypeError,
-  },
-  {
-    input: `
       print(set('abc') == frozenset('abc'))
     `,
     output: ['True'],
@@ -3384,12 +2256,6 @@ line2"""
       print({'c','b','a'} == {'c','a','b'})
     `,
     output: ['True'],
-  },
-  {
-    input: `
-      print([10,20] <= [10,20,30])
-    `,
-    expectedException: ExceptionType.TypeError,
   },
   {
     input: `
@@ -3415,12 +2281,6 @@ line2"""
       '{3, 5, 6}',
       '{}',
     ],
-  },
-  {
-    input: `
-      iter(10)
-    `,
-    expectedException: ExceptionType.TypeError,
   },
   {
     input: `
@@ -3560,20 +2420,6 @@ line2"""
   {
     input: `
       import math
-      print(math.fmod(12, 0))
-    `,
-    expectedException: ExceptionType.ZeroDivisionError,
-  },
-  {
-    input: `
-      import math
-      print(math.frexp(12))
-    `,
-    expectedException: ExceptionType.NotImplementedError,
-  },
-  {
-    input: `
-      import math
       print(math.fsum([0.1,0.2]))
     `,
     output: ['0.3'],
@@ -3626,13 +2472,6 @@ line2"""
       print(math.pow(5.1, 10.2))
     `,
     output: ['16489815.489690851'],
-  },
-  {
-    input: `
-      import math
-      print(math.pow('x', 10.2))
-    `,
-    expectedException: ExceptionType.TypeError,
   },
   {
     input: `
@@ -3733,23 +2572,11 @@ line2"""
   },
   {
     input: `
-      print(abs('x'))
-    `,
-    expectedException: ExceptionType.TypeError,
-  },
-  {
-    input: `
       print(all({True, False}))
       print(all([True, True]))
       print(all([]))
     `,
     output: ['False', 'True', 'True'],
-  },
-  {
-    input: `
-      print(all(10))
-    `,
-    expectedException: ExceptionType.TypeError,
   },
   {
     input: `
@@ -3761,21 +2588,9 @@ line2"""
   },
   {
     input: `
-      print(any(10))
-    `,
-    expectedException: ExceptionType.TypeError,
-  },
-  {
-    input: `
       print(chr(97))
     `,
     output: ['a'],
-  },
-  {
-    input: `
-      print(chr('x'))
-    `,
-    expectedException: ExceptionType.TypeError,
   },
   {
     input: `
@@ -3785,33 +2600,15 @@ line2"""
   },
   {
     input: `
-      print(min())
-    `,
-    expectedException: ExceptionType.ValueError,
-  },
-  {
-    input: `
       print(max(40, 100, 20))
     `,
     output: ['100'],
   },
   {
     input: `
-      print(max())
-    `,
-    expectedException: ExceptionType.ValueError,
-  },
-  {
-    input: `
       print(sum(40, 100, 20))
     `,
     output: ['160'],
-  },
-  {
-    input: `
-      print(sum())
-    `,
-    expectedException: ExceptionType.ValueError,
   },
   {
     input: `
@@ -3832,20 +2629,6 @@ line2"""
       print(f'value: {a+5}')
     `,
     output: ['value: 15'],
-  },
-  {
-    input: `
-      while a > :
-        print('test')
-    `,
-    expectedCompilerError: PyErrorType.ExpectedRightOperand,
-  },
-  {
-    input: `
-      for x in a > :
-        print('test')
-    `,
-    expectedCompilerError: PyErrorType.ExpectedRightOperand,
   },
 ];
 

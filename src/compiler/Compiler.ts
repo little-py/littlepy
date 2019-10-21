@@ -250,14 +250,7 @@ export class Compiler {
     createDebugInformation(this._compiledModule, block.blockCode.code);
 
     if (!parentBlock) {
-      if (block.type === CompilerBlockType.Module) {
-        return true;
-      }
-      // safety check -- should never happen
-      /* istanbul ignore next */
-      this._compilerContext.addError(PyErrorType.UnexpectedBlockEnd, token);
-      /* istanbul ignore next */
-      return false;
+      return block.type === CompilerBlockType.Module;
     }
 
     switch (block.type) {
@@ -876,6 +869,12 @@ export class Compiler {
 
   private parseRaiseDefinition(): boolean {
     const first = this._line[0];
+    if (this._line.length === 1) {
+      const raise = CodeGenerator.raiseEmpty(first.getPosition());
+      this._compilerContext.setRowType(RowType.Raise);
+      CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, raise);
+      return true;
+    }
     const expression = ExpressionCompiler.compile({
       tokens: this._line,
       compiledCode: this._compiledModule,

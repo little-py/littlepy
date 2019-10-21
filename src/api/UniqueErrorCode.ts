@@ -53,7 +53,7 @@ export enum UniqueErrorCode {
   ArgumentAlreadyProvided = 'ArgumentAlreadyProvided',
   MissingArgument = 'MissingArgument',
   StopIteration = 'StopIteration',
-  UnknownUnaryOperation = '',
+  UnknownUnaryOperation = 'UnknownUnaryOperation',
   MathOperationOperandsDontMatch = 'MathOperationOperandsDontMatch',
   UnknownIdentifier = 'UnknownIdentifier',
   RegisterIsNotSet = 'RegisterIsNotSet',

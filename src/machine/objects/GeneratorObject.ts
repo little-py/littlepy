@@ -8,10 +8,11 @@ import { getObjectUtils } from '../../api/ObjectUtils';
 import { pyFunction, pyParam } from '../../api/Decorators';
 import { PropertyType } from '../../api/Native';
 import { UniqueErrorCode } from '../../api/UniqueErrorCode';
+import { IteratorObject } from './IteratorObject';
 
-export class GeneratorObject extends PyObject {
+export class GeneratorObject extends IteratorObject {
   public constructor(stackHead: StackEntry, stackTail: StackEntry) {
-    super();
+    super(null);
     this.stackHead = stackHead;
     this.stackTail = stackTail;
   }
@@ -27,6 +28,7 @@ export class GeneratorObject extends PyObject {
   }
 
   @pyFunction
+  // @ts-ignore
   public __next__(@pyParam('', PropertyType.Machine) runContext: RunContext, @pyParam('', PropertyType.CallContext) callContext: CallContext) {
     if (this.finished) {
       getObjectUtils().throwException(ExceptionType.StopIteration, UniqueErrorCode.CalledNextOnFinishedIterator);

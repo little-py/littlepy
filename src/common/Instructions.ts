@@ -85,7 +85,7 @@ export class Instruction {
     return this.type === InstructionType.CreateArrayIndexRef;
   }
 
-  public shiftRight(countReg: number) {
+  public shiftRight(countReg: number): boolean {
     switch (this.type) {
       case InstructionType.Literal:
       case InstructionType.Condition:
@@ -197,7 +197,10 @@ export class Instruction {
         }
         this.arg6 += countReg;
         break;
+      default:
+        return false;
     }
+    return true;
   }
 }
 

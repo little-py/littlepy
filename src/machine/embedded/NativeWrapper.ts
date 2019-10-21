@@ -16,11 +16,11 @@ import { UniqueErrorCode } from '../../api/UniqueErrorCode';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function nativeWrapper(instance: any, member: MemberWithMetadata) {
-  return function(callContext: CallContext, runContext: RunContextBase) {
+  function wrapper(callContext: CallContext, runContext: RunContextBase) {
     let ignoreParams = false;
     let hasCallback = false;
+    const params = member.pythonParams || [];
     try {
-      const params = member.pythonParams || [];
       const args = (params || []).map(({ name, type, defaultValue, isCallback, args, kwargs }: NativeParam, index: number):
         | number
         | string
@@ -131,5 +131,6 @@ export function nativeWrapper(instance: any, member: MemberWithMetadata) {
       }
       return true;
     }
-  };
+  }
+  return wrapper;
 }

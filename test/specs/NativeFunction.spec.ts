@@ -3,7 +3,6 @@ import { StringObject } from '../../src/machine/objects/StringObject';
 import { CallContext } from '../../src/api/CallContext';
 import { RunContext } from '../../src/machine/RunContext';
 import { ExceptionObject } from '../../src/machine/objects/ExceptionObject';
-import { ExceptionType } from '../../src/api/ExceptionType';
 import { BooleanObject } from '../../src/machine/objects/BooleanObject';
 import { ListObject } from '../../src/machine/objects/ListObject';
 import { DictionaryObject } from '../../src/machine/objects/DictionaryObject';
@@ -18,6 +17,7 @@ import { pyFunction, pyGetter, pyParam, pyParamArgs, pyParamCallback, pyParamKwa
 import { getObjectUtils, setObjectUtils } from '../../src/api/ObjectUtils';
 import { objectUtils } from '../../src/machine/ObjectUtilsImpl';
 import { PropertyType } from '../../src/api/Native';
+import { UniqueErrorCode } from '../../src/api/UniqueErrorCode';
 
 setObjectUtils(objectUtils);
 
@@ -53,8 +53,12 @@ describe('Native function', () => {
   let kwargsArgument: { [key: string]: PyObject };
   let callableContext: CallContext;
   let runContext: RunContext;
-  let stringProperty = '';
-  let numberProperty = 0;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let stringProperty: any = '';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let numberProperty: any = 0;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let objectProperty: any;
 
   class NativeTest extends PyObject {
     @pyFunction
@@ -154,7 +158,8 @@ describe('Native function', () => {
       throw Error();
     }
 
-    public visibleInstance: boolean;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    public visibleInstance: any;
 
     @pyGetter()
     public getVisible() {
@@ -184,6 +189,16 @@ describe('Native function', () => {
     @pySetter(PropertyType.Number)
     public setNumber(newValue: number) {
       numberProperty = newValue;
+    }
+
+    @pyGetter()
+    public getObject() {
+      return objectProperty;
+    }
+
+    @pySetter(PropertyType.Object)
+    public setObject(newValue: PyObject) {
+      objectProperty = newValue;
     }
   }
 
@@ -236,7 +251,7 @@ describe('Native function', () => {
         },
       }),
     );
-    expect(raisedException.exceptionType).toEqual(ExceptionType.TypeError);
+    expect(raisedException.uniqueError).toEqual(UniqueErrorCode.ExpectedBooleanObject);
   });
 
   it('should use any other argument', () => {
@@ -263,7 +278,7 @@ describe('Native function', () => {
       }),
     );
     expect(raisedException).toBeTruthy();
-    expect(raisedException.exceptionType).toEqual(ExceptionType.FunctionArgumentError);
+    expect(raisedException.uniqueError).toEqual(UniqueErrorCode.RequiredArgumentIsMissing);
   });
 
   it('should throw exception on too much arguments', () => {
@@ -281,7 +296,7 @@ describe('Native function', () => {
       }),
     );
     expect(raisedException).toBeTruthy();
-    expect(raisedException.exceptionType).toEqual(ExceptionType.FunctionArgumentCountMismatch);
+    expect(raisedException.uniqueError).toEqual(UniqueErrorCode.RequiredArgumentIsMissing);
   });
 
   it('should provide callback', () => {
@@ -388,7 +403,7 @@ describe('Native function', () => {
         },
       }),
     );
-    expect(raisedException.exceptionType).toEqual(ExceptionType.TypeError);
+    expect(raisedException.uniqueError).toEqual(UniqueErrorCode.ExpectedListObject);
   });
 
   it('should throw exception on non-dictionary argument', () => {
@@ -405,7 +420,7 @@ describe('Native function', () => {
         },
       }),
     );
-    expect(raisedException.exceptionType).toEqual(ExceptionType.TypeError);
+    expect(raisedException.uniqueError).toEqual(UniqueErrorCode.ExpectedDictionaryObject);
   });
 
   it('should throw exception on non-tuple argument', () => {
@@ -422,7 +437,7 @@ describe('Native function', () => {
         },
       }),
     );
-    expect(raisedException.exceptionType).toEqual(ExceptionType.TypeError);
+    expect(raisedException.uniqueError).toEqual(UniqueErrorCode.ExpectedTupleObject);
     expect(raisedException.params).toEqual(['tupleParam']);
   });
 
@@ -440,7 +455,7 @@ describe('Native function', () => {
         },
       }),
     );
-    expect(raisedException.exceptionType).toEqual(ExceptionType.TypeError);
+    expect(raisedException.uniqueError).toEqual(UniqueErrorCode.ExpectedIterableObject);
     expect(raisedException.params).toEqual(['iterable']);
   });
 
@@ -463,7 +478,7 @@ describe('Native function', () => {
         },
       }),
     );
-    expect(raisedException.exceptionType).toEqual(ExceptionType.TypeError);
+    expect(raisedException.uniqueError).toEqual(UniqueErrorCode.ExpectedPythonObject);
   });
 
   it('should throw exception on unknown return type', () => {
@@ -478,7 +493,7 @@ describe('Native function', () => {
         },
       }),
     );
-    expect(raisedException.exceptionType).toEqual(ExceptionType.SystemError);
+    expect(raisedException.uniqueError).toEqual(UniqueErrorCode.UnexpectedJsException);
   });
 
   it('should update properties', () => {
@@ -507,7 +522,7 @@ describe('Native function', () => {
       test.setAttribute('visible', new StringObject('a'));
       fail();
     } catch (e) {
-      expect(e instanceof ExceptionObject && e.exceptionType).toEqual(ExceptionType.TypeError);
+      expect(e instanceof ExceptionObject && e.uniqueError).toEqual(UniqueErrorCode.ExpectedBooleanObject);
     }
   });
 
@@ -517,7 +532,7 @@ describe('Native function', () => {
       test.setAttribute('string', new BooleanObject(true));
       fail();
     } catch (e) {
-      expect(e instanceof ExceptionObject && e.exceptionType).toEqual(ExceptionType.TypeError);
+      expect(e instanceof ExceptionObject && e.uniqueError).toEqual(UniqueErrorCode.ExpectedStringObject);
     }
   });
 
@@ -527,7 +542,7 @@ describe('Native function', () => {
       test.setAttribute('number', new StringObject('a'));
       fail();
     } catch (e) {
-      expect(e instanceof ExceptionObject && e.exceptionType).toEqual(ExceptionType.TypeError);
+      expect(e instanceof ExceptionObject && e.uniqueError).toEqual(UniqueErrorCode.ExpectedNumberObject);
     }
   });
 
@@ -535,5 +550,45 @@ describe('Native function', () => {
     let value = getObjectUtils().toPyObject(false, false);
     expect(value instanceof BooleanObject && value.value).toBeFalsy();
     value = getObjectUtils().toPyObject(10, false);
+  });
+
+  it('should throw exception in case of getter returns non-boolean value', () => {
+    const test = new NativeTest();
+    test.visibleInstance = 'abc';
+    try {
+      test.getAttribute('visible');
+    } catch (e) {
+      expect(e instanceof ExceptionObject && e.uniqueError).toEqual(UniqueErrorCode.CannotConvertJsToBoolean);
+    }
+  });
+
+  it('should throw exception in case of getter returns non-number value', () => {
+    const test = new NativeTest();
+    numberProperty = 'x';
+    try {
+      test.getAttribute('number');
+    } catch (e) {
+      expect(e instanceof ExceptionObject && e.uniqueError).toEqual(UniqueErrorCode.CannotConvertJsToNumber);
+    }
+  });
+
+  it('should throw exception in case of getter returns non-string value', () => {
+    const test = new NativeTest();
+    stringProperty = 10;
+    try {
+      test.getAttribute('string');
+    } catch (e) {
+      expect(e instanceof ExceptionObject && e.uniqueError).toEqual(UniqueErrorCode.CannotConvertJsToString);
+    }
+  });
+
+  it('should throw exception in case of getter returns non-string value', () => {
+    const test = new NativeTest();
+    objectProperty = 10;
+    try {
+      test.getAttribute('object');
+    } catch (e) {
+      expect(e instanceof ExceptionObject && e.uniqueError).toEqual(UniqueErrorCode.CannotConvertJsToObject);
+    }
   });
 });

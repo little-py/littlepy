@@ -2107,7 +2107,7 @@ export class RunContext extends RunContextBase {
   }
 
   public raiseUnknownIdentifier(identifier: string) {
-    this.raiseException(new ExceptionObject(ExceptionType.UnknownIdentifier, UniqueErrorCode.UnknownInstruction, [], identifier));
+    this.raiseException(new ExceptionObject(ExceptionType.UnknownIdentifier, UniqueErrorCode.UnknownIdentifier, [], identifier));
   }
 
   private createGlobalScope() {
