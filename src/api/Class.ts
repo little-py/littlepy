@@ -12,6 +12,7 @@ export class PyInheritance {
   public readonly object: PyClass;
 }
 
+/* istanbul ignore next */
 export class PyClass extends Callable {
   public constructor(body: PyFunction, context: FunctionContext, inheritsFrom: PyInheritance[], nativeConstructor: Function = null) {
     super(body, context, nativeConstructor);

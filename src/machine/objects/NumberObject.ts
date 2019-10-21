@@ -2,6 +2,7 @@ import { ExceptionType } from '../../api/ExceptionType';
 import { PyObject } from '../../api/Object';
 import { getObjectUtils } from '../../api/ObjectUtils';
 import { pyFunction, pyParam } from '../../api/Decorators';
+import { UniqueErrorCode } from '../../api/UniqueErrorCode';
 
 export class NumberObject extends PyObject {
   public constructor(value: number) {
@@ -28,12 +29,12 @@ export class NumberObject extends PyObject {
   @pyFunction
   // eslint-disable-next-line @typescript-eslint/camelcase
   public bit_length() {
-    getObjectUtils().throwException(ExceptionType.NotImplementedError, 'bit_length');
+    getObjectUtils().throwException(ExceptionType.NotImplementedError, UniqueErrorCode.NotImplemented, 'bit_length');
   }
 
   @pyFunction
   // eslint-disable-next-line @typescript-eslint/camelcase,@typescript-eslint/no-unused-vars
   public to_bytes(@pyParam('bytes') bytes: PyObject) {
-    getObjectUtils().throwException(ExceptionType.NotImplementedError, 'to_bytes');
+    getObjectUtils().throwException(ExceptionType.NotImplementedError, UniqueErrorCode.NotImplemented, 'to_bytes');
   }
 }

@@ -7,6 +7,7 @@ import { PyObject } from '../../api/Object';
 import { getObjectUtils } from '../../api/ObjectUtils';
 import { pyFunction, pyParam } from '../../api/Decorators';
 import { PropertyType } from '../../api/Native';
+import { UniqueErrorCode } from '../../api/UniqueErrorCode';
 
 export class DictionaryObject extends ContainerObject {
   public constructor() {
@@ -26,7 +27,7 @@ export class DictionaryObject extends ContainerObject {
     }
     const pos = this._keys.findIndex(k => k.value === index);
     if (pos < 0) {
-      getObjectUtils().throwException(ExceptionType.IndexError);
+      getObjectUtils().throwException(ExceptionType.IndexError, UniqueErrorCode.CannotFindDictionaryKey, index);
     }
     return this._values[pos];
   }
@@ -62,7 +63,7 @@ export class DictionaryObject extends ContainerObject {
       if (def) {
         return def;
       }
-      getObjectUtils().throwException(ExceptionType.KeyError);
+      getObjectUtils().throwException(ExceptionType.KeyError, UniqueErrorCode.CannotFindDictionaryKey, key);
     }
     const ret = this._values[pos];
     this._keys.splice(pos, 1);
@@ -73,7 +74,7 @@ export class DictionaryObject extends ContainerObject {
   public removeItem(key: string) {
     const pos = this._keys.findIndex(k => k.value === key);
     if (pos < 0) {
-      getObjectUtils().throwException(ExceptionType.KeyError);
+      getObjectUtils().throwException(ExceptionType.KeyError, UniqueErrorCode.CannotFindDictionaryKey, key);
     }
     this._keys.splice(pos, 1);
     this._values.splice(pos, 1);
@@ -96,7 +97,7 @@ export class DictionaryObject extends ContainerObject {
       if (def) {
         return def;
       }
-      getObjectUtils().throwException(ExceptionType.KeyError);
+      getObjectUtils().throwException(ExceptionType.KeyError, UniqueErrorCode.CannotFindDictionaryKey, key);
     }
     return this._values[pos];
   }
@@ -112,7 +113,7 @@ export class DictionaryObject extends ContainerObject {
     const pos = this._keys.length - 1;
     const key = this._keys[pos];
     if (!key) {
-      getObjectUtils().throwException(ExceptionType.KeyError);
+      getObjectUtils().throwException(ExceptionType.KeyError, UniqueErrorCode.DictionaryIsEmpty);
     }
     const value = this._values[pos];
     this._keys.splice(pos, 1);

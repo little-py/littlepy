@@ -14,6 +14,7 @@ import { NoneObject } from './objects/NoneObject';
 import { TupleObject } from './objects/TupleObject';
 import { BooleanObject } from './objects/BooleanObject';
 import { PropertyType } from '../api/Native';
+import { UniqueErrorCode } from '../api/UniqueErrorCode';
 
 class ObjectUtilsImpl implements ObjectUtils {
   createList(items: PyObject[]): PyObject {
@@ -41,8 +42,8 @@ class ObjectUtilsImpl implements ObjectUtils {
     return new TupleObject(items);
   }
 
-  throwException(type: ExceptionType, ...args: string[]): void {
-    throw new ExceptionObject(type, [], ...args);
+  throwException(type: ExceptionType, uniqueCode: UniqueErrorCode, ...args: string[]): void {
+    throw new ExceptionObject(type, uniqueCode, [], ...args);
   }
 
   fromPyObject(val: PyObject) {
@@ -87,22 +88,22 @@ class ObjectUtilsImpl implements ObjectUtils {
     switch (property.type) {
       case PropertyType.Boolean:
         if (typeof value !== 'boolean') {
-          this.throwException(ExceptionType.TypeError);
+          this.throwException(ExceptionType.TypeError, UniqueErrorCode.CannotConvertJsToBoolean);
         }
         return BooleanObject.toBoolean(value);
       case PropertyType.Number:
         if (typeof value !== 'number') {
-          this.throwException(ExceptionType.TypeError);
+          this.throwException(ExceptionType.TypeError, UniqueErrorCode.CannotConvertJsToNumber);
         }
         return new NumberObject(value);
       case PropertyType.String:
         if (typeof value !== 'string') {
-          this.throwException(ExceptionType.TypeError);
+          this.throwException(ExceptionType.TypeError, UniqueErrorCode.CannotConvertJsToString);
         }
         return new StringObject(value);
       default:
         if (!(value instanceof PyObject)) {
-          this.throwException(ExceptionType.TypeError);
+          this.throwException(ExceptionType.TypeError, UniqueErrorCode.CannotConvertJsToObject);
         }
         return value;
     }
@@ -114,21 +115,21 @@ class ObjectUtilsImpl implements ObjectUtils {
     switch (property.type) {
       case PropertyType.Boolean:
         if (!(value instanceof BooleanObject)) {
-          this.throwException(ExceptionType.TypeError);
+          this.throwException(ExceptionType.TypeError, UniqueErrorCode.ExpectedBooleanObject);
           return;
         }
         newValue = value.toBoolean();
         break;
       case PropertyType.String:
         if (!(value instanceof StringObject)) {
-          this.throwException(ExceptionType.TypeError);
+          this.throwException(ExceptionType.TypeError, UniqueErrorCode.ExpectedStringObject);
           return;
         }
         newValue = value.value;
         break;
       case PropertyType.Number:
         if (!(value instanceof NumberObject)) {
-          this.throwException(ExceptionType.TypeError);
+          this.throwException(ExceptionType.TypeError, UniqueErrorCode.ExpectedNumberObject);
           return;
         }
         newValue = value.value;
@@ -142,7 +143,7 @@ class ObjectUtilsImpl implements ObjectUtils {
 
   public toNumber(value: PyObject, name?: string): number {
     if (!(value instanceof NumberObject)) {
-      this.throwException(ExceptionType.TypeError, name || '');
+      this.throwException(ExceptionType.TypeError, UniqueErrorCode.ExpectedNumberObject, name || '');
       /* istanbul ignore next */
       return;
     }
@@ -151,7 +152,7 @@ class ObjectUtilsImpl implements ObjectUtils {
 
   public toString(value: PyObject, name?: string): string {
     if (!(value instanceof StringObject)) {
-      this.throwException(ExceptionType.TypeError, name || '');
+      this.throwException(ExceptionType.TypeError, UniqueErrorCode.ExpectedStringObject, name || '');
       /* istanbul ignore next */
       return;
     }

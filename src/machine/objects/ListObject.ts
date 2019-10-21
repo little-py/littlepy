@@ -5,6 +5,7 @@ import { ExceptionType } from '../../api/ExceptionType';
 import { PyObject } from '../../api/Object';
 import { getObjectUtils } from '../../api/ObjectUtils';
 import { pyFunction, pyParam } from '../../api/Decorators';
+import { UniqueErrorCode } from '../../api/UniqueErrorCode';
 
 export class ListObject extends ContainerObject {
   public constructor(values: PyObject[] = []) {
@@ -24,7 +25,7 @@ export class ListObject extends ContainerObject {
 
   public getItem(index: number | string): PyObject {
     if (typeof index === 'string') {
-      getObjectUtils().throwException(ExceptionType.TypeError);
+      getObjectUtils().throwException(ExceptionType.TypeError, UniqueErrorCode.ExpectedStringObject);
     }
     return this.items[index];
   }

@@ -48,6 +48,19 @@ const scenarios: TestScenario[] = [
   },
   {
     input: `
+        a = 330
+        b = 200
+        if b > a:
+          print("b is greater than a")
+        elif b < a:
+          print("a is greater than b")
+        else:
+          print("equal")
+      `,
+    output: ['a is greater than b'],
+  },
+  {
+    input: `
         a = 33
         b = 200
         if b < a:
@@ -1004,7 +1017,7 @@ const scenarios: TestScenario[] = [
         print(a)
       func(10)
     `,
-    expectedException: ExceptionType.FunctionArgumentError,
+    expectedException: ExceptionType.FunctionTooManyArguments,
   },
   {
     input: `
@@ -1395,6 +1408,24 @@ const scenarios: TestScenario[] = [
     input: `
       try:
         raise NotImplementedError()
+      except a.
+        print('ok')
+    `,
+    expectedCompilerError: PyErrorType.ExceptExpectedIdentifier,
+  },
+  {
+    input: `
+      try:
+        raise NotImplementedError()
+      except x as
+        print('ok')
+    `,
+    expectedCompilerError: PyErrorType.ExceptExpectedIdentifierAfterAs,
+  },
+  {
+    input: `
+      try:
+        raise NotImplementedError()
       except E
         print('ok')
     `,
@@ -1509,7 +1540,7 @@ const scenarios: TestScenario[] = [
       a = [20]
       del a['x']
     `,
-    expectedException: ExceptionType.ReferenceError,
+    expectedException: ExceptionType.TypeError,
   },
   {
     input: `
@@ -2230,6 +2261,16 @@ const scenarios: TestScenario[] = [
 line2"""
         print('call')
       print(func.__doc__)
+    `,
+    output: ['line1', 'line2'],
+  },
+  {
+    input: `
+      class Test:
+        """line1
+line2"""
+        pass
+      print(Test.__doc__)
     `,
     output: ['line1', 'line2'],
   },
@@ -3784,6 +3825,20 @@ line2"""
       print(f'value: {a+5}')
     `,
     output: ['value: 15'],
+  },
+  {
+    input: `
+      while a > :
+        print('test')
+    `,
+    expectedCompilerError: PyErrorType.ExpectedRightOperand,
+  },
+  {
+    input: `
+      for x in a > :
+        print('test')
+    `,
+    expectedCompilerError: PyErrorType.ExpectedRightOperand,
   },
 ];
 

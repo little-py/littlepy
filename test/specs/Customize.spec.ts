@@ -6,6 +6,8 @@ import { PyObject } from '../../src/api/Object';
 import { getObjectUtils } from '../../src/api/ObjectUtils';
 import { StringObject } from '../../src/machine/objects/StringObject';
 import { NumberObject } from '../../src/machine/objects/NumberObject';
+import {ExceptionType} from "../../src/api/ExceptionType";
+import {PyErrorType} from "../../src/api/ErrorType";
 
 describe('Customize runContext', () => {
   it('should write to callback instead of internal buffer', () => {
@@ -59,6 +61,32 @@ describe('Customize runContext', () => {
       'main',
     );
     expect(runContext.getOutput()).toEqual(['5', '20']);
+  });
+
+  it('should execute runContext in interpreter mode', () => {
+    const code = compileModule(
+      `
+      for
+    `,
+      'main',
+      {
+        wrapWithPrint: true,
+      },
+    );
+    expect(code.errors[0].type).toEqual(PyErrorType.ExpectedExpressionValue);
+  });
+
+  it('should execute runContext in interpreter mode', () => {
+    const code = compileModule(
+      `
+      2 + 5 = 10
+    `,
+      'main',
+      {
+        wrapWithPrint: true,
+      },
+    );
+    expect(code.errors[0].type).toEqual(PyErrorType.ExpectedEndOfExpression);
   });
 
   it('should handle unitialized position', () => {

@@ -7,6 +7,7 @@ import { PyObject } from '../../api/Object';
 import { getObjectUtils } from '../../api/ObjectUtils';
 import { pyFunction, pyParam } from '../../api/Decorators';
 import { PropertyType } from '../../api/Native';
+import { UniqueErrorCode } from '../../api/UniqueErrorCode';
 
 export class GeneratorObject extends PyObject {
   public constructor(stackHead: StackEntry, stackTail: StackEntry) {
@@ -28,7 +29,7 @@ export class GeneratorObject extends PyObject {
   @pyFunction
   public __next__(@pyParam('', PropertyType.Machine) runContext: RunContext, @pyParam('', PropertyType.CallContext) callContext: CallContext) {
     if (this.finished) {
-      getObjectUtils().throwException(ExceptionType.StopIteration);
+      getObjectUtils().throwException(ExceptionType.StopIteration, UniqueErrorCode.CalledNextOnFinishedIterator);
       /* istanbul ignore next */
       return;
     }

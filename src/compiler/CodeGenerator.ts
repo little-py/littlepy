@@ -391,11 +391,10 @@ export class CodeGenerator {
       } else if (token.type === TokenType.Keyword && token.keyword === KeywordType.Not) {
         ret.add(InstructionType.GetBool, token.getPosition(), 0, 0);
         ret.add(InstructionType.LogicalNot, token.getPosition(), 0, 0);
-      } else if (token.type === TokenType.Operator && token.operator === OperatorType.Plus) {
-        // do nothing
       } else if (token.type === TokenType.Operator && token.operator === OperatorType.Minus) {
         ret.add(InstructionType.Invert, token.getPosition(), 0, 0);
       }
+      // operator Plus does nothing for this
     }
     ret.success = true;
     return ret;
