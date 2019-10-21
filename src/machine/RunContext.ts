@@ -63,6 +63,8 @@ export class RunContext extends RunContextBase {
   private _finished = true;
   private _locationId: string;
   private _position: PyMachinePosition;
+  private _paused = false;
+  private _pausedCallback: () => boolean;
   public onWriteLine: (line: string) => void = null;
   public onLeaveFunction: (name: string, scope: PyScope) => void;
   public onReadLine: (prompt: string, callback: (result: string) => void) => void = (prompt, callback) => callback('');
@@ -78,6 +80,8 @@ export class RunContext extends RunContextBase {
     this._unhandledException = undefined;
     this._currentException = undefined;
     this._position = undefined;
+    this._paused = false;
+    this._pausedCallback = null;
   }
 
   public getGlobalScope() {
@@ -134,7 +138,12 @@ export class RunContext extends RunContextBase {
   }
 
   public run() {
-    while (this.step()) {}
+    while (this.step()) {
+      if (this._paused) {
+        this._pausedCallback = () => false;
+        break;
+      }
+    }
   }
 
   private onLastStackFinished() {
@@ -324,11 +333,36 @@ export class RunContext extends RunContextBase {
     }
   }
 
+  public isPaused(): boolean {
+    return this._paused;
+  }
+
+  public pause() {
+    this._paused = true;
+  }
+
+  public resume() {
+    if (!this._paused) {
+      return;
+    }
+    this._paused = false;
+    if (this._pausedCallback) {
+      this.debugUntilCondition(this._pausedCallback);
+    }
+  }
+
   private debugUntilCondition(callback?: () => boolean) {
+    if (this._paused) {
+      return;
+    }
     while (!this.isFinished()) {
       const current = this._locationId;
-      while (!this.isFinished() && this._locationId === current) {
+      while (!this.isFinished() && this._locationId === current && !this._paused) {
         this.step();
+      }
+      if (this._paused) {
+        this._pausedCallback = callback;
+        break;
       }
       if (this.isFinished()) {
         break;
