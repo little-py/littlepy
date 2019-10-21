@@ -12,14 +12,15 @@ import { IterableObject } from '../objects/IterableObject';
 import { PyObject } from '../../api/Object';
 import { PropertyType } from '../../api/Native';
 import { getObjectUtils } from '../../api/ObjectUtils';
+import { UniqueErrorCode } from '../../api/UniqueErrorCode';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function nativeWrapper(instance: any, member: MemberWithMetadata) {
-  return function(callContext: CallContext, runContext: RunContextBase) {
+  function wrapper(callContext: CallContext, runContext: RunContextBase) {
     let ignoreParams = false;
     let hasCallback = false;
+    const params = member.pythonParams || [];
     try {
-      const params = member.pythonParams || [];
       const args = (params || []).map(({ name, type, defaultValue, isCallback, args, kwargs }: NativeParam, index: number):
         | number
         | string
@@ -57,7 +58,7 @@ export function nativeWrapper(instance: any, member: MemberWithMetadata) {
             if (defaultValue !== undefined) {
               return defaultValue;
             }
-            throw new ExceptionObject(ExceptionType.FunctionArgumentError, [], name);
+            throw new ExceptionObject(ExceptionType.FunctionArgumentError, UniqueErrorCode.RequiredArgumentIsMissing, [], name);
           }
         }
         if (type === PropertyType.Number) {
@@ -68,32 +69,32 @@ export function nativeWrapper(instance: any, member: MemberWithMetadata) {
         }
         if (type === PropertyType.Boolean) {
           if (!(sourceArg instanceof BooleanObject)) {
-            throw new ExceptionObject(ExceptionType.TypeError, [], name);
+            throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedBooleanObject, [], name);
           }
           return sourceArg.value !== 0;
         }
         if (type === PropertyType.List) {
           if (!(sourceArg instanceof ListObject)) {
-            throw new ExceptionObject(ExceptionType.TypeError, [], name);
+            throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedListObject, [], name);
           }
         } else if (type === PropertyType.Dictionary) {
           if (!(sourceArg instanceof DictionaryObject)) {
-            throw new ExceptionObject(ExceptionType.TypeError, [], name);
+            throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedDictionaryObject, [], name);
           }
         } else if (type === PropertyType.Tuple) {
           if (!(sourceArg instanceof TupleObject)) {
-            throw new ExceptionObject(ExceptionType.TypeError, [], name);
+            throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedTupleObject, [], name);
           }
         } else if (type === PropertyType.Iterable) {
           if (!(sourceArg instanceof IterableObject)) {
-            throw new ExceptionObject(ExceptionType.TypeError, [], name);
+            throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedIterableObject, [], name);
           }
         }
         return sourceArg;
       });
       if (!ignoreParams) {
         if (args.length < callContext.indexedArgs.length) {
-          runContext.raiseException(new ExceptionObject(ExceptionType.FunctionArgumentCountMismatch));
+          runContext.raiseException(new ExceptionObject(ExceptionType.FunctionArgumentCountMismatch, UniqueErrorCode.RequiredArgumentIsMissing));
           return true;
         }
       }
@@ -116,7 +117,7 @@ export function nativeWrapper(instance: any, member: MemberWithMetadata) {
           return BooleanObject.toBoolean(ret);
         default:
           if (!(ret instanceof PyObject)) {
-            runContext.raiseException(new ExceptionObject(ExceptionType.TypeError));
+            runContext.raiseException(new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedPythonObject));
           } else {
             return ret;
           }
@@ -126,9 +127,10 @@ export function nativeWrapper(instance: any, member: MemberWithMetadata) {
         runContext.raiseException(err);
       } else {
         //console.log('Native function error!', err);
-        runContext.raiseException(new ExceptionObject(ExceptionType.SystemError));
+        runContext.raiseException(new ExceptionObject(ExceptionType.SystemError, UniqueErrorCode.UnexpectedJsException));
       }
       return true;
     }
-  };
+  }
+  return wrapper;
 }

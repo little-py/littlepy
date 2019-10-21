@@ -7,6 +7,7 @@ import { pyFunction, pyParam } from '../../api/Decorators';
 import { PropertyType } from '../../api/Native';
 import { getObjectUtils } from '../../api/ObjectUtils';
 import { NumberObject } from '../objects/NumberObject';
+import { UniqueErrorCode } from '../../api/UniqueErrorCode';
 
 class PythonMath {
   precision(a: number): number {
@@ -57,7 +58,7 @@ class PythonMath {
   @pyFunction
   fmod(@pyParam('x', PropertyType.Number) x: number, @pyParam('y', PropertyType.Number) y: number) {
     if (y === 0) {
-      throw new ExceptionObject(ExceptionType.ZeroDivisionError);
+      throw new ExceptionObject(ExceptionType.ZeroDivisionError, UniqueErrorCode.ZeroDivision);
     }
     return x % y;
   }
@@ -65,7 +66,7 @@ class PythonMath {
   @pyFunction
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   frexp(@pyParam('x', PropertyType.Number) x: number) {
-    throw new ExceptionObject(ExceptionType.NotImplementedError);
+    throw new ExceptionObject(ExceptionType.NotImplementedError, UniqueErrorCode.NotImplemented);
   }
 
   @pyFunction

@@ -3,6 +3,7 @@ import { ExceptionType } from '../../api/ExceptionType';
 import { PyObject } from '../../api/Object';
 import { getObjectUtils } from '../../api/ObjectUtils';
 import { pyFunction } from '../../api/Decorators';
+import { UniqueErrorCode } from '../../api/UniqueErrorCode';
 
 export class IteratorObject extends PyObject {
   private index = 0;
@@ -20,7 +21,7 @@ export class IteratorObject extends PyObject {
   @pyFunction
   public __next__() {
     if (this.index >= this.iterableObject.getCount()) {
-      getObjectUtils().throwException(ExceptionType.StopIteration);
+      getObjectUtils().throwException(ExceptionType.StopIteration, UniqueErrorCode.IteratorFinished);
       /* istanbul ignore next */
       return;
     }

@@ -12,6 +12,7 @@ import { PyObject } from '../../api/Object';
 import { getObjectUtils } from '../../api/ObjectUtils';
 import { NumberObject } from './NumberObject';
 import { PyScope } from '../../api/Scope';
+import { UniqueErrorCode } from '../../api/UniqueErrorCode';
 
 export enum ReferenceType {
   Index = 'Index',
@@ -56,32 +57,38 @@ export class ReferenceObject extends PyObject {
         break;
       case ReferenceType.Property:
         if (!(this.indexer instanceof StringObject)) {
-          runContext.raiseTypeConversion();
+          runContext.raiseException(new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedStringObject, [], this.indexer.toString()));
+          /* istanbul ignore next */
           return;
         }
         break;
       case ReferenceType.Variable:
         if (!(this.parent instanceof StringObject)) {
-          runContext.raiseTypeConversion();
+          runContext.raiseException(new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedStringObject, [], this.parent.toString()));
+          /* istanbul ignore next */
           return;
         }
         break;
       case ReferenceType.Range:
         if (!(this.parent instanceof ContainerObject)) {
-          runContext.raiseTypeConversion();
+          runContext.raiseException(new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedContainer, [], this.parent.toString()));
+          /* istanbul ignore next */
           return;
         }
         if (!(this.indexer instanceof NumberObject)) {
-          runContext.raiseTypeConversion();
+          runContext.raiseException(new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedNumberObject, [], this.indexer.toString()));
+          /* istanbul ignore next */
           return;
         }
         if (!(this.indexTo instanceof NumberObject)) {
-          runContext.raiseTypeConversion();
+          runContext.raiseException(new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedNumberObject, [], this.indexTo.toString()));
+          /* istanbul ignore next */
           return;
         }
         if (this.indexInterval && !(this.indexer instanceof NumberObject)) {
-          runContext.raiseTypeConversion();
-          return;
+          // @ts-ignore
+          runContext.raiseException(new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedNumberObject, [], this.indexer.toString()));
+          /* istanbul ignore next */
         }
         break;
     }
@@ -124,16 +131,21 @@ export class ReferenceObject extends PyObject {
           if (this.parent instanceof ListObject) {
             this.parent.removeItem(this.indexer.value);
             return;
+          } else {
+            getObjectUtils().throwException(ExceptionType.TypeError, UniqueErrorCode.ExpectedListObject, this.indexer.toString());
           }
         } else if (this.indexer instanceof StringObject) {
           if (this.parent instanceof DictionaryObject) {
             this.parent.removeItem(this.indexer.value);
             return;
+          } else {
+            getObjectUtils().throwException(ExceptionType.TypeError, UniqueErrorCode.ExpectedDictionaryObject, this.indexer.toString());
           }
+        } else {
+          getObjectUtils().throwException(ExceptionType.ReferenceError, UniqueErrorCode.ExpectedNumericOrStringIndexer, this.indexer.toString());
         }
       }
     }
-    getObjectUtils().throwException(ExceptionType.ReferenceError);
   }
 
   public setValue(value: PyObject, runContext: RunContext) {
@@ -167,15 +179,19 @@ export class ReferenceObject extends PyObject {
         break;
       }
       case ReferenceType.Range: {
-        if (!(value instanceof IterableObject) || !(this.parent instanceof ListObject)) {
-          runContext.raiseTypeConversion();
+        if (!(value instanceof IterableObject)) {
+          runContext.raiseException(new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedIterableObject, [], value.toString()));
+          return;
+        }
+        if (!(this.parent instanceof ListObject)) {
+          runContext.raiseException(new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedListObject, [], value.toString()));
           return;
         }
         const from = getObjectUtils().toNumber(this.indexer, 'from');
         const to = getObjectUtils().toNumber(this.indexTo, 'to');
         const step = this.indexInterval ? (this.indexInterval as NumberObject).value : 1;
         if (step === 0) {
-          runContext.raiseFunctionArgumentError();
+          runContext.raiseException(new ExceptionObject(ExceptionType.FunctionArgumentError, UniqueErrorCode.StepCannotBeZero));
           return;
         }
         if (step < 0) {
@@ -189,12 +205,6 @@ export class ReferenceObject extends PyObject {
         }
         break;
       }
-      default:
-        // safety check
-        /* istanbul ignore next */
-        runContext.onRuntimeError();
-        /* istanbul ignore next */
-        break;
     }
   }
 
@@ -205,8 +215,7 @@ export class ReferenceObject extends PyObject {
         const scope = this.getTargetScope(runContext, name.value);
         const value = scope && scope.getObject(name.value);
         if (!value) {
-          runContext.raiseUnknownIdentifier(name.value);
-          return;
+          throw new ExceptionObject(ExceptionType.UnknownIdentifier, UniqueErrorCode.UnknownIdentifier, [], name.value);
         }
         return value;
       }
@@ -214,8 +223,7 @@ export class ReferenceObject extends PyObject {
         const indexer = this.indexer as StringObject;
         const ret = this.parent.getAttribute(indexer.value);
         if (!ret) {
-          runContext.raiseUnknownIdentifier(indexer.value);
-          return;
+          throw new ExceptionObject(ExceptionType.UnknownIdentifier, UniqueErrorCode.UnknownIdentifier, [], indexer.value);
         }
         return ret;
       }
@@ -225,20 +233,20 @@ export class ReferenceObject extends PyObject {
           const indexer = this.indexer as NumberObject;
           const ret = list.getItem(indexer.value);
           if (!ret) {
-            throw new ExceptionObject(ExceptionType.IndexError, [], this.indexer.value.toString());
+            throw new ExceptionObject(ExceptionType.IndexError, UniqueErrorCode.IndexerIsOutOfRange, [], this.indexer.value.toString());
           }
           return ret;
         } else {
           if (this.parent instanceof IterableObject && this.indexer instanceof StringObject) {
             const ret = this.parent.getItem(this.indexer.value);
             if (!ret) {
-              runContext.raiseUnknownIdentifier(this.indexer.value);
+              throw new ExceptionObject(ExceptionType.UnknownIdentifier, UniqueErrorCode.UnknownIdentifier, [], this.indexer.value);
             }
             return ret;
           } else if (this.parent instanceof IterableObject && this.indexer instanceof NumberObject) {
             const ret = this.parent.getItem(this.indexer.value);
             if (!ret) {
-              throw new ExceptionObject(ExceptionType.IndexError, [], this.indexer.value.toString());
+              throw new ExceptionObject(ExceptionType.IndexError, UniqueErrorCode.IndexerIsOutOfRange, [], this.indexer.value.toString());
             }
             return ret;
           }
@@ -250,8 +258,7 @@ export class ReferenceObject extends PyObject {
         const to = (this.indexTo as NumberObject).value;
         const step = this.indexInterval ? (this.indexInterval as NumberObject).value : 1;
         if (step === 0) {
-          runContext.raiseFunctionArgumentError();
-          return;
+          throw new ExceptionObject(ExceptionType.FunctionArgumentError, UniqueErrorCode.StepCannotBeZero);
         }
         if (this.parent instanceof TupleObject) {
           const value = new TupleObject([]);
@@ -279,12 +286,6 @@ export class ReferenceObject extends PyObject {
           return value;
         }
       }
-      default:
-        // safety check
-        /* istanbul ignore next */
-        runContext.onRuntimeError();
-        /* istanbul ignore next */
-        break;
     }
   }
 }

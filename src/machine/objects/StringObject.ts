@@ -5,6 +5,7 @@ import { PyObject } from '../../api/Object';
 import { getObjectUtils } from '../../api/ObjectUtils';
 import { pyFunction, pyParam, pyParamArgs, pyParamKwargs } from '../../api/Decorators';
 import { PropertyType } from '../../api/Native';
+import { UniqueErrorCode } from '../../api/UniqueErrorCode';
 
 function isSpace(c: string): boolean {
   return c === ' ' || c === '\t' || c === '\r' || c === '\n';
@@ -24,7 +25,7 @@ export class StringObject extends ContainerObject {
 
   getItem(index: number | string): PyObject {
     if (typeof index !== 'number') {
-      getObjectUtils().throwException(ExceptionType.TypeError, 'index');
+      getObjectUtils().throwException(ExceptionType.TypeError, UniqueErrorCode.ExpectedNumericIndexer, 'index');
     }
     return new StringObject(this.value[index]);
   }
@@ -118,7 +119,7 @@ export class StringObject extends ContainerObject {
       i => {
         const v = indexed[i];
         if (!v) {
-          getObjectUtils().throwException(ExceptionType.FunctionArgumentError);
+          getObjectUtils().throwException(ExceptionType.FunctionArgumentError, UniqueErrorCode.IndexerIsOutOfRange, i.toString());
         } else {
           return v;
         }
@@ -126,7 +127,7 @@ export class StringObject extends ContainerObject {
       key => {
         const v = named[key];
         if (!v) {
-          getObjectUtils().throwException(ExceptionType.FunctionArgumentError);
+          getObjectUtils().throwException(ExceptionType.FunctionArgumentError, UniqueErrorCode.IndexerIsOutOfRange, key);
         } else {
           return v;
         }
@@ -194,7 +195,7 @@ export class StringObject extends ContainerObject {
     if (pos >= start && pos <= end) {
       return pos;
     }
-    getObjectUtils().throwException(ExceptionType.ValueError, 'cannot find element');
+    getObjectUtils().throwException(ExceptionType.ValueError, UniqueErrorCode.CannotFindObjectInIterator, sub);
   }
 
   @pyFunction
@@ -452,7 +453,7 @@ export class StringObject extends ContainerObject {
   ): number {
     const pos = this.rfind(sub, start, end);
     if (pos === -1) {
-      getObjectUtils().throwException(ExceptionType.ValueError);
+      getObjectUtils().throwException(ExceptionType.ValueError, UniqueErrorCode.CannotFindObjectInIterator, sub);
     }
     return pos;
   }

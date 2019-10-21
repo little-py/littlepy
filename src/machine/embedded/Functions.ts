@@ -16,6 +16,7 @@ import { PyObject } from '../../api/Object';
 import { pyFunction, pyParam, pyParamArgs, pyParamKwargs } from '../../api/Decorators';
 import { PropertyType } from '../../api/Native';
 import { getObjectUtils } from '../../api/ObjectUtils';
+import { UniqueErrorCode } from '../../api/UniqueErrorCode';
 
 class RangeObject extends IterableObject {
   private readonly items: number[];
@@ -38,7 +39,7 @@ class ExportedFunctions {
   @pyFunction
   abs(@pyParam('x') x: PyObject) {
     if (!(x instanceof NumberObject)) {
-      throw new ExceptionObject(ExceptionType.TypeError, [], 'x');
+      throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedNumberObject, [], 'x');
     }
     return new NumberObject(Math.abs(x.value));
   }
@@ -75,7 +76,7 @@ class ExportedFunctions {
   @pyFunction
   min(@pyParamArgs args: PyObject[]) {
     if (args.length === 0) {
-      throw new ExceptionObject(ExceptionType.ValueError);
+      throw new ExceptionObject(ExceptionType.ValueError, UniqueErrorCode.ExpectedNonEmptyArgs);
     }
     let ret = getObjectUtils().toNumber(args[0], 'args');
     for (let i = 1; i < args.length; i++) {
@@ -90,7 +91,7 @@ class ExportedFunctions {
   @pyFunction
   max(@pyParamArgs args: PyObject[]) {
     if (args.length === 0) {
-      throw new ExceptionObject(ExceptionType.ValueError);
+      throw new ExceptionObject(ExceptionType.ValueError, UniqueErrorCode.ExpectedNonEmptyArgs);
     }
     let ret = getObjectUtils().toNumber(args[0], 'args');
     for (let i = 1; i < args.length; i++) {
@@ -105,7 +106,7 @@ class ExportedFunctions {
   @pyFunction
   sum(@pyParamArgs args: PyObject[]) {
     if (args.length === 0) {
-      throw new ExceptionObject(ExceptionType.ValueError);
+      throw new ExceptionObject(ExceptionType.ValueError, UniqueErrorCode.ExpectedNonEmptyArgs);
     }
     let ret = 0;
     for (let i = 0; i < args.length; i++) {
@@ -161,7 +162,7 @@ class ExportedFunctions {
       step = 1;
     } else {
       if (step === 0) {
-        throw new ExceptionObject(ExceptionType.FunctionArgumentError);
+        throw new ExceptionObject(ExceptionType.FunctionArgumentError, UniqueErrorCode.StepCannotBeZero);
       }
     }
     if (end === null) {
@@ -193,7 +194,7 @@ class ExportedFunctions {
     }
     const len = obj.getAttribute('__len__');
     if (!len || !(len instanceof Callable)) {
-      throw new ExceptionObject(ExceptionType.TypeError);
+      throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedCallableObject);
     } else {
       callContext.indexedArgs = [];
       runContext.callFunction(len, obj, (ret, exception) => {
@@ -206,7 +207,7 @@ class ExportedFunctions {
   @pyFunction
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   hash(@pyParam('object', PropertyType.Object) object: PyObject) {
-    throw new ExceptionObject(ExceptionType.NotImplementedError, [], 'hash');
+    throw new ExceptionObject(ExceptionType.NotImplementedError, UniqueErrorCode.NotImplemented, [], 'hash');
   }
 
   @pyFunction
@@ -220,7 +221,7 @@ class ExportedFunctions {
       return new SetObject();
     }
     if (!(source instanceof IterableObject)) {
-      throw new ExceptionObject(ExceptionType.ValueError);
+      throw new ExceptionObject(ExceptionType.ValueError, UniqueErrorCode.ExpectedIterableObject);
     }
     const values: PyObject[] = [];
     for (let i = 0; i < source.getCount(); i++) {
@@ -236,7 +237,7 @@ class ExportedFunctions {
       return new FrozenSetObject();
     }
     if (!(source instanceof IterableObject)) {
-      throw new ExceptionObject(ExceptionType.ValueError);
+      throw new ExceptionObject(ExceptionType.ValueError, UniqueErrorCode.ExpectedIterableObject);
     }
     const values: PyObject[] = [];
     for (let i = 0; i < source.getCount(); i++) {
@@ -261,7 +262,7 @@ class ExportedFunctions {
       return new SetObject();
     }
     if (!(source instanceof IterableObject)) {
-      throw new ExceptionObject(ExceptionType.ValueError);
+      throw new ExceptionObject(ExceptionType.ValueError, UniqueErrorCode.ExpectedIterableObject);
     }
     const values: PyObject[] = [];
     for (let i = 0; i < source.getCount(); i++) {

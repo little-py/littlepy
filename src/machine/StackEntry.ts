@@ -10,6 +10,7 @@ import { PyStackEntry } from '../api/StackEntry';
 import { FunctionBody } from '../common/FunctionBody';
 import { PyScope } from '../api/Scope';
 import { FunctionContext } from '../api/FunctionContext';
+import { UniqueErrorCode } from '../api/UniqueErrorCode';
 
 export enum StackEntryType {
   WhileCycle = 'While',
@@ -46,7 +47,7 @@ export class StackEntry implements PyStackEntry {
     if (!reg) {
       // safety check
       /* istanbul ignore next */
-      throw new ExceptionObject(ExceptionType.ReferenceError);
+      throw new ExceptionObject(ExceptionType.ReferenceError, UniqueErrorCode.RegisterIsNotSet, [], num.toString());
     }
     if (extractRef && reg instanceof ReferenceObject) {
       reg = reg.getValue(runContext);
@@ -62,7 +63,7 @@ export class StackEntry implements PyStackEntry {
     }
     // safety check
     /* istanbul ignore next */
-    throw new ExceptionObject(ExceptionType.SystemError);
+    throw new ExceptionObject(ExceptionType.SystemError, UniqueErrorCode.CannotFindLabel, [], label.toString());
   }
 
   public name: string;

@@ -93,6 +93,8 @@ export class Keyword {
     if (first === KeywordType.Is && second === KeywordType.Not) {
       return KeywordType.IsNot;
     }
+    // async is not implemented yet
+    /* istanbul ignore next */
     if (first === KeywordType.Async && second === KeywordType.For) {
       return KeywordType.AsyncFor;
     }

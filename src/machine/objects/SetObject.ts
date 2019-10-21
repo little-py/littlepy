@@ -6,6 +6,7 @@ import { PyObject } from '../../api/Object';
 import { getObjectUtils } from '../../api/ObjectUtils';
 import { pyFunction, pyParam, pyParamArgs } from '../../api/Decorators';
 import { PropertyType } from '../../api/Native';
+import { UniqueErrorCode } from '../../api/UniqueErrorCode';
 
 export class SetObject extends FrozenSetObject {
   public constructor(items: PyObject[] = []) {
@@ -54,7 +55,7 @@ export class SetObject extends FrozenSetObject {
     if (pos >= 0) {
       this.items.splice(pos, 1);
     } else {
-      getObjectUtils().throwException(ExceptionType.KeyError);
+      getObjectUtils().throwException(ExceptionType.KeyError, UniqueErrorCode.ObjectNotFoundInSet);
     }
   }
 

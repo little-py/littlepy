@@ -313,6 +313,13 @@ export class CodeGenerator {
     return ret;
   }
 
+  public static raiseEmpty(position: TokenPosition): GeneratedCode {
+    const ret = new GeneratedCode();
+    ret.add(InstructionType.Raise, position, -1);
+    ret.success = true;
+    return ret;
+  }
+
   public static returnEmpty(position: TokenPosition): GeneratedCode {
     const ret = new GeneratedCode();
     ret.add(InstructionType.Ret, position, -1);
@@ -391,11 +398,10 @@ export class CodeGenerator {
       } else if (token.type === TokenType.Keyword && token.keyword === KeywordType.Not) {
         ret.add(InstructionType.GetBool, token.getPosition(), 0, 0);
         ret.add(InstructionType.LogicalNot, token.getPosition(), 0, 0);
-      } else if (token.type === TokenType.Operator && token.operator === OperatorType.Plus) {
-        // do nothing
       } else if (token.type === TokenType.Operator && token.operator === OperatorType.Minus) {
         ret.add(InstructionType.Invert, token.getPosition(), 0, 0);
       }
+      // operator Plus does nothing for this
     }
     ret.success = true;
     return ret;
@@ -504,7 +510,7 @@ export class CodeGenerator {
     /* istanbul ignore next */
     if (opType === InstructionType.Pass) {
       ret.success = false;
-      compilerContext.addError(PyErrorType.UnknownBinaryOperator, op);
+      compilerContext.addError(PyErrorType.ErrorUnexpectedScenario05, op);
       return ret;
     }
     ret.add(opType, op.getPosition(), 0, 1, 0);

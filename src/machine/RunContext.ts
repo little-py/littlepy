@@ -22,7 +22,7 @@ import { SetObject } from './objects/SetObject';
 import { DictionaryObject } from './objects/DictionaryObject';
 import { BooleanObject } from './objects/BooleanObject';
 import { InstanceMethodObject } from './objects/InstanceMethodObject';
-import { PyInheritance, PyClass } from '../api/Class';
+import { PyClass, PyInheritance } from '../api/Class';
 import { PyClassInstance } from '../api/Instance';
 import { SuperProxyObject } from './objects/SuperProxyObject';
 import { GeneratorObject } from './objects/GeneratorObject';
@@ -44,6 +44,7 @@ import { setObjectUtils } from '../api/ObjectUtils';
 import { objectUtils } from './ObjectUtilsImpl';
 import { PyObject } from '../api/Object';
 import { PyFunction } from '../api/Function';
+import { UniqueErrorCode } from '../api/UniqueErrorCode';
 
 setObjectUtils(objectUtils);
 
@@ -218,30 +219,38 @@ export class RunContext extends RunContextBase {
       this.raiseUnknownIdentifier(name);
       return;
     }
-    const moduleFunction = this.getModuleFunction(module);
-    /* istanbul ignore next */
-    if (moduleFunction === undefined) {
-      // should never happen in correctly compiled code
-      this.onRuntimeError();
-      return;
+    try {
+      const moduleFunction = this.getModuleFunction(module);
+      /* istanbul ignore next */
+      if (moduleFunction === undefined) {
+        // should never happen in correctly compiled code
+        this.raiseException(new ExceptionObject(ExceptionType.RuntimeError, UniqueErrorCode.CannotFindModuleFunction));
+        return;
+      }
+
+      this.prepareStart();
+
+      const moduleContext = this.createFunctionContext(moduleFunction);
+      const args: PyObject[] = [];
+      this.enterFunction(
+        moduleContext,
+        moduleFunction,
+        (ret, exception) => {
+          if (finishCallback) {
+            finishCallback(ret, exception);
+          }
+          this._finished = true;
+        },
+        args,
+        null,
+      );
+    } catch (e) {
+      if (e instanceof ExceptionObject) {
+        this.raiseException(e);
+      } else {
+        throw e;
+      }
     }
-
-    this.prepareStart();
-
-    const moduleContext = this.createFunctionContext(moduleFunction);
-    const args: PyObject[] = [];
-    this.enterFunction(
-      moduleContext,
-      moduleFunction,
-      (ret, exception) => {
-        if (finishCallback) {
-          finishCallback(ret, exception);
-        }
-        this._finished = true;
-      },
-      args,
-      null,
-    );
   }
 
   public startCallFunction(
@@ -255,31 +264,39 @@ export class RunContext extends RunContextBase {
     }
     const module = this._importedModules[moduleName];
     if (!module) {
-      this.onRuntimeError();
+      this.raiseException(new ExceptionObject(ExceptionType.UnknownIdentifier, UniqueErrorCode.ModuleNotFound, [], moduleName));
       return;
     }
     const functionObject: FunctionObject = module.getAttribute(funcName) as FunctionObject;
     if (!functionObject || !functionObject.context) {
-      this.onRuntimeError();
+      this.raiseException(new ExceptionObject(ExceptionType.UnknownIdentifier, UniqueErrorCode.FunctionNotFound, [], funcName));
       return;
     }
 
     const functionContext = functionObject.context;
     const functionBody = functionObject.body;
 
-    this.prepareStart();
-    this.enterFunction(
-      functionContext,
-      functionBody,
-      (ret, exception) => {
-        if (finishCallback) {
-          finishCallback(ret, exception);
-        }
-        this._finished = true;
-      },
-      args,
-      null,
-    );
+    try {
+      this.prepareStart();
+      this.enterFunction(
+        functionContext,
+        functionBody,
+        (ret, exception) => {
+          if (finishCallback) {
+            finishCallback(ret, exception);
+          }
+          this._finished = true;
+        },
+        args,
+        null,
+      );
+    } catch (e) {
+      if (e instanceof ExceptionObject) {
+        this.raiseException(e);
+      } else {
+        throw e;
+      }
+    }
   }
 
   public write(output: string) {
@@ -401,15 +418,15 @@ export class RunContext extends RunContextBase {
     this._position = undefined;
     const functionStack = this.getCurrentFunctionStack();
     const code = functionStack.functionBody.code;
-    if (functionStack.instruction >= code.length) {
-      this.onCodeBlockFinished(functionStack);
-      return true;
-    }
-    const current = code[functionStack.instruction];
-    this._currentInstruction = functionStack.instruction;
-    this.updateLocation(current);
-    functionStack.instruction++;
     try {
+      if (functionStack.instruction >= code.length) {
+        this.onCodeBlockFinished(functionStack);
+        return true;
+      }
+      const current = code[functionStack.instruction];
+      this._currentInstruction = functionStack.instruction;
+      this.updateLocation(current);
+      functionStack.instruction++;
       this.stepInternal(current);
     } catch (err) {
       if (err instanceof ExceptionObject) {
@@ -417,25 +434,20 @@ export class RunContext extends RunContextBase {
       } else {
         // safety check
         /* istanbul ignore next */
-        this.raiseException(new ExceptionObject(ExceptionType.SystemError));
+        this.raiseException(new ExceptionObject(ExceptionType.SystemError, UniqueErrorCode.UnexpectedJsException));
       }
     }
     return !this._unhandledException;
-  }
-
-  public onRuntimeError(): void {
-    const exception = new ExceptionObject(ExceptionType.RuntimeError);
-    this.onUnhandledException(exception);
   }
 
   private stepLeaveCycle() {
     if (!this._currentStack.endInstruction) {
       // should never happen in correctly compiled code
       /* istanbul ignore next */
-      this.onRuntimeError();
-    } else {
-      this.leaveStack(null, true);
+      throw new ExceptionObject(ExceptionType.RuntimeError, UniqueErrorCode.CannotFindEndOfCycle);
     }
+
+    this.leaveStack(null, true);
   }
 
   private createClassWithHierarchy(context: FunctionContext, body: FunctionBody, scope: PyScope): PyClass {
@@ -448,8 +460,7 @@ export class RunContext extends RunContextBase {
         return;
       }
       if (!(obj instanceof PyClass)) {
-        this.raiseTypeConversion();
-        return;
+        throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedClass);
       }
       if (obj instanceof ExceptionClassObject) {
         isException = true;
@@ -575,9 +586,6 @@ export class RunContext extends RunContextBase {
 
   private stepReadProperty(current: Instruction, module: CompiledModule, functionStack: StackEntry) {
     const object = functionStack.getReg(current.arg2, true, this);
-    if (!object) {
-      return;
-    }
     const id = module.identifiers[current.arg1];
     const prop = object.getAttribute(id);
     if (!prop) {
@@ -589,45 +597,24 @@ export class RunContext extends RunContextBase {
 
   private stepMathOperation(current: Instruction, functionStack: StackEntry) {
     const left = functionStack.getReg(current.arg1, true, this);
-    if (!left) {
-      return;
-    }
     const right = functionStack.getReg(current.arg2, true, this);
-    if (!right) {
-      return;
-    }
     const ret = this.mathOperation(left, right, current);
-    if (!ret) {
-      return;
-    }
     functionStack.setReg(current.arg3, ret);
   }
 
   private stepInvert(current: Instruction, functionStack: StackEntry) {
     const arg = functionStack.getReg(current.arg1, true, this);
-    if (!arg) {
-      return;
-    }
     const ret = this.unaryOperation(arg, current.type);
-    if (!ret) {
-      return;
-    }
     functionStack.setReg(current.arg2, ret);
   }
 
   private stepRegArg(current: Instruction, functionStack: StackEntry) {
     const arg = functionStack.getReg(current.arg1, true, this);
-    if (!arg) {
-      return;
-    }
     functionStack.setIndexedArg(current.arg2, arg, current.arg3 !== 0);
   }
 
   private stepRegArgName(current: Instruction, module: CompiledModule, functionStack: StackEntry) {
     const arg = functionStack.getReg(current.arg1, true, this);
-    if (!arg) {
-      return;
-    }
     functionStack.setNamedArg(module.identifiers[current.arg2], arg);
   }
 
@@ -639,8 +626,7 @@ export class RunContext extends RunContextBase {
       return;
     }
     if (!(functionObj instanceof Callable)) {
-      this.raiseNotAFunction();
-      return;
+      throw new ExceptionObject(ExceptionType.NotAFunction, UniqueErrorCode.ExpectedCallableObject, [], functionObj.toString());
     }
     this.callFunction(functionObj, null, (ret, exception) => {
       if (!exception) {
@@ -651,12 +637,8 @@ export class RunContext extends RunContextBase {
 
   private stepCallMethod(current: Instruction, module: CompiledModule, functionStack: StackEntry) {
     const functionObj = functionStack.getReg(current.arg2, true, this);
-    if (!functionObj) {
-      return;
-    }
     if (!(functionObj instanceof Callable)) {
-      this.raiseNotAFunction();
-      return;
+      throw new ExceptionObject(ExceptionType.NotAFunction, UniqueErrorCode.ExpectedCallableObject, [], functionObj.toString());
     }
     const parentObj = functionStack.getReg(current.arg1, true, this);
     // safety check
@@ -675,9 +657,6 @@ export class RunContext extends RunContextBase {
     let arg: PyObject;
     if (current.arg1 !== -1) {
       arg = functionStack.getReg(current.arg1, true, this);
-      if (!arg) {
-        return;
-      }
     } else {
       arg = this.getNoneObject();
     }
@@ -687,19 +666,15 @@ export class RunContext extends RunContextBase {
   private stepRaise(current: Instruction, functionStack: StackEntry) {
     if (current.arg1 === -1) {
       if (!this._currentException) {
-        this.raiseException(new ExceptionObject(ExceptionType.CannotReRaise));
+        throw new ExceptionObject(ExceptionType.CannotReRaise, UniqueErrorCode.NoCurrentException);
       } else {
         this.raiseException(this._currentException);
       }
       return;
     }
     const arg = functionStack.getReg(current.arg1, true, this);
-    if (!arg) {
-      return;
-    }
     if (!(arg instanceof ExceptionObject)) {
-      this.raiseTypeConversion();
-      return;
+      throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedException, [], arg.toString());
     }
     this.raiseException(arg);
   }
@@ -713,7 +688,7 @@ export class RunContext extends RunContextBase {
     // safety check
     /* istanbul ignore next */
     if (stack.endInstruction === -1) {
-      this.raiseException(new ExceptionObject(ExceptionType.SystemError));
+      throw new ExceptionObject(ExceptionType.SystemError, UniqueErrorCode.CannotFindEndOfCycle);
     }
   }
 
@@ -731,9 +706,6 @@ export class RunContext extends RunContextBase {
     const obj = functionStack.getReg(current.arg2, true, this);
     const listObject = obj as ListObject;
     let listItem = functionStack.getReg(current.arg1, true, this);
-    if (!listItem) {
-      return;
-    }
     if (listItem instanceof TupleObject && listItem.items.findIndex(t => t instanceof ReferenceObject) >= 0) {
       listItem = new TupleObject(listItem.items.map(r => (r instanceof ReferenceObject ? r.getValue(this) : r)));
     }
@@ -745,8 +717,7 @@ export class RunContext extends RunContextBase {
     // safety check
     /* istanbul ignore next */
     if (next === -1) {
-      this.raiseException(new ExceptionObject(ExceptionType.SystemError));
-      return;
+      throw new ExceptionObject(ExceptionType.SystemError, UniqueErrorCode.CannotFindLabel, [], current.arg1.toString());
     }
     functionStack.instruction = next;
   }
@@ -788,8 +759,7 @@ export class RunContext extends RunContextBase {
       entry = entry.parent;
     }
     if (!entry || (entry.type !== StackEntryType.WhileCycle && entry.type !== StackEntryType.ForCycle)) {
-      this.raiseException(new ExceptionObject(ExceptionType.BreakOrContinueOutsideOfCycle));
-      return;
+      throw new ExceptionObject(ExceptionType.BreakOrContinueOutsideOfCycle, UniqueErrorCode.BreakAndContinueShouldBeInsideCycle);
     }
     const context = new ContinueContext();
     context.type = ContinueContextType.Cycle;
@@ -811,8 +781,7 @@ export class RunContext extends RunContextBase {
       // safety check
       /* istanbul ignore next */
       if (next === -1) {
-        this.raiseException(new ExceptionObject(ExceptionType.SystemError));
-        return;
+        throw new ExceptionObject(ExceptionType.SystemError, UniqueErrorCode.CannotFindLabel, [], current.arg2.toString());
       }
       functionStack.instruction = next;
     }
@@ -820,56 +789,40 @@ export class RunContext extends RunContextBase {
 
   private stepAugmentedCopy(current: Instruction, functionStack: StackEntry) {
     const sourceObject = functionStack.getReg(current.arg1, true, this);
-    if (!sourceObject) {
-      return;
-    }
     const targetObject = functionStack.getReg(current.arg2, false, this);
-    if (!targetObject) {
-      return;
-    }
     if (!(targetObject instanceof ReferenceObject)) {
-      this.raiseException(new ExceptionObject(ExceptionType.ExpectedReference));
-      return;
+      throw new ExceptionObject(ExceptionType.ExpectedReference, UniqueErrorCode.ExpectedReferenceObject);
     }
     const targetValue = targetObject.getValue(this);
-    if (!targetValue) {
-      return;
-    }
     const newValue = this.mathOperation(targetValue, sourceObject, current);
-    if (!newValue) {
-      return;
-    }
     targetObject.setValue(newValue, this);
   }
 
   private stepCopyValue(current: Instruction, functionStack: StackEntry) {
     const sourceObject = functionStack.getReg(current.arg1, true, this);
-    if (!sourceObject) {
-      return;
-    }
     const targetObject = functionStack.getReg(current.arg2, false, this);
-    if (!targetObject) {
-      return;
-    }
     if (targetObject instanceof TupleObject) {
       // special case of unpacking source sequence into tuple values which should be references
       if (targetObject.getCount() === 0) {
-        this.raiseException(new ExceptionObject(ExceptionType.CannotUnpackToEmptyTuple));
-        return;
+        throw new ExceptionObject(ExceptionType.CannotUnpackToEmptyTuple, UniqueErrorCode.CannotUnpackToEmptyTuple);
       }
       if (!(sourceObject instanceof IterableObject)) {
-        this.raiseException(new ExceptionObject(ExceptionType.UnpackSourceIsNotSequence));
-        return;
+        throw new ExceptionObject(ExceptionType.UnpackSourceIsNotSequence, UniqueErrorCode.ExpectedIterableObject, [], sourceObject.toString());
       }
       if (sourceObject.getCount() !== targetObject.getCount()) {
-        this.raiseException(new ExceptionObject(ExceptionType.UnpackCountDoesntMatch));
+        throw new ExceptionObject(
+          ExceptionType.UnpackCountDoesntMatch,
+          UniqueErrorCode.UnpackCountDoesntMatch,
+          [],
+          sourceObject.getCount().toString(),
+          targetObject.getCount().toString(),
+        );
         return;
       }
       for (let i = 0; i < sourceObject.getCount(); i++) {
         const targetItem = targetObject.getItem(i);
         if (!(targetItem instanceof ReferenceObject)) {
-          this.raiseException(new ExceptionObject(ExceptionType.ExpectedReference));
-          return;
+          throw new ExceptionObject(ExceptionType.ExpectedReference, UniqueErrorCode.ExpectedReferenceObject, [], targetItem.toString());
         }
         const targetRef = targetItem as ReferenceObject;
         let sourceValue = sourceObject.getItem(i);
@@ -881,8 +834,7 @@ export class RunContext extends RunContextBase {
     } else {
       /* istanbul ignore next */ // safety check
       if (!(targetObject instanceof ReferenceObject)) {
-        this.raiseException(new ExceptionObject(ExceptionType.ExpectedReference));
-        return;
+        throw new ExceptionObject(ExceptionType.ExpectedReference, UniqueErrorCode.ExpectedReferenceObject, [], targetObject.toString());
       }
       targetObject.setValue(sourceObject, this);
     }
@@ -896,9 +848,6 @@ export class RunContext extends RunContextBase {
     const obj = functionStack.getReg(current.arg2, true, this);
     const tuple = obj as TupleObject;
     const value = functionStack.getReg(current.arg1, false, this);
-    if (!value) {
-      return;
-    }
     tuple.addItem(value);
   }
 
@@ -910,9 +859,6 @@ export class RunContext extends RunContextBase {
     const obj = functionStack.getReg(current.arg2, true, this);
     const set = obj as SetObject;
     const value = functionStack.getReg(current.arg1, true, this);
-    if (!value) {
-      return;
-    }
     set.addItem(value);
   }
 
@@ -925,9 +871,6 @@ export class RunContext extends RunContextBase {
     const obj = functionStack.getReg(current.arg3, true, this);
     const dictionary = obj as DictionaryObject;
     const value = functionStack.getReg(current.arg1, false, this);
-    if (!value) {
-      return;
-    }
     dictionary.setItem(id, value);
   }
 
@@ -940,9 +883,6 @@ export class RunContext extends RunContextBase {
 
   private stepLogicalNot(current: Instruction, functionStack: StackEntry) {
     const obj = functionStack.getReg(current.arg1, true, this);
-    if (!obj) {
-      return;
-    }
     const value = obj.toBoolean();
     const invertedValue = value ? 0 : 1;
     functionStack.setReg(current.arg2, BooleanObject.toBoolean(invertedValue));
@@ -950,16 +890,13 @@ export class RunContext extends RunContextBase {
 
   private ensureAtModuleLevel(functionStack: StackEntry) {
     if (functionStack.functionBody.type !== FunctionType.Module) {
-      this.raiseException(new ExceptionObject(ExceptionType.ImportAllowedOnlyOnModuleLevel));
-      return false;
+      throw new ExceptionObject(ExceptionType.ImportAllowedOnlyOnModuleLevel, UniqueErrorCode.ImportAllowedOnlyOnModuleLevel);
     }
     return true;
   }
 
   private stepImport(current: Instruction, currentModule: CompiledModule, functionStack: StackEntry) {
-    if (!this.ensureAtModuleLevel(functionStack)) {
-      return;
-    }
+    this.ensureAtModuleLevel(functionStack);
     const name = currentModule.identifiers[current.arg1];
     this.importModule(name, importedModule => {
       functionStack.scope.objects[name] = importedModule;
@@ -967,9 +904,7 @@ export class RunContext extends RunContextBase {
   }
 
   private stepImportAs(current: Instruction, currentModule: CompiledModule, functionStack: StackEntry) {
-    if (!this.ensureAtModuleLevel(functionStack)) {
-      return;
-    }
+    this.ensureAtModuleLevel(functionStack);
     const rename = currentModule.identifiers[current.arg2];
     const name = currentModule.identifiers[current.arg1];
     this.importModule(name, importedModule => {
@@ -978,9 +913,7 @@ export class RunContext extends RunContextBase {
   }
 
   private stepImportFrom(current: Instruction, currentModule: CompiledModule, functionStack: StackEntry) {
-    if (!this.ensureAtModuleLevel(functionStack)) {
-      return;
-    }
+    this.ensureAtModuleLevel(functionStack);
     const id = currentModule.identifiers[current.arg1];
     const module = currentModule.identifiers[current.arg2];
     this.importModule(module, importedModule => {
@@ -1027,9 +960,6 @@ export class RunContext extends RunContextBase {
 
   private stepGetBool(current: Instruction, functionStack: StackEntry) {
     const obj = functionStack.getReg(current.arg1, true, this);
-    if (!obj) {
-      return;
-    }
     const boolFunc = obj.getAttribute('__bool__');
     if (boolFunc && boolFunc instanceof Callable) {
       this.callFunction(boolFunc as Callable, obj, (ret, exception) => {
@@ -1053,9 +983,6 @@ export class RunContext extends RunContextBase {
 
   private stepLogicalOr(current: Instruction, functionStack: StackEntry) {
     const obj = functionStack.getReg(current.arg1, true, this);
-    if (!obj) {
-      return;
-    }
     if (obj.toBoolean()) {
       functionStack.setReg(current.arg2, BooleanObject.toBoolean(1));
       functionStack.instruction += current.arg3;
@@ -1064,9 +991,6 @@ export class RunContext extends RunContextBase {
 
   private stepLogicalAnd(current: Instruction, functionStack: StackEntry) {
     const obj = functionStack.getReg(current.arg1, true, this);
-    if (!obj) {
-      return;
-    }
     if (!obj.toBoolean()) {
       functionStack.setReg(current.arg2, BooleanObject.toBoolean(0));
       functionStack.instruction += current.arg3;
@@ -1085,13 +1009,7 @@ export class RunContext extends RunContextBase {
 
   private stepIn(current: Instruction, functionStack: StackEntry, invert: boolean) {
     const container = functionStack.getReg(current.arg2, true, this);
-    if (!container) {
-      return;
-    }
     const value = functionStack.getReg(current.arg1, true, this);
-    if (!value) {
-      return;
-    }
     if (container instanceof ContainerObject) {
       if (container.contains(value)) {
         functionStack.setReg(current.arg3, BooleanObject.toBoolean(!invert));
@@ -1120,26 +1038,19 @@ export class RunContext extends RunContextBase {
       });
       return;
     }
-    this.raiseTypeConversion();
+    throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedContainer);
   }
 
   private stepDel(current: Instruction, functionStack: StackEntry) {
     const reference = functionStack.getReg(current.arg1, false, this);
-    if (!reference) {
-      return;
-    }
     if (!(reference instanceof ReferenceObject)) {
-      this.raiseException(new ExceptionObject(ExceptionType.ReferenceError));
-      return;
+      throw new ExceptionObject(ExceptionType.ReferenceError, UniqueErrorCode.ExpectedReferenceObject, [], reference.toString());
     }
     reference.deleteValue(this);
   }
 
   private stepYield(current: Instruction, functionStack: StackEntry) {
     const value = functionStack.getReg(current.arg1, true, this);
-    if (!value) {
-      return;
-    }
     if (functionStack.generatorObject) {
       this._currentStack = functionStack.parent;
       functionStack.parent = null;
@@ -1156,50 +1067,38 @@ export class RunContext extends RunContextBase {
 
   private stepReadArrayIndex(current: Instruction, functionStack: StackEntry) {
     const obj = functionStack.getReg(current.arg1, true, this);
-    if (!obj) {
-      return;
-    }
     const index = functionStack.getReg(current.arg2, true, this);
-    if (!index) {
-      return;
-    }
     if (obj instanceof ListObject) {
       if (!(index instanceof NumberObject)) {
-        this.raiseTypeConversion();
-        return;
+        throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedNumberObject, [], index.toString());
       }
       functionStack.setReg(current.arg3, obj.getItem(index.value));
       return;
     }
     if (obj instanceof DictionaryObject) {
       if (!(index instanceof StringObject)) {
-        this.raiseTypeConversion();
-        return;
+        throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedStringObject, [], obj.toString());
       }
       functionStack.setReg(current.arg3, obj.getItem(index.value));
       return;
     }
-    this.raiseTypeConversion();
+    throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedDictionaryOrListObject);
   }
 
   private stepReadArrayRange(current: Instruction, functionStack: StackEntry) {
     const list = functionStack.getReg(current.arg1, true, this);
-    if (!list) {
-      return;
-    }
-
     const indexFromObject = functionStack.getReg(current.arg2, true, this);
     const indexToObject = functionStack.getReg(current.arg3, true, this);
     const indexIntervalObject: PyObject = current.arg5 === -1 ? null : functionStack.getReg(current.arg5, true, this);
 
-    if (
-      !(list instanceof ContainerObject) ||
-      !(indexFromObject instanceof NumberObject) ||
-      !(indexToObject instanceof NumberObject) ||
-      (indexIntervalObject && !(indexIntervalObject instanceof NumberObject))
-    ) {
-      this.raiseTypeConversion();
-      return;
+    if (!(list instanceof ContainerObject)) {
+      throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedContainer, [], list.toString());
+    } else if (!(indexFromObject instanceof NumberObject)) {
+      throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedNumberObject, [], indexFromObject.toString());
+    } else if (!(indexToObject instanceof NumberObject)) {
+      throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedNumberObject, [], indexToObject.toString());
+    } else if (indexIntervalObject && !(indexIntervalObject instanceof NumberObject)) {
+      throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedNumberObject, [], indexIntervalObject.toString());
     }
 
     const from = indexFromObject.value;
@@ -1207,8 +1106,7 @@ export class RunContext extends RunContextBase {
     const step = indexIntervalObject ? (indexIntervalObject as NumberObject).value : 1;
 
     if (step === 0) {
-      this.raiseFunctionArgumentError();
-      return;
+      throw new ExceptionObject(ExceptionType.FunctionArgumentError, UniqueErrorCode.StepCannotBeZero);
     }
 
     if (list instanceof TupleObject) {
@@ -1435,9 +1333,7 @@ export class RunContext extends RunContextBase {
       default:
         // safety check
         /* istanbul ignore next */
-        this.onRuntimeError();
-        /* istanbul ignore next */
-        break;
+        throw new ExceptionObject(ExceptionType.SystemError, UniqueErrorCode.UnknownInstruction, [], current.type);
     }
   }
 
@@ -1603,24 +1499,22 @@ export class RunContext extends RunContextBase {
     }
 
     // TODO: implement all other types
-    this.raiseException(new ExceptionObject(ExceptionType.NotImplementedError));
+    throw new ExceptionObject(ExceptionType.NotImplementedError, UniqueErrorCode.UnsupportedLiteralType, [], literalDef.type.toString());
   }
 
   private instantiateClass(classObject: PyClass): PyClassInstance {
     const inherits = calculateResolutionOrder(new PyInheritance(classObject.name, classObject));
     if (!inherits) {
-      this.raiseException(new ExceptionObject(ExceptionType.ResolutionOrder));
-      return;
+      throw new ExceptionObject(ExceptionType.ResolutionOrder, UniqueErrorCode.CannotBuildResolutionOrder);
     }
     const coreExceptions = inherits.filter(c => c.object instanceof ExceptionClassObject && c.object.inheritsFrom.length === 0);
     if (coreExceptions.length > 1) {
-      this.raiseException(new ExceptionObject(ExceptionType.CannotDeriveFromMultipleException));
-      return;
+      throw new ExceptionObject(ExceptionType.CannotDeriveFromMultipleException, UniqueErrorCode.CannotDeriveFromMultipleException);
     }
     let ret: PyClassInstance;
     if (coreExceptions.length) {
       const exception = coreExceptions[0].object as ExceptionClassObject;
-      ret = new ExceptionObject(exception.exceptionType, inherits);
+      ret = new ExceptionObject(exception.exceptionType, UniqueErrorCode.NotSpecified, inherits);
     } else {
       ret = new PyClassInstance(inherits);
     }
@@ -1691,8 +1585,7 @@ export class RunContext extends RunContextBase {
       }
       if (!initFunc || !(initFunc instanceof Callable)) {
         if (indexedArgs.length > 0 || Object.keys(namedArgs).length > 0) {
-          this.raiseFunctionTooManyArgumentsError();
-          return;
+          throw new ExceptionObject(ExceptionType.FunctionTooManyArguments, UniqueErrorCode.FunctionTooManyArguments);
         }
         onFinish(classInstance, null);
         return;
@@ -1719,8 +1612,12 @@ export class RunContext extends RunContextBase {
           // function class initializer (called before __init__) has no arguments
           break;
         }
-        this.raiseFunctionTooManyArgumentsError();
-        return;
+        throw new ExceptionObject(
+          ExceptionType.FunctionTooManyArguments,
+          UniqueErrorCode.FunctionTooManyArguments,
+          [],
+          indexedArgs.length.toString(),
+        );
       }
       const argDef = functionBody.arguments[i];
       if (argDef.type === ArgumentType.ArbitraryArguments) {
@@ -1728,8 +1625,14 @@ export class RunContext extends RunContextBase {
         i++;
         break;
       } else if (argDef.type === ArgumentType.KeywordArguments) {
-        this.raiseFunctionArgumentError();
-        return;
+        // kwarg should be never addressed through indexed arguments, i.e. provided too many indexed arguments
+        throw new ExceptionObject(
+          ExceptionType.FunctionTooManyArguments,
+          UniqueErrorCode.FunctionTooManyArguments,
+          [],
+          indexedArgs.length.toString(),
+        );
+        /* istanbul ignore next */
       }
       args[i] = indexedArgs[i];
     }
@@ -1762,8 +1665,7 @@ export class RunContext extends RunContextBase {
         }
       }
       if (args[i]) {
-        this.raiseFunctionDuplicateArgumentError();
-        return;
+        throw new ExceptionObject(ExceptionType.FunctionDuplicateArgumentError, UniqueErrorCode.ArgumentAlreadyProvided, [], namedArgKey);
       }
       args[i] = namedArgs[namedArgKey];
     }
@@ -1772,8 +1674,8 @@ export class RunContext extends RunContextBase {
         if (runContext.defaultValues[i]) {
           args[i] = runContext.defaultValues[i];
         } else {
-          this.raiseFunctionMissingArgumentError();
-          return;
+          const argName = functionBody.module.identifiers[functionBody.arguments[i].id];
+          throw new ExceptionObject(ExceptionType.FunctionMissingArgument, UniqueErrorCode.MissingArgument, [], argName);
         }
       }
     }
@@ -1813,8 +1715,7 @@ export class RunContext extends RunContextBase {
         }
       }
       if (!this._currentStack) {
-        this.onRuntimeError();
-        return;
+        throw new ExceptionObject(ExceptionType.SystemError, UniqueErrorCode.UnexpectedEndOfStack);
       }
     }
 
@@ -1861,7 +1762,7 @@ export class RunContext extends RunContextBase {
     this.setContinueContext(null);
 
     if (raiseStopIteration) {
-      this.raiseStopIteration();
+      throw new ExceptionObject(ExceptionType.StopIteration, UniqueErrorCode.StopIteration);
     }
   }
 
@@ -1970,19 +1871,20 @@ export class RunContext extends RunContextBase {
       case InstructionType.Invert:
         if (obj instanceof NumberObject) {
           return new NumberObject(-obj.value);
+        } else {
+          throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedNumberObject, [], obj.toString());
         }
-        break;
       case InstructionType.BinInv:
         if (obj instanceof NumberObject) {
           let val = obj.value;
           val = ~val;
           return new NumberObject(val);
+        } else {
+          throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedNumberObject, [], obj.toString());
         }
-        break;
+      default:
+        throw new ExceptionObject(ExceptionType.RuntimeError, UniqueErrorCode.UnknownUnaryOperation);
     }
-
-    this.raiseTypeConversion();
-    return null;
   }
 
   private mathOperation(leftObj: PyObject, rightObj: PyObject, instruction: Instruction): PyObject {
@@ -2005,22 +1907,19 @@ export class RunContext extends RunContextBase {
           return this.realToObject(left * right);
         case InstructionType.Div:
           if (right === 0) {
-            this.raiseException(new ExceptionObject(ExceptionType.ZeroDivisionError));
-            return null;
+            throw new ExceptionObject(ExceptionType.ZeroDivisionError, UniqueErrorCode.ZeroDivision);
           }
           return this.realToObject(left / right);
         case InstructionType.Pow:
           return this.realToObject(Math.pow(left, right));
         case InstructionType.Floor:
           if (right === 0) {
-            this.raiseException(new ExceptionObject(ExceptionType.ZeroDivisionError));
-            return null;
+            throw new ExceptionObject(ExceptionType.ZeroDivisionError, UniqueErrorCode.ZeroDivision);
           }
           return this.realToObject(Math.floor(left / right));
         case InstructionType.Mod:
           if (right === 0) {
-            this.raiseException(new ExceptionObject(ExceptionType.ZeroDivisionError));
-            return null;
+            throw new ExceptionObject(ExceptionType.ZeroDivisionError, UniqueErrorCode.ZeroDivision);
           }
           return this.realToObject(left % right);
         case InstructionType.Shl:
@@ -2185,8 +2084,7 @@ export class RunContext extends RunContextBase {
         }
         break;
     }
-    this.raiseTypeConversion();
-    return null;
+    throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.MathOperationOperandsDontMatch, [], leftObj.toString(), rightObj.toString());
   }
 
   private setContinueContext(context: ContinueContext) {
@@ -2209,42 +2107,7 @@ export class RunContext extends RunContextBase {
   }
 
   public raiseUnknownIdentifier(identifier: string) {
-    const exception = new ExceptionObject(ExceptionType.UnknownIdentifier, [], identifier);
-    this.raiseException(exception);
-  }
-
-  public raiseNotAFunction() {
-    const exception = new ExceptionObject(ExceptionType.NotAFunction);
-    this.raiseException(exception);
-  }
-
-  public raiseTypeConversion() {
-    const exception = new ExceptionObject(ExceptionType.TypeError);
-    this.raiseException(exception);
-  }
-
-  public raiseFunctionArgumentError() {
-    const exception = new ExceptionObject(ExceptionType.FunctionArgumentError);
-    this.raiseException(exception);
-  }
-
-  public raiseFunctionMissingArgumentError() {
-    const exception = new ExceptionObject(ExceptionType.FunctionMissingArgument);
-    this.raiseException(exception);
-  }
-
-  public raiseFunctionDuplicateArgumentError() {
-    const exception = new ExceptionObject(ExceptionType.FunctionDuplicateArgumentError);
-    this.raiseException(exception);
-  }
-
-  public raiseFunctionTooManyArgumentsError() {
-    const exception = new ExceptionObject(ExceptionType.FunctionTooManyArguments);
-    this.raiseException(exception);
-  }
-
-  public raiseStopIteration() {
-    this.raiseException(new ExceptionObject(ExceptionType.StopIteration));
+    this.raiseException(new ExceptionObject(ExceptionType.UnknownIdentifier, UniqueErrorCode.UnknownIdentifier, [], identifier));
   }
 
   private createGlobalScope() {

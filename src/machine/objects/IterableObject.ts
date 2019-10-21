@@ -4,6 +4,7 @@ import { PyObject } from '../../api/Object';
 import { getObjectUtils } from '../../api/ObjectUtils';
 import { pyFunction, pyParam } from '../../api/Decorators';
 import { PropertyType } from '../../api/Native';
+import { UniqueErrorCode } from '../../api/UniqueErrorCode';
 
 export abstract class IterableObject extends PyObject {
   protected constructor() {
@@ -33,6 +34,6 @@ export abstract class IterableObject extends PyObject {
         return i;
       }
     }
-    getObjectUtils().throwException(ExceptionType.ValueError, 'cannot find element');
+    getObjectUtils().throwException(ExceptionType.ValueError, UniqueErrorCode.CannotFindObjectInIterator, element.toString());
   }
 }

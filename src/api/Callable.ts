@@ -20,6 +20,8 @@ export class Callable extends PyObject {
   public readonly body: PyFunction;
   public readonly nativeFunction: Function;
   public readonly newNativeFunction: Function;
+
+  /* istanbul ignore next */
   public isCallable(): boolean {
     return true;
   }

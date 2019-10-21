@@ -5,6 +5,7 @@ import { StringObject } from './objects/StringObject';
 import { ExceptionObject } from './objects/ExceptionObject';
 import { PyObject } from '../api/Object';
 import { getObjectUtils } from '../api/ObjectUtils';
+import { UniqueErrorCode } from '../api/UniqueErrorCode';
 
 export const stringFormat = (self: StringObject, format: PyObject) => {
   let dictionary: DictionaryObject;
@@ -14,7 +15,7 @@ export const stringFormat = (self: StringObject, format: PyObject) => {
   } else if (format instanceof IterableObject) {
     iterable = format;
   } else {
-    throw new ExceptionObject(ExceptionType.TypeError);
+    throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedDictionaryOrIterableInFormat);
   }
 
   let index = 0;
@@ -25,20 +26,17 @@ export const stringFormat = (self: StringObject, format: PyObject) => {
       let arg: PyObject;
       if (mapper) {
         if (!dictionary) {
-          throw new ExceptionObject(ExceptionType.TypeError, [], 'format');
+          throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedDictionaryObject, [], format.toString());
         } else {
           arg = dictionary.getItem(mapper);
-          if (!arg) {
-            throw new ExceptionObject(ExceptionType.UnknownIdentifier, [], mapper);
-          }
         }
       } else {
         if (!iterable) {
-          throw new ExceptionObject(ExceptionType.TypeError, [], 'format');
+          throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedIterableObject, [], format.toString());
         } else {
           arg = iterable.getItem(index);
           if (!arg) {
-            throw new ExceptionObject(ExceptionType.IndexError, [], index.toString());
+            throw new ExceptionObject(ExceptionType.IndexError, UniqueErrorCode.IndexerIsOutOfRange, [], index.toString());
           }
           index++;
         }

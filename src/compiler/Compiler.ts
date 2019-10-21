@@ -138,6 +138,8 @@ export class Compiler {
 
     while (this._offset < this._compiledModule.tokens.length) {
       if (!this.scanLine()) {
+        // safety check -- should never happen
+        /* istanbul ignore next */
         return false;
       }
       if (!this._line.length) {
@@ -160,6 +162,8 @@ export class Compiler {
         this._insideIndentedBlocks = false;
         this._indent--;
         if (!this.finishBlock(this._line[this._line.length - 1])) {
+          // safety check -- should never happen
+          /* istanbul ignore next */
           return false;
         }
       }
@@ -169,6 +173,8 @@ export class Compiler {
       this.parseFinishedBlocks(this._line[this._line.length - 1]);
     }
 
+    // safety check -- should never happen
+    /* istanbul ignore next */
     while (this._compilerContext.getBlockCount() > 1) {
       this.finishBlock(this._line[this._line.length - 1]);
     }
@@ -208,6 +214,8 @@ export class Compiler {
         this._indent--;
         this._offset++;
         if (!this.finishBlock(token)) {
+          // safety check -- should never happen
+          /* istanbul ignore next */
           return false;
         }
       } else if (token.type === TokenType.NewLine) {
@@ -242,13 +250,7 @@ export class Compiler {
     createDebugInformation(this._compiledModule, block.blockCode.code);
 
     if (!parentBlock) {
-      if (block.type === CompilerBlockType.Module) {
-        return true;
-      }
-      // safety check -- should never happen
-      /* istanbul ignore next */
-      this._compilerContext.addError(PyErrorType.UnexpectedBlockEnd, token);
-      return false;
+      return block.type === CompilerBlockType.Module;
     }
 
     switch (block.type) {
@@ -267,10 +269,8 @@ export class Compiler {
         func.documentation = block.documentation;
         func.initialize();
         this._compilerContext.leaveBlock();
-        if (block.type === CompilerBlockType.Function || block.type === CompilerBlockType.Class) {
-          if (!this.declareFunction(block.arg1, block.position)) {
-            return false;
-          }
+        if (block.type !== CompilerBlockType.Module) {
+          this.declareFunction(block.arg1, block.position);
         }
         return true;
       }
@@ -869,6 +869,12 @@ export class Compiler {
 
   private parseRaiseDefinition(): boolean {
     const first = this._line[0];
+    if (this._line.length === 1) {
+      const raise = CodeGenerator.raiseEmpty(first.getPosition());
+      this._compilerContext.setRowType(RowType.Raise);
+      CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, raise);
+      return true;
+    }
     const expression = ExpressionCompiler.compile({
       tokens: this._line,
       compiledCode: this._compiledModule,
@@ -1040,7 +1046,7 @@ export class Compiler {
         next++;
         continue;
       }
-      this._compilerContext.addError(PyErrorType.ExceptExpectedRightBracket, this._line[next] || this._line[this._line.length - 1]);
+      this._compilerContext.addError(PyErrorType.ExceptExpectedRightBracket, this._line[next]);
       return false;
     }
 
@@ -1177,7 +1183,7 @@ export class Compiler {
     return this.parseKeywordAndExpression();
   }
 
-  private declareFunction(functionDef: number, position: TokenPosition): boolean {
+  private declareFunction(functionDef: number, position: TokenPosition) {
     const func = this._compiledModule.functions[functionDef];
     const createFunction = CodeGenerator.readFunctionDef(functionDef, position);
     const identifiers: string[] = [func.name];
@@ -1186,7 +1192,6 @@ export class Compiler {
     CodeGenerator.appendTo(code, createFunction, 1);
     code.add(InstructionType.CopyValue, position, 1, 0);
     CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, code);
-    return true;
   }
 
   private parseLineAsExpression() {

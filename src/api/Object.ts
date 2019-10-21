@@ -50,6 +50,7 @@ export class PyObject {
     if (!this._nativeMethods || !this._nativeMethods[name]) {
       this._nativeMethods = this._nativeMethods || {};
       const newNativeMethod = getObjectUtils().createNativeMethod(this[name], this, name);
+      /* istanbul ignore next */
       if (newNativeMethod) {
         this._nativeMethods[name] = newNativeMethod;
       }
