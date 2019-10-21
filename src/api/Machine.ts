@@ -25,6 +25,9 @@ export abstract class PyMachine {
   abstract getOutput(): string[];
   abstract getOutputText(): string;
   abstract getStackEntries(): PyStackEntry[];
+  abstract pause();
+  abstract resume();
+  abstract isPaused(): boolean;
 
   onWriteLine: (line: string) => void;
   onLeaveFunction: (name: string, scope: PyScope) => void;

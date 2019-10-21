@@ -113,4 +113,26 @@ describe('Customize runContext', () => {
     expect(prompt).toEqual('test1');
     expect(runContext.getOutputText()).toEqual('test2');
   });
+
+  it('should handle postponed user input', () => {
+    const runContext = compileAndStartModule(
+      `
+      a = input('test1')
+      print(a)
+    `,
+    );
+    let prompt = '';
+    let promptCallback: (result: string) => void;
+    runContext.onReadLine = (p: string, callback: (result: string) => void) => {
+      prompt = p;
+      promptCallback = callback;
+      runContext.pause();
+    };
+    runContext.run();
+    expect(runContext.isPaused()).toEqual(true);
+    promptCallback('test2');
+    runContext.resume();
+    expect(prompt).toEqual('test1');
+    expect(runContext.getOutputText()).toEqual('test2');
+  });
 });
