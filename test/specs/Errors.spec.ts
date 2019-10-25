@@ -1,5 +1,5 @@
-import {PyErrorType} from '../../src/api/ErrorType';
-import {compileModule} from './Utils';
+import { PyErrorType } from '../../src/api/ErrorType';
+import { compileModule } from './Utils';
 
 interface ErrorScenario {
   input: string;
@@ -586,7 +586,7 @@ const errors: ErrorScenario[] = [
       x = lambda x
     `,
     error: PyErrorType.ExpectedFunctionArgumentList,
-  }
+  },
 ];
 
 describe('compiler and machine tests', () => {
