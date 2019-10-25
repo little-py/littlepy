@@ -222,11 +222,7 @@ export class ExpressionCompiler {
           this._from = valueResult.finish;
         }
         if (unaryOperators.length) {
-          const unaryResult = CodeGenerator.unaryOperators(unaryOperators, values[values.length - 1]);
-          if (!unaryResult.success) {
-            return failedResult;
-          }
-          values[values.length - 1] = unaryResult;
+          values[values.length - 1] = CodeGenerator.unaryOperators(unaryOperators, values[values.length - 1]);
         }
       }
 
@@ -257,10 +253,6 @@ export class ExpressionCompiler {
         compiledPart = ifOperator;
         token = this._tokens[compiledPart.finish];
       }
-
-      // if (token && token.type === TokenType.Keyword && (token.arg1 === KeywordType.For || token.arg1 === KeywordType.AsyncFor)) {
-      //   compiledPart = this.compileListComprehension(token, this._from, compiledPart);
-      // }
 
       parts.push(compiledPart);
       token = this._tokens[compiledPart.finish];
@@ -432,7 +424,7 @@ export class ExpressionCompiler {
     ret.success = true;
     this.compileAnyAccessor(ret);
     if (!ret.success) {
-      return;
+      return ret;
     }
     ret.finish = this._from;
     ret.success = true;

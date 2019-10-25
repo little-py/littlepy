@@ -1,5 +1,5 @@
-import { PyErrorType } from '../../src/api/ErrorType';
-import { compileModule } from './Utils';
+import {PyErrorType} from '../../src/api/ErrorType';
+import {compileModule} from './Utils';
 
 interface ErrorScenario {
   input: string;
@@ -552,6 +552,41 @@ const errors: ErrorScenario[] = [
     `,
     error: PyErrorType.ExpectedOnlyIdentifier,
   },
+  {
+    input: `
+      nonlocal x,100
+    `,
+    error: PyErrorType.ExpectedOnlyIdentifier,
+  },
+  {
+    input: `
+      nonlocal x,
+    `,
+    error: PyErrorType.ExpectedOnlyIdentifier,
+  },
+  {
+    input: `
+      a = 1
+      if not 10+:
+        print('1')
+      else:
+        print('2')
+    `,
+    error: PyErrorType.ExpectedRightOperand,
+  },
+  {
+    input: `
+      a = [1,2]
+      b = a[1+]
+    `,
+    error: PyErrorType.ExpectedRightOperand,
+  },
+  {
+    input: `
+      x = lambda x
+    `,
+    error: PyErrorType.ExpectedFunctionArgumentList,
+  }
 ];
 
 describe('compiler and machine tests', () => {

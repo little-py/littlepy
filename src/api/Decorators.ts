@@ -43,8 +43,11 @@ function pyGetterSetter(name: string | undefined, isGetter: boolean, type?: Prop
   return (target: any, propertyKey: string) => {
     const member = target[propertyKey];
     if (!name) {
-      const match = propertyKey.match(isGetter ? /^get(.+)$/ : /^set(.+)$/);
-      /* istanbul ignore next */
+      const match = propertyKey.match(
+        isGetter
+          ? /^get(.+)$/ //
+          : /^set(.+)$/,
+      );
       if (!match) {
         throw Error('Unrecognized getter name format');
       }

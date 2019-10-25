@@ -1211,16 +1211,30 @@ export class Compiler {
   }
 
   private parseScopeDefinition(): boolean {
-    if (this._line.length !== 2 || !isIdentifier(this._line[1])) {
-      this._compilerContext.addError(PyErrorType.ExpectedOnlyIdentifier, this._line[1] || this._line[0]);
-      return false;
-    }
     const block = this._compilerContext.getCurrentBlock();
-    const id = this._line[1].identifier;
-    if (this._line[0].keyword === KeywordType.Global) {
-      block.scopeChange[id] = ReferenceScope.Global;
-    } else {
-      block.scopeChange[id] = ReferenceScope.NonLocal;
+    let pos = 1;
+    let last = this._line[0];
+    for (;;) {
+      const current = this._line[pos];
+      if (current) {
+        last = current;
+      }
+      const next = this._line[pos + 1];
+      if (!isIdentifier(current) || (next && !isComma(next))) {
+        this._compilerContext.addError(PyErrorType.ExpectedOnlyIdentifier, last);
+        return false;
+      }
+      const id = current.identifier;
+      if (this._line[0].keyword === KeywordType.Global) {
+        block.scopeChange[id] = ReferenceScope.Global;
+      } else {
+        block.scopeChange[id] = ReferenceScope.NonLocal;
+      }
+      pos++;
+      if (!isComma(next)) {
+        break;
+      }
+      pos++;
     }
   }
 }

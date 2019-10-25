@@ -1554,22 +1554,24 @@ line2"""
   {
     input: `
       x = 10
+      z = 20
       def func1():
-        nonlocal x
+        nonlocal x, z
         x = 20
+        z = 30
       def func2():
         x = 30
       def func3():
         global y
         y = 40
       func1()
-      print(x)
+      print(x, z)
       func2()
       print(x)
       func3()
       print(y)
     `,
-    output: ['20', '20', '40'],
+    output: ['20 30', '20', '40'],
   },
   {
     input: `
