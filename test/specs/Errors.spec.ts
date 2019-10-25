@@ -437,10 +437,22 @@ const errors: ErrorScenario[] = [
   {
     input: `
       def func():
-        yield 10]
+        return 10]
       func()
     `,
-    error: PyErrorType.ReturnOrYieldExpectedEndOfLine,
+    error: PyErrorType.ReturnExpectedEndOfLine,
+  },
+  {
+    input: `
+      yield 10]
+    `,
+    error: PyErrorType.YieldExpectedEndOfLine,
+  },
+  {
+    input: `
+      del 10]
+    `,
+    error: PyErrorType.DelExpectedEndOfLine,
   },
   {
     input: 'except:',
