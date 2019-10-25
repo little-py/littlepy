@@ -2,7 +2,7 @@ export enum PyErrorType {
   // LexicalAnalyzer errors
   UnknownChar = 'unknownChar',
   MismatchedIndent = 'mismatchedIndent',
-  UnknownEscapeChar = 'mismatchedIndent',
+  UnknownEscapeChar = 'unknownEscapeChar',
 
   // Compiler errors
   BlockExpectedColon = 'blockExpectedColon',
@@ -54,7 +54,9 @@ export enum PyErrorType {
   BreakHasNoArguments = 'breakHasNoArguments',
   ContinueHasNoArguments = 'continueHasNoArguments',
   RaiseExpectedEndOfLine = 'raiseExpectedEndOfLine',
-  ReturnOrYieldExpectedEndOfLine = 'returnOrYieldExpectedEndOfLine',
+  ReturnExpectedEndOfLine = 'returnExpectedEndOfLine',
+  YieldExpectedEndOfLine = 'yieldExpectedEndOfLine',
+  DelExpectedEndOfLine = 'delExpectedEndOfLine',
   ExceptExpectedTry = 'exceptExpectedTry',
   ExceptExpectedRightBracket = 'exceptExpectedRightBracket',
   ExceptExpectedIdentifierAfterAs = 'exceptExpectedIdentifierAfterAs',

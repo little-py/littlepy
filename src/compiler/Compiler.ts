@@ -400,7 +400,7 @@ export class Compiler {
         case KeywordType.Pass:
           return this.parsePassDefinition();
         case KeywordType.Raise:
-          return this.parseRaiseDefinition();
+          return this.parseKeywordAndExpression();
         case KeywordType.Return:
           return this.parseReturnDefinition();
         case KeywordType.Try:
@@ -867,36 +867,7 @@ export class Compiler {
     return true;
   }
 
-  private parseRaiseDefinition(): boolean {
-    const first = this._line[0];
-    if (this._line.length === 1) {
-      const raise = CodeGenerator.raiseEmpty(first.getPosition());
-      this._compilerContext.setRowType(RowType.Raise);
-      CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, raise);
-      return true;
-    }
-    const expression = ExpressionCompiler.compile({
-      tokens: this._line,
-      compiledCode: this._compiledModule,
-      compilerContext: this._compilerContext,
-      lexicalContext: this._lexicalContext,
-      start: 1,
-    });
-    if (!expression.success) {
-      return false;
-    }
-    const from = expression.finish;
-    if (from !== this._line.length) {
-      this._compilerContext.addError(PyErrorType.RaiseExpectedEndOfLine, first);
-      return false;
-    }
-    const raise = CodeGenerator.raise(expression, first.getPosition());
-    this._compilerContext.setRowType(RowType.Raise);
-    CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, raise);
-    return true;
-  }
-
-  // at the moment it is only yield and return
+  // Yield, return, del and raise
   private parseKeywordAndExpression(): boolean {
     const first = this._line[0];
     let returnCode: GeneratedCode;
@@ -904,6 +875,9 @@ export class Compiler {
       switch (first.keyword) {
         case KeywordType.Return:
           returnCode = CodeGenerator.returnEmpty(first.getPosition());
+          break;
+        case KeywordType.Raise:
+          returnCode = CodeGenerator.raiseEmpty(first.getPosition());
           break;
         case KeywordType.Yield:
           this._compilerContext.addError(PyErrorType.ExpectedYieldExpression, first);
@@ -924,19 +898,38 @@ export class Compiler {
         return false;
       }
       const from = expression.finish;
-      if (from !== this._line.length) {
-        this._compilerContext.addError(PyErrorType.ReturnOrYieldExpectedEndOfLine, first);
-        return false;
-      }
       switch (first.keyword) {
         case KeywordType.Return:
-          returnCode = CodeGenerator.returnValue(expression, first.getPosition());
+          if (from !== this._line.length) {
+            this._compilerContext.addError(PyErrorType.ReturnExpectedEndOfLine, first);
+            return false;
+          } else {
+            returnCode = CodeGenerator.returnValue(expression, first.getPosition());
+          }
           break;
         case KeywordType.Yield:
-          returnCode = CodeGenerator.yield(expression, first.getPosition());
+          if (from !== this._line.length) {
+            this._compilerContext.addError(PyErrorType.YieldExpectedEndOfLine, first);
+            return false;
+          } else {
+            returnCode = CodeGenerator.yield(expression, first.getPosition());
+          }
           break;
         case KeywordType.Del:
-          returnCode = CodeGenerator.delete(expression, first.getPosition());
+          if (from !== this._line.length) {
+            this._compilerContext.addError(PyErrorType.DelExpectedEndOfLine, first);
+            return false;
+          } else {
+            returnCode = CodeGenerator.delete(expression, first.getPosition());
+          }
+          break;
+        case KeywordType.Raise:
+          if (from !== this._line.length) {
+            this._compilerContext.addError(PyErrorType.RaiseExpectedEndOfLine, first);
+            return false;
+          } else {
+            returnCode = CodeGenerator.raise(expression, first.getPosition());
+          }
           break;
       }
     }
@@ -949,6 +942,9 @@ export class Compiler {
         break;
       case KeywordType.Del:
         this._compilerContext.setRowType(RowType.Del);
+        break;
+      case KeywordType.Raise:
+        this._compilerContext.setRowType(RowType.Raise);
         break;
     }
     CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, returnCode);
