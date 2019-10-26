@@ -424,7 +424,7 @@ export class ExpressionCompiler {
     const ret = new GeneratedCode();
     ret.add(InstructionType.ReadObject, first.getPosition(), first.identifier, ReferenceScope.Default);
     ret.success = true;
-    this.compileAnyAccessor(ret);
+    this.compileAnyAccessor(ret, first.identifier);
     if (!ret.success) {
       return ret;
     }
@@ -433,7 +433,7 @@ export class ExpressionCompiler {
     return ret;
   }
 
-  private compileAnyAccessor(ret: GeneratedCode) {
+  private compileAnyAccessor(ret: GeneratedCode, fromIdentifier?: number) {
     while (this.isAnyAccessor(this._from)) {
       const current = this._tokens[this._from];
       if (this.isPropertyAccessor(this._from)) {
@@ -512,6 +512,12 @@ export class ExpressionCompiler {
           const ret = new GeneratedCode();
           ret.success = false;
           return;
+        }
+        this._compilerContext.setRowType(RowType.FunctionCall);
+        if (fromIdentifier !== undefined) {
+          this._compilerContext.updateRowDescriptor({
+            functionName: this._compiledCode.identifiers[fromIdentifier],
+          });
         }
       }
     }
