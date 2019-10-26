@@ -261,6 +261,9 @@ export class ExpressionCompiler {
         break;
       }
       createdTuple = true;
+      this._compilerContext.updateRowDescriptor({
+        hasTupleUnpack: true,
+      });
       this._from = compiledPart.finish + 1;
       token = this._tokens[this._from];
       if (!token || isExpressionEnd(token)) {
@@ -467,6 +470,9 @@ export class ExpressionCompiler {
         let indexInterval: GeneratedCode = null;
         let token = this._tokens[this._from];
         if (isColon(token)) {
+          this._compilerContext.updateRowDescriptor({
+            hasRangeAccessor: true,
+          });
           indexTo = this.compileInternal(this._from + 1, false, false, false);
           if (!indexTo.success) {
             ret.success = false;
@@ -524,6 +530,9 @@ export class ExpressionCompiler {
   }
 
   private compileComprehension(value: GeneratedCode): GeneratedCode {
+    this._compilerContext.updateRowDescriptor({
+      hasComprehension: true,
+    });
     const lastToken = this._tokens[this._tokens.length - 1];
     const parts: CompilerBlockContext[] = [];
     while (this._from < this._end) {
@@ -583,6 +592,7 @@ export class ExpressionCompiler {
   }
 
   private compileListInstantiation(startToken: Token, values: GeneratedCode[]): boolean {
+    this._compilerContext.setRowType(RowType.List);
     const records: GeneratedCode[] = [];
     let token = startToken;
     for (;;) {
@@ -634,6 +644,7 @@ export class ExpressionCompiler {
   }
 
   private compileTupleInstantiation(startToken: Token, values: GeneratedCode[]): boolean {
+    this._compilerContext.setRowType(RowType.Tuple);
     const records: GeneratedCode[] = [];
     let token = startToken;
     for (;;) {
@@ -686,6 +697,7 @@ export class ExpressionCompiler {
   }
 
   private compileSetOrDictionary(startToken: Token, values: GeneratedCode[]): boolean {
+    this._compilerContext.setRowType(RowType.Set);
     const records: GeneratedCode[] = [];
     const literals: string[] = [];
     let isDictionary = false;
@@ -712,6 +724,7 @@ export class ExpressionCompiler {
           this._compilerContext.addError(PyErrorType.SetMixedWithAndWithoutColon, this._tokens[this._from + 1]);
           return false;
         }
+        this._compilerContext.setRowType(RowType.Dictionary);
         isDictionary = true;
         literalIndex = token.literal;
         this._from += 2;
@@ -758,6 +771,9 @@ export class ExpressionCompiler {
   }
 
   private compileIfExpression(condition: GeneratedCode, from: Token): GeneratedCode {
+    this._compilerContext.updateRowDescriptor({
+      hasIfExpression: true,
+    });
     this._from++;
     const ifExpression = this.compileInternal(this._from, false, false, false);
     if (!ifExpression.success) {
@@ -787,6 +803,9 @@ export class ExpressionCompiler {
   }
 
   private compileLambdaExpression(startToken: Token): GeneratedCode {
+    this._compilerContext.updateRowDescriptor({
+      hasLambda: true,
+    });
     this._from++;
     const args: number[] = [];
     for (;;) {
