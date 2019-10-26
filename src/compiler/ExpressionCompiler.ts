@@ -32,6 +32,7 @@ import {
   isUnaryOperator,
 } from './TokenUtils';
 import { LexicalAnalyzer } from './LexicalAnalyzer';
+import { RowType } from '../api/RowType';
 
 export class ExpressionCompiler {
   private _from: number;
@@ -357,6 +358,7 @@ export class ExpressionCompiler {
     let token = this._tokens[this._from];
     const args: GeneratedCode[] = [];
     this._from++;
+    this._compilerContext.setRowType(RowType.FunctionCall);
     let namedStarted = false;
     for (;;) {
       let prevToken = token;
@@ -442,6 +444,10 @@ export class ExpressionCompiler {
           break;
         }
         if (this.isLeftBracket(this._from)) {
+          this._compilerContext.setRowType(RowType.FunctionCall);
+          this._compilerContext.updateRowDescriptor({
+            functionName: this._compiledCode.identifiers[identifier],
+          });
           ret.add(InstructionType.ReadProperty, current.getPosition(), identifier, 0, 1);
           this.appendFunctionCall(ret, current.getPosition(), true);
         } else {

@@ -301,7 +301,7 @@ describe('Native function', () => {
       }),
     );
     expect(raisedException).toBeTruthy();
-    expect(raisedException.uniqueError).toEqual(UniqueErrorCode.RequiredArgumentIsMissing);
+    expect(raisedException.uniqueError).toEqual(UniqueErrorCode.FunctionTooManyArguments);
   });
 
   it('should provide callback', () => {
