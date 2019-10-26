@@ -446,6 +446,8 @@ export class Compiler {
   }
 
   private parseForDefinition(): boolean {
+    this._compilerContext.setRowType(RowType.ForCycle);
+
     const first = this._line[0];
     if (this._line.length < 4) {
       this._compilerContext.addError(PyErrorType.IncompleteForDefinition, first);
@@ -472,8 +474,6 @@ export class Compiler {
       return false;
     }
 
-    this._compilerContext.setRowType(RowType.ForCycle);
-
     const block = this._compilerContext.enterBlock(first.getPosition());
     block.arg1 = argument.identifier;
     block.type = CompilerBlockType.For;
@@ -488,6 +488,8 @@ export class Compiler {
   }
 
   private parseWhileDefinition(): boolean {
+    this._compilerContext.setRowType(RowType.WhileCycle);
+
     if (this._line.length < 3) {
       const last = this._line[this._line.length - 1];
       this._compilerContext.addError(PyErrorType.IncompleteWhileDefinition, last);
@@ -504,8 +506,6 @@ export class Compiler {
       return false;
     }
 
-    this._compilerContext.setRowType(RowType.WhileCycle);
-
     const block = this._compilerContext.enterBlock(this._line[0].getPosition());
     block.type = CompilerBlockType.While;
     block.arg2 = expression;
@@ -519,6 +519,8 @@ export class Compiler {
   }
 
   private parseFunctionDefinition(): boolean {
+    this._compilerContext.setRowType(RowType.FunctionDefinition);
+
     if (this._line.length < 5) {
       const last = this._line[this._line.length - 1];
       this._compilerContext.addError(PyErrorType.IncompleteFunctionDeclaration, last);
@@ -536,7 +538,6 @@ export class Compiler {
       this._compilerContext.addError(PyErrorType.ExpectedFunctionArgumentList, open);
       return false;
     }
-    this._compilerContext.setRowType(RowType.FunctionDefinition);
     const func = new FunctionBody();
     this._compiledModule.functions.push(func);
     func.module = this._compiledModule;
@@ -715,6 +716,8 @@ export class Compiler {
 
   private parseIfElifDefinition(): boolean {
     const first = this._line[0];
+    const isIf = first.keyword === KeywordType.If;
+    this._compilerContext.setRowType(isIf ? RowType.IfBlock : RowType.ElifBlock);
 
     if (first.keyword === KeywordType.Elif) {
       const firstBlock = this._pendingFinishedBlocks[0];
@@ -734,8 +737,6 @@ export class Compiler {
     if (!expression.success) {
       return false;
     }
-    const isIf = first.keyword === KeywordType.If;
-    this._compilerContext.setRowType(isIf ? RowType.IfBlock : RowType.ElifBlock);
     const block = this._compilerContext.enterBlock(first.getPosition());
     block.type = isIf ? CompilerBlockType.If : CompilerBlockType.ElseIf;
     block.arg2 = expression;
@@ -745,6 +746,8 @@ export class Compiler {
   }
 
   private parseElseDefinition(): boolean {
+    this._compilerContext.setRowType(RowType.ElseBlock);
+
     const first = this._line[0];
     const firstBlock = this._pendingFinishedBlocks[0];
     if (
@@ -755,8 +758,6 @@ export class Compiler {
       return false;
     }
 
-    this._compilerContext.setRowType(RowType.ElseBlock);
-
     const block = this._compilerContext.enterBlock(first.getPosition());
     block.type = CompilerBlockType.Else;
     block.indent = this._indent;
@@ -765,6 +766,7 @@ export class Compiler {
   }
 
   private parseImportDefinition(): boolean {
+    this._compilerContext.setRowType(RowType.Import);
     const first = this._line[0];
     if (this._line.length < 2) {
       this._compilerContext.addError(PyErrorType.IncompleteImportDefinition, first);
@@ -801,6 +803,8 @@ export class Compiler {
   }
 
   private parseImportFromDefinition(): boolean {
+    this._compilerContext.setRowType(RowType.ImportFrom);
+
     const first = this._line[0];
     if (this._line.length < 4) {
       this._compilerContext.addError(PyErrorType.IncompleteImportFromDefinition, first);
@@ -826,42 +830,41 @@ export class Compiler {
       this._compilerContext,
       first.getPosition(),
     );
-    this._compilerContext.setRowType(RowType.ImportFrom);
     CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, imp);
     return true;
   }
 
   private parseBreakDefinition(): boolean {
+    this._compilerContext.setRowType(RowType.Break);
     const first = this._line[0];
     if (this._line.length !== 1) {
       this._compilerContext.addError(PyErrorType.BreakHasNoArguments, first);
       return false;
     }
-    this._compilerContext.setRowType(RowType.Break);
     const breakCode = CodeGenerator.breakCode(first.getPosition());
     CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, breakCode);
     return true;
   }
 
   private parseContinueDefinition(): boolean {
+    this._compilerContext.setRowType(RowType.Continue);
     const first = this._line[0];
     if (this._line.length !== 1) {
       this._compilerContext.addError(PyErrorType.ContinueHasNoArguments, first);
       return false;
     }
-    this._compilerContext.setRowType(RowType.Continue);
     const continueCode = CodeGenerator.continueCode(first.getPosition());
     CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, continueCode);
     return true;
   }
 
   private parsePassDefinition(): boolean {
+    this._compilerContext.setRowType(RowType.Pass);
     const first = this._line[0];
     if (this._line.length !== 1) {
       this._compilerContext.addError(PyErrorType.PassHasNoArguments, first);
       return false;
     }
-    this._compilerContext.setRowType(RowType.Pass);
     const pass = CodeGenerator.pass(first.getPosition());
     CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, pass);
     return true;
@@ -870,6 +873,20 @@ export class Compiler {
   // Yield, return, del and raise
   private parseKeywordAndExpression(): boolean {
     const first = this._line[0];
+    switch (first.keyword) {
+      case KeywordType.Return:
+        this._compilerContext.setRowType(RowType.Return);
+        break;
+      case KeywordType.Yield:
+        this._compilerContext.setRowType(RowType.Yield);
+        break;
+      case KeywordType.Del:
+        this._compilerContext.setRowType(RowType.Del);
+        break;
+      case KeywordType.Raise:
+        this._compilerContext.setRowType(RowType.Raise);
+        break;
+    }
     let returnCode: GeneratedCode;
     if (this._line.length === 1) {
       switch (first.keyword) {
@@ -933,20 +950,6 @@ export class Compiler {
           break;
       }
     }
-    switch (first.keyword) {
-      case KeywordType.Return:
-        this._compilerContext.setRowType(RowType.Return);
-        break;
-      case KeywordType.Yield:
-        this._compilerContext.setRowType(RowType.Yield);
-        break;
-      case KeywordType.Del:
-        this._compilerContext.setRowType(RowType.Del);
-        break;
-      case KeywordType.Raise:
-        this._compilerContext.setRowType(RowType.Raise);
-        break;
-    }
     CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, returnCode);
     return true;
   }
@@ -960,16 +963,18 @@ export class Compiler {
   }
 
   private parseTryDefinition(): boolean {
+    this._compilerContext.setRowType(RowType.TryBlock);
+
     const block = this._compilerContext.enterBlock(this._line[0].getPosition());
     block.type = CompilerBlockType.Try;
     block.indent = this._indent;
-
-    this._compilerContext.setRowType(RowType.TryBlock);
 
     return this.parseEndOfBlockDefinition(1);
   }
 
   private parseWithDefinition(): boolean {
+    this._compilerContext.setRowType(RowType.With);
+
     const expression = ExpressionCompiler.compile({
       tokens: this._line,
       compiledCode: this._compiledModule,
@@ -990,12 +995,13 @@ export class Compiler {
     block.indent = this._indent;
     block.arg1 = this._line[from + 1].identifier;
     block.arg2 = expression;
-    this._compilerContext.setRowType(RowType.With);
 
     return this.parseEndOfBlockDefinition(from + 2);
   }
 
   private parseExceptDefinition(): boolean {
+    this._compilerContext.setRowType(RowType.ExceptBlock);
+
     const first = this._line[0];
     const firstBlock = this._pendingFinishedBlocks[0];
     if (!firstBlock || firstBlock.type !== CompilerBlockType.Try) {
@@ -1067,8 +1073,6 @@ export class Compiler {
       next++;
     }
 
-    this._compilerContext.setRowType(RowType.ExceptBlock);
-
     const block = this._compilerContext.enterBlock(first.getPosition());
     block.type = CompilerBlockType.Except;
     block.indent = this._indent;
@@ -1079,6 +1083,8 @@ export class Compiler {
   }
 
   private parseFinallyDefinition(): boolean {
+    this._compilerContext.setRowType(RowType.FinallyBlock);
+
     const first = this._line[0];
     const firstBlock = this._pendingFinishedBlocks[0];
     if (!firstBlock || firstBlock.type !== CompilerBlockType.Try) {
@@ -1088,8 +1094,6 @@ export class Compiler {
     const block = this._compilerContext.enterBlock(first.getPosition());
     block.type = CompilerBlockType.Finally;
     block.indent = this._indent;
-
-    this._compilerContext.setRowType(RowType.FinallyBlock);
 
     return this.parseEndOfBlockDefinition(1);
   }
@@ -1133,13 +1137,6 @@ export class Compiler {
         return false;
       }
     }
-
-    // TODO: check if we want to throw error when expression output is unused
-    // if (expressions.length === 1) {
-    //   const current = this._line[start >= this._line.length ? start - 1 : start];
-    //   this._compilerContext.addError(PyErrorType.Error_Compiler_ExpressionExpectedAssignmentOperator, current);
-    //   return false;
-    // }
 
     let result: GeneratedCode = expressions[expressions.length - 1];
 
@@ -1211,6 +1208,8 @@ export class Compiler {
   }
 
   private parseScopeDefinition(): boolean {
+    const isGlobal = this._line[0].keyword === KeywordType.Global;
+    this._compilerContext.setRowType(isGlobal ? RowType.ScopeGlobal : RowType.ScopeNonlocal);
     const block = this._compilerContext.getCurrentBlock();
     let pos = 1;
     let last = this._line[0];
@@ -1225,7 +1224,7 @@ export class Compiler {
         return false;
       }
       const id = current.identifier;
-      if (this._line[0].keyword === KeywordType.Global) {
+      if (isGlobal) {
         block.scopeChange[id] = ReferenceScope.Global;
       } else {
         block.scopeChange[id] = ReferenceScope.NonLocal;

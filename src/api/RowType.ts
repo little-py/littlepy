@@ -24,4 +24,10 @@ export enum RowType {
   Yield = 'Yield',
   With = 'With',
   Del = 'Del',
+  ScopeGlobal = 'ScopeGlobal',
+  ScopeNonlocal = 'ScopeNonlocal',
+  Set = 'Set',
+  Dictionary = 'Dictionary',
+  Tuple = 'Tuple',
+  List = 'List',
 }
