@@ -94,7 +94,7 @@ export function nativeWrapper(instance: any, member: MemberWithMetadata) {
       });
       if (!ignoreParams) {
         if (args.length < callContext.indexedArgs.length) {
-          runContext.raiseException(new ExceptionObject(ExceptionType.FunctionArgumentCountMismatch, UniqueErrorCode.RequiredArgumentIsMissing));
+          runContext.raiseException(new ExceptionObject(ExceptionType.FunctionArgumentCountMismatch, UniqueErrorCode.FunctionTooManyArguments));
           return true;
         }
       }

@@ -144,6 +144,9 @@ export class CompilerContext {
           });
           return it;
         }
+
+        // safety check
+        /* istanbul ignore next */
         return -1;
       }
       default: {
@@ -155,6 +158,9 @@ export class CompilerContext {
           });
           return it;
         }
+
+        // safety check
+        /* istanbul ignore next */
         return -1;
       }
     }

@@ -200,6 +200,11 @@ describe('Native function', () => {
     public setObject(newValue: PyObject) {
       objectProperty = newValue;
     }
+
+    @pyGetter('overrideName')
+    public someGetter() {
+      return 10;
+    }
   }
 
   beforeEach(() => {
@@ -296,7 +301,7 @@ describe('Native function', () => {
       }),
     );
     expect(raisedException).toBeTruthy();
-    expect(raisedException.uniqueError).toEqual(UniqueErrorCode.RequiredArgumentIsMissing);
+    expect(raisedException.uniqueError).toEqual(UniqueErrorCode.FunctionTooManyArguments);
   });
 
   it('should provide callback', () => {
@@ -590,5 +595,18 @@ describe('Native function', () => {
     } catch (e) {
       expect(e instanceof ExceptionObject && e.uniqueError).toEqual(UniqueErrorCode.CannotConvertJsToObject);
     }
+  });
+
+  it('should throw exception in case of getter is ill-formed', () => {
+    try {
+      class BadNativeTest extends PyObject {
+        @pyGetter()
+        public setBadGetter() {
+          return 10;
+        }
+      }
+      new BadNativeTest();
+      fail('Unreachable code');
+    } catch (e) {}
   });
 });

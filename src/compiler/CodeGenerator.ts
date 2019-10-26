@@ -149,7 +149,8 @@ export class CodeGenerator {
       } else if (part.type === CompilerBlockType.Except) {
         exceptParts.push(part);
         part.label = context.getNewLabel();
-      } else if (part.type === CompilerBlockType.Else) {
+      } else {
+        //if (part.type === CompilerBlockType.Else) {
         elsePart = part;
         part.label = context.getNewLabel();
       }
@@ -393,15 +394,23 @@ export class CodeGenerator {
     const ret = new GeneratedCode();
     CodeGenerator.appendTo(ret, source);
     for (const token of unaryOperators) {
-      if (token.type === TokenType.Operator && token.operator === OperatorType.Invert) {
-        ret.add(InstructionType.BinInv, token.getPosition(), 0, 0);
-      } else if (token.type === TokenType.Keyword && token.keyword === KeywordType.Not) {
-        ret.add(InstructionType.GetBool, token.getPosition(), 0, 0);
-        ret.add(InstructionType.LogicalNot, token.getPosition(), 0, 0);
-      } else if (token.type === TokenType.Operator && token.operator === OperatorType.Minus) {
-        ret.add(InstructionType.Invert, token.getPosition(), 0, 0);
+      if (token.type === TokenType.Operator) {
+        switch (token.operator) {
+          case OperatorType.Invert:
+            ret.add(InstructionType.BinInv, token.getPosition(), 0, 0);
+            break;
+          case OperatorType.Minus:
+            ret.add(InstructionType.Invert, token.getPosition(), 0, 0);
+            break;
+        }
+      } else {
+        switch (token.keyword) {
+          case KeywordType.Not:
+            ret.add(InstructionType.GetBool, token.getPosition(), 0, 0);
+            ret.add(InstructionType.LogicalNot, token.getPosition(), 0, 0);
+            break;
+        }
       }
-      // operator Plus does nothing for this
     }
     ret.success = true;
     return ret;
@@ -490,7 +499,7 @@ export class CodeGenerator {
           opType = InstructionType.NotEq;
           break;
       }
-    } else if (op.type === TokenType.Keyword) {
+    } else {
       switch (op.keyword) {
         case KeywordType.Is:
           opType = InstructionType.Is;

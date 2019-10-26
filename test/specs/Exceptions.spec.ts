@@ -21,7 +21,6 @@ const errors: ErrorScenario[] = [
       b.c = a
     `,
     error: UniqueErrorCode.UnknownIdentifier,
-    // expectedException: ExceptionType.UnknownIdentifier,
   },
   {
     input: `
@@ -30,14 +29,12 @@ const errors: ErrorScenario[] = [
       a = b.c.d
     `,
     error: UniqueErrorCode.UnknownIdentifier,
-    // expectedException: ExceptionType.UnknownIdentifier,
   },
   {
     input: `
       b = 10
       b.c(100)
     `,
-    // expectedException: ExceptionType.UnknownIdentifier,
     error: UniqueErrorCode.UnknownIdentifier,
     args: ['c'],
   },
@@ -112,7 +109,6 @@ const errors: ErrorScenario[] = [
     input: `
       print(end=x)
     `,
-    // expectedException: ExceptionType.UnknownIdentifier,
     error: UniqueErrorCode.UnknownIdentifier,
     args: ['x'],
   },
@@ -121,7 +117,6 @@ const errors: ErrorScenario[] = [
       test = 5
       test(10)
     `,
-    // expectedException: ExceptionType.NotAFunction,
     error: UniqueErrorCode.ExpectedCallableObject,
   },
   {
@@ -296,7 +291,6 @@ const errors: ErrorScenario[] = [
     input: `
       import u
     `,
-    // expectedException: ExceptionType.UnknownIdentifier,
     args: ['u'],
     error: UniqueErrorCode.UnknownIdentifier,
   },
@@ -305,7 +299,6 @@ const errors: ErrorScenario[] = [
       if x or y:
         print('x')
     `,
-    // expectedException: ExceptionType.UnknownIdentifier,
     error: UniqueErrorCode.UnknownIdentifier,
   },
   {
@@ -313,7 +306,6 @@ const errors: ErrorScenario[] = [
       year = 2018
       print(f'Results of the {year} {event}.')
     `,
-    // expectedException: ExceptionType.UnknownIdentifier,
     args: ['event'],
     error: UniqueErrorCode.UnknownIdentifier,
   },
@@ -321,7 +313,6 @@ const errors: ErrorScenario[] = [
     input: `
       print('1' > '2')
     `,
-    // expectedException: ExceptionType.TypeError,
     error: UniqueErrorCode.MathOperationOperandsDontMatch,
   },
   {
@@ -331,7 +322,6 @@ const errors: ErrorScenario[] = [
         
       func(1, 2)
     `,
-    // expectedException: ExceptionType.FunctionTooManyArguments,
     error: UniqueErrorCode.FunctionTooManyArguments,
   },
   {
@@ -342,7 +332,6 @@ const errors: ErrorScenario[] = [
           
       r = Example(10)
     `,
-    // expectedException: ExceptionType.FunctionTooManyArguments,
     error: UniqueErrorCode.FunctionTooManyArguments,
   },
   {
@@ -350,7 +339,6 @@ const errors: ErrorScenario[] = [
       class Example: pass
       r = Example(10)
     `,
-    // expectedException: ExceptionType.FunctionTooManyArguments,
     error: UniqueErrorCode.FunctionTooManyArguments,
   },
   {
@@ -359,7 +347,6 @@ const errors: ErrorScenario[] = [
         print('a')
       func(x=10)
     `,
-    // expectedException: ExceptionType.UnknownIdentifier,
     error: UniqueErrorCode.UnknownIdentifier,
   },
   {
@@ -377,7 +364,6 @@ const errors: ErrorScenario[] = [
         print(a)
       func()
     `,
-    // expectedException: ExceptionType.FunctionMissingArgument,
     error: UniqueErrorCode.MissingArgument,
   },
   {
@@ -454,6 +440,13 @@ const errors: ErrorScenario[] = [
         print(x)
     `,
     // expectedException: ExceptionType.FunctionArgumentCountMismatch,
+    error: UniqueErrorCode.FunctionTooManyArguments,
+  },
+  {
+    input: `
+      for x in range():
+        print(x)
+    `,
     error: UniqueErrorCode.RequiredArgumentIsMissing,
   },
   {
@@ -571,7 +564,6 @@ const errors: ErrorScenario[] = [
       s = (1,2,3,4,5)
       print(s['a'][0])
     `,
-    // expectedException: ExceptionType.TypeError,
     error: UniqueErrorCode.ExpectedDictionaryOrListObject,
   },
   {
@@ -619,7 +611,6 @@ const errors: ErrorScenario[] = [
       s = (1,2,3)*4
       print(s.index(2, 5, 6))
     `,
-    // expectedException: ExceptionType.ValueError,
     error: UniqueErrorCode.CannotFindObjectInIterator,
   },
   {
