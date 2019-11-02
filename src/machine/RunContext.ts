@@ -165,6 +165,17 @@ export class RunContext extends RunContextBase {
   }
 
   public debug() {
+    const functionStack = this.getCurrentFunctionStack();
+    const code = functionStack.functionBody.code;
+    const current = code[functionStack.instruction];
+    this.updateLocation(current);
+    if (this._breakpoints[this._locationId]) {
+      return;
+    }
+    this.debugUntilCondition();
+  }
+
+  public debugContinue(): void {
     this.debugUntilCondition();
   }
 
