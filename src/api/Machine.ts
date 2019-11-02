@@ -16,6 +16,7 @@ export abstract class PyMachine {
   abstract run(): void;
   abstract stop(): void;
   abstract debug(): void;
+  abstract debugContinue(): void;
   abstract debugIn(): void;
   abstract debugOut(): void;
   abstract debugOver(): void;

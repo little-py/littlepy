@@ -42,12 +42,35 @@ describe('Debug flow', () => {
     );
     let position = runContext.getPosition();
     expect(position.row).toEqual(0);
-    runContext.debug();
+    runContext.debugContinue();
     expect(runContext.getUnhandledException()).toBeUndefined();
     position = runContext.getPosition();
     expect(position.row).toEqual(1);
     runContext.debugOver();
     expect(runContext.isFinished()).toBeTruthy();
+  });
+
+  it('should stop on breakpoint on first line', () => {
+    const runContext = compileAndStartModule(
+      `
+      a = 10
+      b = 20
+    `,
+      [
+        {
+          row: 0,
+          moduleId: '',
+        },
+      ],
+    );
+    let position = runContext.getPosition();
+    expect(position.row).toEqual(0);
+    runContext.debug();
+    expect(runContext.getUnhandledException()).toBeUndefined();
+    position = runContext.getPosition();
+    expect(position && position.row).toEqual(0);
+    runContext.debugOver();
+    expect(runContext.isFinished()).toBeFalsy();
   });
 
   it('should stop on call to stop', () => {
