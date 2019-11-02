@@ -227,7 +227,11 @@ export class RunContext extends RunContextBase {
     }
     const module = this._compiledModules[name];
     if (!module) {
-      this.raiseUnknownIdentifier(name);
+      const exception = new ExceptionObject(ExceptionType.UnknownIdentifier, UniqueErrorCode.UnknownIdentifier, [], name);
+      this.raiseException(exception);
+      if (finishCallback) {
+        finishCallback(null, exception);
+      }
       return;
     }
     try {
@@ -235,7 +239,11 @@ export class RunContext extends RunContextBase {
       /* istanbul ignore next */
       if (moduleFunction === undefined) {
         // should never happen in correctly compiled code
-        this.raiseException(new ExceptionObject(ExceptionType.RuntimeError, UniqueErrorCode.CannotFindModuleFunction));
+        const exception = new ExceptionObject(ExceptionType.RuntimeError, UniqueErrorCode.CannotFindModuleFunction);
+        this.raiseException(exception);
+        if (finishCallback) {
+          finishCallback(null, exception);
+        }
         return;
       }
 
@@ -258,6 +266,9 @@ export class RunContext extends RunContextBase {
     } catch (e) {
       if (e instanceof ExceptionObject) {
         this.raiseException(e);
+        if (!this._currentStack && finishCallback) {
+          finishCallback(null, e);
+        }
       } else {
         throw e;
       }
@@ -275,12 +286,20 @@ export class RunContext extends RunContextBase {
     }
     const module = this._importedModules[moduleName];
     if (!module) {
-      this.raiseException(new ExceptionObject(ExceptionType.UnknownIdentifier, UniqueErrorCode.ModuleNotFound, [], moduleName));
+      const exception = new ExceptionObject(ExceptionType.UnknownIdentifier, UniqueErrorCode.ModuleNotFound, [], moduleName);
+      this.raiseException(exception);
+      if (finishCallback) {
+        finishCallback(null, exception);
+      }
       return;
     }
     const functionObject: FunctionObject = module.getAttribute(funcName) as FunctionObject;
     if (!functionObject || !functionObject.context) {
-      this.raiseException(new ExceptionObject(ExceptionType.UnknownIdentifier, UniqueErrorCode.FunctionNotFound, [], funcName));
+      const exception = new ExceptionObject(ExceptionType.UnknownIdentifier, UniqueErrorCode.FunctionNotFound, [], funcName);
+      this.raiseException(exception);
+      if (finishCallback) {
+        finishCallback(null, exception);
+      }
       return;
     }
 
@@ -304,6 +323,9 @@ export class RunContext extends RunContextBase {
     } catch (e) {
       if (e instanceof ExceptionObject) {
         this.raiseException(e);
+        if (!this._currentStack && finishCallback) {
+          finishCallback(null, e);
+        }
       } else {
         throw e;
       }
@@ -2108,8 +2130,15 @@ export class RunContext extends RunContextBase {
 
   public onUnhandledException(exception: ExceptionObject) {
     this._unhandledException = exception;
-    while (this._currentStack) {
-      this.leaveStack(null, true, this._unhandledException);
+    let stack = this._currentStack;
+    if (!stack) {
+      return;
+    }
+    while (stack.parent) {
+      stack = stack.parent;
+    }
+    if (stack.onFinish) {
+      stack.onFinish(null, exception);
     }
   }
 
