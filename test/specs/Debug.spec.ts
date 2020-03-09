@@ -219,4 +219,10 @@ describe('Debug flow', () => {
     runContext.run();
     expect(runContext.isFinished()).toBeTruthy();
   });
+
+  it('should allow debugging empty source code', () => {
+    const runContext = compileAndStartModule('');
+    runContext.debug();
+    expect(runContext.getPosition()).toBeUndefined();
+  });
 });
