@@ -8,6 +8,10 @@ export class PyObject {
   public id: number = PyObject.idCounter++;
   public name: string;
 
+  public getAttributeNames() {
+    return Object.keys(this.attributes);
+  }
+
   public getAttribute(name: string): PyObject {
     const property = this[name] as NativeProperty;
     if (property && property.getter) {
