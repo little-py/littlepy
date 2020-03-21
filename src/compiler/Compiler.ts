@@ -995,7 +995,7 @@ export class Compiler {
       }
       id += this._compiledModule.identifiers[this._line[next].identifier];
       next++;
-      identifiers.push(this._compilerContext.getIdentifier(id));
+      identifiers.push(this._compilerContext.getIdentifierCode(id));
       if (next >= this._line.length) {
         break;
       }
@@ -1165,7 +1165,7 @@ export class Compiler {
     }
     const print = this._codeGenerator.createFragment();
     const first = this._line[0];
-    this._codeGenerator.appendReadObject(print, first.getPosition(), this._compilerContext.getIdentifier('print'));
+    this._codeGenerator.appendReadObject(print, first.getPosition(), this._compilerContext.getIdentifierCode('print'), this._compilerContext);
     this._codeGenerator.appendFunctionCall(print, [expression], this._compilerContext, this._line[0].getPosition(), false);
     this._codeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, print, 0);
   }

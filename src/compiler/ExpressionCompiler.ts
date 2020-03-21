@@ -433,6 +433,7 @@ export class ExpressionCompiler {
           first.identifier,
           scopeType !== undefined ? scopeType : ReferenceScope.Default,
           first.getPosition(),
+          this._compilerContext,
         );
         this._from++;
         return reference;
@@ -440,7 +441,7 @@ export class ExpressionCompiler {
     }
     this._from++;
     const ret = this._codeGenerator.createFragment();
-    this._codeGenerator.appendReadObject(ret, first.getPosition(), first.identifier);
+    this._codeGenerator.appendReadObject(ret, first.getPosition(), first.identifier, this._compilerContext);
     ret.success = true;
     this.compileAnyAccessor(ret, first.identifier);
     if (!ret.success) {
@@ -466,10 +467,10 @@ export class ExpressionCompiler {
           this._compilerContext.updateRowDescriptor({
             functionName: this._compiledCode.identifiers[identifier],
           });
-          this._codeGenerator.appendReadProperty(ret, current.getPosition(), identifier, 0, 1);
+          this._codeGenerator.appendReadProperty(ret, current.getPosition(), identifier, 0, 1, this._compilerContext);
           this.appendFunctionCall(ret, current.getPosition(), true);
         } else {
-          this._codeGenerator.appendReadProperty(ret, current.getPosition(), identifier, 0, 0);
+          this._codeGenerator.appendReadProperty(ret, current.getPosition(), identifier, 0, 0, this._compilerContext);
           continue;
         }
       }

@@ -171,7 +171,7 @@ export class CompilerContext {
     return this.usedLabels++;
   }
 
-  public getIdentifier(name: string): number {
+  public getIdentifierCode(name: string): number {
     let it = this.identifierMap[name];
     if (it !== undefined) {
       return it;
@@ -180,6 +180,15 @@ export class CompilerContext {
     this.compiledCode.identifiers.push(name);
     this.identifierMap[name] = it;
     return it;
+  }
+
+  public getIdentifierName(id: number): string {
+    for (const key of Object.keys(this.identifierMap)) {
+      if (this.identifierMap[key] === id) {
+        return key;
+      }
+    }
+    return undefined;
   }
 
   public getCurrentBlock(): CompilerBlockContext {
