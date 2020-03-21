@@ -2,10 +2,10 @@ import { LexicalContext } from './LexicalContext';
 import { DelimiterType, OperatorType, Token, TokenType } from '../api/Token';
 import { Keyword, KeywordType } from '../api/Keyword';
 import { isDigit, isFirstIdentifierChar, isIdentifierChar, isStringMarkerChar } from './Characters';
-import { Literal, LiteralType } from './Literal';
-import { CompiledModule } from './CompiledModule';
+import { CompiledModule } from '../api/CompiledModule';
 import { PyErrorType } from '../api/ErrorType';
 import { PyError, PyErrorContext } from '../api/Error';
+import { Literal, LiteralType } from '../api/Literal';
 
 const TAB_LENGTH = 4;
 

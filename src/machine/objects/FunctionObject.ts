@@ -1,6 +1,6 @@
 import { Callable } from '../../api/Callable';
 import { FunctionContext } from '../../api/FunctionContext';
-import { FunctionBody } from '../../common/FunctionBody';
+import { FunctionBody } from '../../api/FunctionBody';
 
 /* istanbul ignore next */
 export class FunctionObject extends Callable {

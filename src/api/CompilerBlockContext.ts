@@ -1,6 +1,6 @@
-import { GeneratedCode } from '../common/Instructions';
-import { TokenPosition } from '../api/Token';
-import { ReferenceScope } from '../common/ReferenceScope';
+import { TokenPosition } from './Token';
+import { ReferenceScope } from './ReferenceScope';
+import { CodeFragment } from './CodeFragment';
 
 export enum CompilerBlockType {
   For = 'For',
@@ -18,12 +18,15 @@ export enum CompilerBlockType {
 }
 
 export class CompilerBlockContext {
+  constructor(fragment: CodeFragment) {
+    this.blockCode = fragment;
+  }
+
   public position: TokenPosition;
   public type: CompilerBlockType;
-  public blockCode: GeneratedCode = new GeneratedCode();
+  public blockCode: CodeFragment;
   public arg1: number;
-  public arg2: GeneratedCode;
-  //public arg3: string[];
+  public arg2: CodeFragment;
   public arg4: number[];
   public label: number;
   public indent: number;
@@ -32,5 +35,4 @@ export class CompilerBlockContext {
   public parent: CompilerBlockContext;
   public documentation = '';
   public scopeChange: { [id: string]: ReferenceScope } = {};
-  //public declaredVariables: { [key: string]: boolean } = {};
 }

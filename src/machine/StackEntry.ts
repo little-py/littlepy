@@ -1,5 +1,4 @@
 import { CallContext } from '../api/CallContext';
-import { InstructionType } from '../common/InstructionType';
 import { RunContext } from './RunContext';
 import { ReferenceObject } from './objects/ReferenceObject';
 import { GeneratorObject } from './objects/GeneratorObject';
@@ -7,10 +6,12 @@ import { ExceptionObject } from './objects/ExceptionObject';
 import { ExceptionType } from '../api/ExceptionType';
 import { PyObject } from '../api/Object';
 import { PyStackEntry } from '../api/StackEntry';
-import { FunctionBody } from '../common/FunctionBody';
 import { PyScope } from '../api/Scope';
 import { FunctionContext } from '../api/FunctionContext';
 import { UniqueErrorCode } from '../api/UniqueErrorCode';
+import { InstructionType } from '../generator/InstructionType';
+import { FunctionBody } from '../api/FunctionBody';
+import { FullCodeInst } from '../generator/FullCodeInst';
 
 export enum StackEntryType {
   WhileCycle = 'While',
@@ -56,8 +57,9 @@ export class StackEntry implements PyStackEntry {
   }
 
   public findLabel(label: number): number {
-    for (let i = 0; i < this.functionBody.code.length; i++) {
-      if (this.functionBody.code[i].type === InstructionType.Label && this.functionBody.code[i].arg1 === label) {
+    const code = this.functionBody.code as FullCodeInst;
+    for (let i = 0; i < code.instructions.length; i++) {
+      if (code.instructions[i].type === InstructionType.Label && code.instructions[i].arg1 === label) {
         return i + 1;
       }
     }

@@ -1,4 +1,4 @@
-import { CompiledModule } from './CompiledModule';
+import { CompiledModule } from '../api/CompiledModule';
 
 export class LexicalContext {
   private readonly compiledCode: CompiledModule;

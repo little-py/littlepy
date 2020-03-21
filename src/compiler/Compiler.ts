@@ -1,20 +1,14 @@
-import { GeneratedCode } from '../common/Instructions';
 import { LexicalContext } from './LexicalContext';
-import { CompilerContext } from './CompilerContext';
+import { CompilerContext } from '../api/CompilerContext';
 import { DelimiterType, OperatorType, Token, TokenPosition, TokenType } from '../api/Token';
-import { ArgumentType, createDebugInformation, FunctionArgument, FunctionBody, FunctionType } from '../common/FunctionBody';
-import { CodeGenerator } from './CodeGenerator';
+import { ArgumentType, FunctionArgument, FunctionBody, FunctionType } from '../api/FunctionBody';
 import { KeywordType } from '../api/Keyword';
 import { ExpressionCompiler } from './ExpressionCompiler';
-import { CompiledModule } from './CompiledModule';
+import { CompiledModule } from '../api/CompiledModule';
 import { LexicalAnalyzer } from './LexicalAnalyzer';
-import { CompilerBlockContext, CompilerBlockType } from './CompilerBlockContext';
-import { InstructionType } from '../common/InstructionType';
 import { RowDescriptor } from '../api/RowDescriptor';
 import { RowType } from '../api/RowType';
 import { PyErrorType } from '../api/ErrorType';
-import { LiteralType } from './Literal';
-import { ReferenceScope } from '../common/ReferenceScope';
 import {
   isAssignmentDelimiter,
   isBlockKeyword,
@@ -30,56 +24,12 @@ import {
   isSemicolon,
 } from './TokenUtils';
 import { CompileOptions } from '../api/CompileOptions';
-
-function getAssignmentInstruction(assignmentOperator: Token): InstructionType {
-  let opType = InstructionType.Pass;
-  if (assignmentOperator.type === TokenType.Delimiter) {
-    switch (assignmentOperator.delimiter) {
-      case DelimiterType.EqualPlus:
-        opType = InstructionType.Add;
-        break;
-      case DelimiterType.EqualMinus:
-        opType = InstructionType.Sub;
-        break;
-      case DelimiterType.EqualMultiply:
-        opType = InstructionType.Mul;
-        break;
-      case DelimiterType.EqualDivide:
-        opType = InstructionType.Div;
-        break;
-      case DelimiterType.EqualFloorDivide:
-        opType = InstructionType.Floor;
-        break;
-      case DelimiterType.EqualModulus:
-        opType = InstructionType.Mod;
-        break;
-      // not implemented yet
-      /* istanbul ignore next */
-      case DelimiterType.EqualAt:
-        opType = InstructionType.At;
-        break;
-      case DelimiterType.EqualAnd:
-        opType = InstructionType.BinAnd;
-        break;
-      case DelimiterType.EqualOr:
-        opType = InstructionType.BinOr;
-        break;
-      case DelimiterType.EqualXor:
-        opType = InstructionType.BinXor;
-        break;
-      case DelimiterType.EqualShiftRight:
-        opType = InstructionType.Shr;
-        break;
-      case DelimiterType.EqualShiftLeft:
-        opType = InstructionType.Shl;
-        break;
-      case DelimiterType.EqualPower:
-        opType = InstructionType.Pow;
-        break;
-    }
-  }
-  return opType;
-}
+import { CodeGenerator } from '../api/CodeGenerator';
+import { CodeGeneratorInst } from '../generator/CodeGeneratorInst';
+import { CompilerBlockContext, CompilerBlockType } from '../api/CompilerBlockContext';
+import { LiteralType } from '../api/Literal';
+import { CodeFragment } from '../api/CodeFragment';
+import { ReferenceScope } from '../api/ReferenceScope';
 
 export class Compiler {
   private readonly _compiledModule: CompiledModule;
@@ -92,9 +42,11 @@ export class Compiler {
   private _offset: number;
   private _indent: number;
   private _insideIndentedBlocks = false;
+  private readonly _codeGenerator: CodeGenerator;
 
   private constructor(code: CompiledModule, lexicalContext: LexicalContext, options?: CompileOptions) {
     this._compiledModule = code;
+    this._codeGenerator = (options && options.codeGenerator) || new CodeGeneratorInst();
     this._calculateExpression = options && options.wrapWithPrint;
     this._compilerContext = new CompilerContext(code);
     this._lexicalContext = lexicalContext;
@@ -126,7 +78,7 @@ export class Compiler {
   }
 
   private compileModuleWithContext(name: string): boolean {
-    const block = this._compilerContext.enterBlock(this._compiledModule.tokens[0].getPosition());
+    const block = this._compilerContext.enterBlock(this._compiledModule.tokens[0].getPosition(), this._codeGenerator.createFragment());
     block.type = CompilerBlockType.Module;
     block.indent = -1;
     block.path = name;
@@ -184,8 +136,8 @@ export class Compiler {
     func.module = this._compiledModule;
     func.name = name;
     func.type = FunctionType.Module;
-    func.code = CodeGenerator.copyCode(block.blockCode);
-    func.initialize();
+    func.code = this._codeGenerator.getFullCode(block.blockCode);
+    func.initialize(this._codeGenerator);
 
     return true;
   }
@@ -247,7 +199,7 @@ export class Compiler {
       }
     }
 
-    createDebugInformation(this._compiledModule, block.blockCode.code);
+    this._codeGenerator.setFragmentDebugInformation(this._compiledModule, block.blockCode);
 
     if (!parentBlock) {
       return block.type === CompilerBlockType.Module;
@@ -258,16 +210,16 @@ export class Compiler {
         this._pendingFinishedBlocks.push(block);
         break;
       case CompilerBlockType.While:
-        const whileCode = CodeGenerator.whileCycle(block.arg2, block.blockCode, this._compilerContext, block.position);
-        CodeGenerator.appendTo(parentBlock.blockCode, whileCode);
+        const whileCode = this._codeGenerator.whileCycle(block.arg2, block.blockCode, this._compilerContext, block.position);
+        this._codeGenerator.appendTo(parentBlock.blockCode, whileCode, 0);
         break;
       case CompilerBlockType.Module:
       case CompilerBlockType.Class:
       case CompilerBlockType.Function: {
         const func = this._compiledModule.functions[block.arg1];
-        func.code = CodeGenerator.copyCode(block.blockCode);
+        func.code = this._codeGenerator.getFullCode(block.blockCode);
         func.documentation = block.documentation;
-        func.initialize();
+        func.initialize(this._codeGenerator);
         this._compilerContext.leaveBlock();
         if (block.type !== CompilerBlockType.Module) {
           this.declareFunction(block.arg1, block.position);
@@ -275,8 +227,8 @@ export class Compiler {
         return true;
       }
       case CompilerBlockType.With: {
-        const withCode = CodeGenerator.with(block.arg1, block.arg2, block.blockCode, this._compilerContext, block.position);
-        CodeGenerator.appendTo(parentBlock.blockCode, withCode);
+        const withCode = this._codeGenerator.with(block.arg1, block.arg2, block.blockCode, this._compilerContext, block.position);
+        this._codeGenerator.appendTo(parentBlock.blockCode, withCode, 0);
         break;
       }
       case CompilerBlockType.If:
@@ -294,20 +246,20 @@ export class Compiler {
   }
 
   private finishIfBlock() {
-    const ifCode = CodeGenerator.condition(this._pendingFinishedBlocks, this._compilerContext);
-    CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, ifCode);
+    const ifCode = this._codeGenerator.condition(this._pendingFinishedBlocks, this._compilerContext);
+    this._codeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, ifCode, 0);
     return true;
   }
 
   private finishTryBlock() {
-    const tryCode = CodeGenerator.tryExcept(this._pendingFinishedBlocks, this._compilerContext);
-    CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, tryCode);
+    const tryCode = this._codeGenerator.tryExcept(this._pendingFinishedBlocks, this._compilerContext);
+    this._codeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, tryCode, 0);
     return true;
   }
 
   private finishForBlock() {
-    const forCode = CodeGenerator.forCycle(this._pendingFinishedBlocks, this._compilerContext);
-    CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, forCode);
+    const forCode = this._codeGenerator.forCycle(this._pendingFinishedBlocks, this._compilerContext);
+    this._codeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, forCode, 0);
     return true;
   }
 
@@ -425,7 +377,10 @@ export class Compiler {
       const literal = this._compiledModule.literals[first.literal];
       if ((literal.type & LiteralType.LiteralMask) === LiteralType.String) {
         const block = this._compilerContext.getCurrentBlock();
-        if ((block.type === CompilerBlockType.Function || block.type === CompilerBlockType.Class) && block.blockCode.code.length === 0) {
+        if (
+          (block.type === CompilerBlockType.Function || block.type === CompilerBlockType.Class) &&
+          this._codeGenerator.isEmptyFragment(block.blockCode)
+        ) {
           block.documentation = literal.string;
         }
       }
@@ -469,12 +424,13 @@ export class Compiler {
       compilerContext: this._compilerContext,
       lexicalContext: this._lexicalContext,
       start: 3,
+      codeGenerator: this._codeGenerator,
     });
     if (!expression.success) {
       return false;
     }
 
-    const block = this._compilerContext.enterBlock(first.getPosition());
+    const block = this._compilerContext.enterBlock(first.getPosition(), this._codeGenerator.createFragment());
     block.arg1 = argument.identifier;
     block.type = CompilerBlockType.For;
     block.arg2 = expression;
@@ -501,12 +457,13 @@ export class Compiler {
       compilerContext: this._compilerContext,
       lexicalContext: this._lexicalContext,
       start: 1,
+      codeGenerator: this._codeGenerator,
     });
     if (!expression.success) {
       return false;
     }
 
-    const block = this._compilerContext.enterBlock(this._line[0].getPosition());
+    const block = this._compilerContext.enterBlock(this._line[0].getPosition(), this._codeGenerator.createFragment());
     block.type = CompilerBlockType.While;
     block.arg2 = expression;
     block.indent = this._indent;
@@ -600,6 +557,7 @@ export class Compiler {
         compilerContext: this._compilerContext,
         lexicalContext: this._lexicalContext,
         start: from,
+        codeGenerator: this._codeGenerator,
       });
       if (!defaultValue.success) {
         return false;
@@ -610,7 +568,7 @@ export class Compiler {
         this._compilerContext.addError(PyErrorType.IncompleteFunctionArgumentList, current);
         return false;
       }
-      CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, defaultValue, initializeIndex);
+      this._codeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, defaultValue, initializeIndex);
       arg.initReg = initializeIndex++;
 
       current = this._line[from];
@@ -627,7 +585,7 @@ export class Compiler {
       return false;
     }
 
-    const block = this._compilerContext.enterBlock(this._line[0].getPosition());
+    const block = this._compilerContext.enterBlock(this._line[0].getPosition(), this._codeGenerator.createFragment());
     block.type = CompilerBlockType.Function;
     block.arg1 = this._compiledModule.functions.length - 1;
     block.indent = this._indent;
@@ -705,7 +663,7 @@ export class Compiler {
     func.module = this._compiledModule;
     func.inheritsFrom = inheritsFrom;
 
-    const block = this._compilerContext.enterBlock(first.getPosition());
+    const block = this._compilerContext.enterBlock(first.getPosition(), this._codeGenerator.createFragment());
     block.type = CompilerBlockType.Class;
     block.arg1 = this._compiledModule.functions.length - 1;
     block.indent = this._indent;
@@ -733,11 +691,12 @@ export class Compiler {
       compilerContext: this._compilerContext,
       lexicalContext: this._lexicalContext,
       start: 1,
+      codeGenerator: this._codeGenerator,
     });
     if (!expression.success) {
       return false;
     }
-    const block = this._compilerContext.enterBlock(first.getPosition());
+    const block = this._compilerContext.enterBlock(first.getPosition(), this._codeGenerator.createFragment());
     block.type = isIf ? CompilerBlockType.If : CompilerBlockType.ElseIf;
     block.arg2 = expression;
     block.indent = this._indent;
@@ -758,7 +717,7 @@ export class Compiler {
       return false;
     }
 
-    const block = this._compilerContext.enterBlock(first.getPosition());
+    const block = this._compilerContext.enterBlock(first.getPosition(), this._codeGenerator.createFragment());
     block.type = CompilerBlockType.Else;
     block.indent = this._indent;
 
@@ -790,15 +749,15 @@ export class Compiler {
       return false;
     }
     const imp = rename
-      ? CodeGenerator.importAsDirective(
+      ? this._codeGenerator.importAsDirective(
           this._compiledModule.identifiers[name.identifier],
           this._compiledModule.identifiers[rename.identifier],
           this._compilerContext,
           first.getPosition(),
         )
-      : CodeGenerator.importDirective(this._compiledModule.identifiers[name.identifier], this._compilerContext, first.getPosition());
+      : this._codeGenerator.importDirective(this._compiledModule.identifiers[name.identifier], this._compilerContext, first.getPosition());
     this._compilerContext.setRowType(rename ? RowType.ImportAs : RowType.Import);
-    CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, imp);
+    this._codeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, imp, 0);
     return true;
   }
 
@@ -824,13 +783,13 @@ export class Compiler {
       this._compilerContext.addError(PyErrorType.ImportFromExpectedIdentifier, first);
       return false;
     }
-    const imp = CodeGenerator.importFromDirective(
+    const imp = this._codeGenerator.importFromDirective(
       this._compiledModule.identifiers[func.identifier],
       this._compiledModule.identifiers[module.identifier],
       this._compilerContext,
       first.getPosition(),
     );
-    CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, imp);
+    this._codeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, imp, 0);
     return true;
   }
 
@@ -841,8 +800,8 @@ export class Compiler {
       this._compilerContext.addError(PyErrorType.BreakHasNoArguments, first);
       return false;
     }
-    const breakCode = CodeGenerator.breakCode(first.getPosition());
-    CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, breakCode);
+    const breakCode = this._codeGenerator.breakCode(first.getPosition());
+    this._codeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, breakCode, 0);
     return true;
   }
 
@@ -853,8 +812,8 @@ export class Compiler {
       this._compilerContext.addError(PyErrorType.ContinueHasNoArguments, first);
       return false;
     }
-    const continueCode = CodeGenerator.continueCode(first.getPosition());
-    CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, continueCode);
+    const continueCode = this._codeGenerator.continueCode(first.getPosition());
+    this._codeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, continueCode, 0);
     return true;
   }
 
@@ -865,8 +824,8 @@ export class Compiler {
       this._compilerContext.addError(PyErrorType.PassHasNoArguments, first);
       return false;
     }
-    const pass = CodeGenerator.pass(first.getPosition());
-    CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, pass);
+    const pass = this._codeGenerator.pass(first.getPosition());
+    this._codeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, pass, 0);
     return true;
   }
 
@@ -887,14 +846,14 @@ export class Compiler {
         this._compilerContext.setRowType(RowType.Raise);
         break;
     }
-    let returnCode: GeneratedCode;
+    let returnCode: CodeFragment;
     if (this._line.length === 1) {
       switch (first.keyword) {
         case KeywordType.Return:
-          returnCode = CodeGenerator.returnEmpty(first.getPosition());
+          returnCode = this._codeGenerator.returnEmpty(first.getPosition());
           break;
         case KeywordType.Raise:
-          returnCode = CodeGenerator.raiseEmpty(first.getPosition());
+          returnCode = this._codeGenerator.raiseEmpty(first.getPosition());
           break;
         case KeywordType.Yield:
           this._compilerContext.addError(PyErrorType.ExpectedYieldExpression, first);
@@ -910,6 +869,7 @@ export class Compiler {
         compilerContext: this._compilerContext,
         lexicalContext: this._lexicalContext,
         start: 1,
+        codeGenerator: this._codeGenerator,
       });
       if (!expression.success) {
         return false;
@@ -921,7 +881,7 @@ export class Compiler {
             this._compilerContext.addError(PyErrorType.ReturnExpectedEndOfLine, first);
             return false;
           } else {
-            returnCode = CodeGenerator.returnValue(expression, first.getPosition());
+            returnCode = this._codeGenerator.returnValue(expression, first.getPosition());
           }
           break;
         case KeywordType.Yield:
@@ -929,7 +889,7 @@ export class Compiler {
             this._compilerContext.addError(PyErrorType.YieldExpectedEndOfLine, first);
             return false;
           } else {
-            returnCode = CodeGenerator.yield(expression, first.getPosition());
+            returnCode = this._codeGenerator.yield(expression, first.getPosition());
           }
           break;
         case KeywordType.Del:
@@ -937,7 +897,7 @@ export class Compiler {
             this._compilerContext.addError(PyErrorType.DelExpectedEndOfLine, first);
             return false;
           } else {
-            returnCode = CodeGenerator.delete(expression, first.getPosition());
+            returnCode = this._codeGenerator.delete(expression, first.getPosition());
           }
           break;
         case KeywordType.Raise:
@@ -945,12 +905,12 @@ export class Compiler {
             this._compilerContext.addError(PyErrorType.RaiseExpectedEndOfLine, first);
             return false;
           } else {
-            returnCode = CodeGenerator.raise(expression, first.getPosition());
+            returnCode = this._codeGenerator.raise(expression, first.getPosition());
           }
           break;
       }
     }
-    CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, returnCode);
+    this._codeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, returnCode, 0);
     return true;
   }
 
@@ -965,7 +925,7 @@ export class Compiler {
   private parseTryDefinition(): boolean {
     this._compilerContext.setRowType(RowType.TryBlock);
 
-    const block = this._compilerContext.enterBlock(this._line[0].getPosition());
+    const block = this._compilerContext.enterBlock(this._line[0].getPosition(), this._codeGenerator.createFragment());
     block.type = CompilerBlockType.Try;
     block.indent = this._indent;
 
@@ -981,6 +941,7 @@ export class Compiler {
       compilerContext: this._compilerContext,
       lexicalContext: this._lexicalContext,
       start: 1,
+      codeGenerator: this._codeGenerator,
     });
     if (!expression.success) {
       return false;
@@ -990,7 +951,7 @@ export class Compiler {
       this._compilerContext.addError(PyErrorType.WithExpectedAs, this._line[from] || this._line[this._line.length - 1]);
       return false;
     }
-    const block = this._compilerContext.enterBlock(this._line[0].getPosition());
+    const block = this._compilerContext.enterBlock(this._line[0].getPosition(), this._codeGenerator.createFragment());
     block.type = CompilerBlockType.With;
     block.indent = this._indent;
     block.arg1 = this._line[from + 1].identifier;
@@ -1073,7 +1034,7 @@ export class Compiler {
       next++;
     }
 
-    const block = this._compilerContext.enterBlock(first.getPosition());
+    const block = this._compilerContext.enterBlock(first.getPosition(), this._codeGenerator.createFragment());
     block.type = CompilerBlockType.Except;
     block.indent = this._indent;
     block.arg1 = exceptionIdentifier;
@@ -1091,7 +1052,7 @@ export class Compiler {
       this._compilerContext.addError(PyErrorType.FinallyCannotFindTry, first);
       return false;
     }
-    const block = this._compilerContext.enterBlock(first.getPosition());
+    const block = this._compilerContext.enterBlock(first.getPosition(), this._codeGenerator.createFragment());
     block.type = CompilerBlockType.Finally;
     block.indent = this._indent;
 
@@ -1100,7 +1061,7 @@ export class Compiler {
 
   private parseAssignmentOrCallOperator(): boolean {
     let start = 0;
-    const expressions: GeneratedCode[] = [];
+    const expressions: CodeFragment[] = [];
     let isAugmented = false;
     let augmentedOperator: Token;
     while (start < this._line.length) {
@@ -1111,6 +1072,7 @@ export class Compiler {
         lexicalContext: this._lexicalContext,
         start,
         parseTuple: true,
+        codeGenerator: this._codeGenerator,
       });
       if (!expression.success) {
         return false;
@@ -1138,32 +1100,32 @@ export class Compiler {
       }
     }
 
-    let result: GeneratedCode = expressions[expressions.length - 1];
+    let result: CodeFragment = expressions[expressions.length - 1];
 
     for (let i = expressions.length - 2; i >= 0; i--) {
       const assignment = expressions[i];
-      CodeGenerator.appendTo(assignment, result, 1);
+      this._codeGenerator.appendTo(assignment, result, 1);
       if (isAugmented) {
-        assignment.add(InstructionType.AugmentedCopy, assignment.position, 1, 0, 0, getAssignmentInstruction(augmentedOperator));
+        this._codeGenerator.appendAugmentedCopy(assignment, augmentedOperator);
       } else {
-        assignment.add(InstructionType.CopyValue, assignment.position, 1, 0);
+        this._codeGenerator.appendCopyValue(assignment);
       }
       result = assignment;
     }
 
-    CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, result);
+    this._codeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, result, 0);
 
     if (expressions.length > 1) {
       this._compilerContext.setRowType(RowType.AssignmentOperator);
     }
 
-    if (result.code.findIndex(c => c.isArrayIndex()) >= 0) {
+    if (this._codeGenerator.hasArrayIndex(result)) {
       this._compilerContext.updateRowDescriptor({
         isArrayAssignment: true,
       });
     }
 
-    if (result.code.findIndex(c => c.isOperator()) >= 0) {
+    if (this._codeGenerator.hasArrayIndex(result)) {
       this._compilerContext.updateRowDescriptor({
         hasOperators: true,
       });
@@ -1178,13 +1140,13 @@ export class Compiler {
 
   private declareFunction(functionDef: number, position: TokenPosition) {
     const func = this._compiledModule.functions[functionDef];
-    const createFunction = CodeGenerator.readFunctionDef(functionDef, position);
+    const createFunction = this._codeGenerator.readFunctionDef(functionDef, position);
     const identifiers: string[] = [func.name];
-    const code = CodeGenerator.createReference(identifiers, this._compilerContext, position);
+    const code = this._codeGenerator.createReference(identifiers, this._compilerContext, position);
     // It is important not to touch registers starting from index 2 because they are used for default values
-    CodeGenerator.appendTo(code, createFunction, 1);
-    code.add(InstructionType.CopyValue, position, 1, 0);
-    CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, code);
+    this._codeGenerator.appendTo(code, createFunction, 1);
+    this._codeGenerator.appendCopyValue(code);
+    this._codeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, code, 0);
   }
 
   private parseLineAsExpression() {
@@ -1194,17 +1156,18 @@ export class Compiler {
       compilerContext: this._compilerContext,
       lexicalContext: this._lexicalContext,
       start: 0,
+      codeGenerator: this._codeGenerator,
     });
     if (!expression.success) {
       return;
     } else if (expression.finish !== this._line.length) {
       this._compilerContext.addError(PyErrorType.ExpectedEndOfExpression, this._line[expression.finish]);
     }
-    const print = new GeneratedCode();
+    const print = this._codeGenerator.createFragment();
     const first = this._line[0];
-    print.add(InstructionType.ReadObject, first.getPosition(), this._compilerContext.getIdentifier('print'), 0);
-    CodeGenerator.appendFunctionCall(print, [expression], this._compilerContext, this._line[0].getPosition(), false);
-    CodeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, print);
+    this._codeGenerator.appendReadObject(print, first.getPosition(), this._compilerContext.getIdentifier('print'));
+    this._codeGenerator.appendFunctionCall(print, [expression], this._compilerContext, this._line[0].getPosition(), false);
+    this._codeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, print, 0);
   }
 
   private parseScopeDefinition(): boolean {

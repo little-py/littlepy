@@ -1,5 +1,5 @@
 import { Compiler } from '../compiler/Compiler';
-import { CompiledModule } from '../compiler/CompiledModule';
+import { CompiledModule } from './CompiledModule';
 import { RunContext } from '../machine/RunContext';
 import { RowDescriptor } from './RowDescriptor';
 import { PyModule } from './Module';
