@@ -1,5 +1,5 @@
-import { InstructionType } from '../../src/common/InstructionType';
-import { Instruction } from '../../src/common/Instructions';
+import { InstructionType } from '../../src/generator/InstructionType';
+import { Instruction } from '../../src/generator/Instructions';
 
 describe('Instructions', () => {
   it('ensure that every instruction is handled', () => {

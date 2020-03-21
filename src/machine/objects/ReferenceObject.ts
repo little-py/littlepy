@@ -3,7 +3,7 @@ import { ListObject } from './ListObject';
 import { StringObject } from './StringObject';
 import { DictionaryObject } from './DictionaryObject';
 import { IterableObject } from './IterableObject';
-import { ReferenceScope } from '../../common/ReferenceScope';
+import { ReferenceScope } from '../../api/ReferenceScope';
 import { ContainerObject } from './ContainerObject';
 import { TupleObject } from './TupleObject';
 import { ExceptionType } from '../../api/ExceptionType';

@@ -44,14 +44,24 @@ for (const name of fs.readdirSync(DIR)) {
 const resolvedIds = {};
 const resolvedFiles = [];
 
-function resolve(id) {
+function resolve(id, prevDeps) {
+  if (!prevDeps) {
+    prevDeps = [];
+  } else {
+    if (prevDeps.includes(id)) {
+      console.error('cyclic dependency: ', id, prevDeps);
+      throw Error('Cyclic dependency');
+    }
+  }
+  prevDeps.push(id);
   const file = files[id];
   if (!file) {
     throw Error(`cannot resolve dependency '${id}'`);
   }
   for (const dependency of file.depends) {
-    resolve(dependency);
+    resolve(dependency, prevDeps);
   }
+  prevDeps.pop();
   if (!resolvedIds[id]) {
     resolvedIds[id] = true;
     resolvedFiles.push(file);

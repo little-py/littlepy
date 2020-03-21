@@ -1,11 +1,12 @@
-import { Token, TokenPosition } from '../api/Token';
-import { CompiledModule } from './CompiledModule';
-import { Literal, LiteralType } from './Literal';
+import { Token, TokenPosition } from './Token';
+import { RowType } from './RowType';
+import { RowDescriptor } from './RowDescriptor';
+import { PyErrorType } from './ErrorType';
+import { PyError, PyErrorContext } from './Error';
 import { CompilerBlockContext } from './CompilerBlockContext';
-import { RowType } from '../api/RowType';
-import { RowDescriptor } from '../api/RowDescriptor';
-import { PyErrorType } from '../api/ErrorType';
-import { PyError, PyErrorContext } from '../api/Error';
+import { Literal, LiteralType } from './Literal';
+import { PyModule } from './Module';
+import { CodeFragment } from './CodeFragment';
 
 // it is for external usage
 /* istanbul ignore next */
@@ -61,7 +62,7 @@ export function getRowTypeDescription(rowType: RowType): string {
 }
 
 export class CompilerContext {
-  private readonly compiledCode: CompiledModule;
+  private readonly compiledCode: PyModule;
   private readonly blocks: CompilerBlockContext[] = [];
   private readonly identifierMap: { [key: string]: number } = {};
   private usedLabels = 0;
@@ -74,7 +75,7 @@ export class CompilerContext {
   private parsedLiterals = 0;
   private parsedIdentifiers = 0;
 
-  public constructor(code: CompiledModule) {
+  public constructor(code: PyModule) {
     this.compiledCode = code;
     this.update();
   }
@@ -185,8 +186,8 @@ export class CompilerContext {
     return this.blocks[this.blocks.length - 1];
   }
 
-  public enterBlock(position: TokenPosition): CompilerBlockContext {
-    const newContext = new CompilerBlockContext();
+  public enterBlock(position: TokenPosition, newFragment: CodeFragment): CompilerBlockContext {
+    const newContext = new CompilerBlockContext(newFragment);
     newContext.position = position;
     if (this.blocks.length) {
       newContext.parent = this.blocks[this.blocks.length - 1];

@@ -1,8 +1,8 @@
-import { FunctionBody } from '../common/FunctionBody';
+import { FunctionBody } from './FunctionBody';
 import { Literal } from './Literal';
-import { Token } from '../api/Token';
-import { PyModule } from '../api/Module';
-import { PyError } from '../api/Error';
+import { Token } from './Token';
+import { PyModule } from './Module';
+import { PyError } from './Error';
 
 /* istanbul ignore next */
 export class CompiledModule extends PyModule {

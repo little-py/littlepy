@@ -1,16 +1,9 @@
 import { DelimiterType, Token, TokenPosition, TokenType } from '../api/Token';
-import { CompilerContext } from './CompilerContext';
 import { LexicalContext } from './LexicalContext';
-import { GeneratedCode } from '../common/Instructions';
 import { KeywordType } from '../api/Keyword';
-import { CodeGenerator } from './CodeGenerator';
-import { CompiledModule } from './CompiledModule';
-import { Literal, LiteralType } from './Literal';
-import { InstructionType } from '../common/InstructionType';
+import { CompiledModule } from '../api/CompiledModule';
 import { PyErrorType } from '../api/ErrorType';
-import { ArgumentType, FunctionArgument, FunctionBody, FunctionType } from '../common/FunctionBody';
-import { ReferenceScope } from '../common/ReferenceScope';
-import { CompilerBlockContext, CompilerBlockType } from './CompilerBlockContext';
+import { ArgumentType, FunctionArgument, FunctionBody, FunctionType } from '../api/FunctionBody';
 import {
   getTokenOperatorPriority,
   isBinaryOperator,
@@ -33,6 +26,12 @@ import {
 } from './TokenUtils';
 import { LexicalAnalyzer } from './LexicalAnalyzer';
 import { RowType } from '../api/RowType';
+import { CompilerContext } from '../api/CompilerContext';
+import { CodeFragment } from '../api/CodeFragment';
+import { CodeGenerator } from '../api/CodeGenerator';
+import { ReferenceScope } from '../api/ReferenceScope';
+import { CompilerBlockContext, CompilerBlockType } from '../api/CompilerBlockContext';
+import { Literal, LiteralType } from '../api/Literal';
 
 export class ExpressionCompiler {
   private _from: number;
@@ -41,12 +40,14 @@ export class ExpressionCompiler {
   private readonly _compilerContext: CompilerContext;
   private readonly _lexicalContext: LexicalContext;
   private readonly _compiledCode: CompiledModule;
+  private readonly _codeGenerator: CodeGenerator;
 
   public static compile({
     tokens,
     compiledCode,
     compilerContext,
     lexicalContext,
+    codeGenerator,
     start,
     end,
     parseTuple,
@@ -55,26 +56,35 @@ export class ExpressionCompiler {
     compiledCode: CompiledModule;
     compilerContext: CompilerContext;
     lexicalContext: LexicalContext;
+    codeGenerator: CodeGenerator;
     start: number;
     end?: number;
     parseTuple?: boolean;
-  }): GeneratedCode {
+  }): CodeFragment {
     if (end === undefined) {
       end = tokens.length;
     }
     if (parseTuple === undefined) {
       parseTuple = false;
     }
-    const compiler = new ExpressionCompiler(tokens, end, compilerContext, lexicalContext, compiledCode);
+    const compiler = new ExpressionCompiler(tokens, end, compilerContext, lexicalContext, compiledCode, codeGenerator);
     return compiler.compileInternal(start, parseTuple, false, false);
   }
 
-  public constructor(tokens: Token[], end: number, compilerContext: CompilerContext, lexicalContext: LexicalContext, compiledCode: CompiledModule) {
+  public constructor(
+    tokens: Token[],
+    end: number,
+    compilerContext: CompilerContext,
+    lexicalContext: LexicalContext,
+    compiledCode: CompiledModule,
+    codeGenerator: CodeGenerator,
+  ) {
     this._tokens = tokens;
     this._end = end;
     this._compilerContext = compilerContext;
     this._lexicalContext = lexicalContext;
     this._compiledCode = compiledCode;
+    this._codeGenerator = codeGenerator;
   }
 
   private getClosestToken(from: number): Token {
@@ -84,17 +94,17 @@ export class ExpressionCompiler {
     return this._tokens[from];
   }
 
-  private compileInternal(start: number, parseTuple: boolean, parseComprehension: boolean, ignoreIf: boolean): GeneratedCode {
+  private compileInternal(start: number, parseTuple: boolean, parseComprehension: boolean, ignoreIf: boolean): CodeFragment {
     const savedFrom = this._from;
     this._from = start;
     const startToken = this._tokens[start];
-    const failedResult = new GeneratedCode();
+    const failedResult = this._codeGenerator.createFragment();
     failedResult.success = false;
     let createdTuple;
-    const parts: GeneratedCode[] = [];
+    const parts: CodeFragment[] = [];
 
     for (;;) {
-      const values: GeneratedCode[] = [];
+      const values: CodeFragment[] = [];
       const operators: Token[] = [];
 
       let token: Token = null;
@@ -146,7 +156,7 @@ export class ExpressionCompiler {
             return argument;
           }
           this._from = argument.finish;
-          values.push(CodeGenerator.unaryOperators([token], argument));
+          values.push(this._codeGenerator.unaryOperators([token], argument));
           continue;
         }
         const unaryOperators: Token[] = [];
@@ -223,7 +233,7 @@ export class ExpressionCompiler {
           this._from = valueResult.finish;
         }
         if (unaryOperators.length) {
-          values[values.length - 1] = CodeGenerator.unaryOperators(unaryOperators, values[values.length - 1]);
+          values[values.length - 1] = this._codeGenerator.unaryOperators(unaryOperators, values[values.length - 1]);
         }
       }
 
@@ -270,9 +280,9 @@ export class ExpressionCompiler {
         break;
       }
     }
-    let result: GeneratedCode;
+    let result: CodeFragment;
     if (createdTuple) {
-      result = CodeGenerator.tuple(parts, startToken.getPosition());
+      result = this._codeGenerator.tuple(parts, startToken.getPosition());
       result.finish = parts[parts.length - 1].finish;
     } else {
       result = parts[0];
@@ -281,8 +291,8 @@ export class ExpressionCompiler {
     return result;
   }
 
-  private compileOperators(values: GeneratedCode[], operators: Token[]): GeneratedCode {
-    const result = new GeneratedCode();
+  private compileOperators(values: CodeFragment[], operators: Token[]): CodeFragment {
+    const result = this._codeGenerator.createFragment();
     result.success = false;
     while (values.length > 1) {
       let maxOperator = 0;
@@ -306,7 +316,12 @@ export class ExpressionCompiler {
           maxOperator = i;
         }
       }
-      const newValue = CodeGenerator.binaryOperator(values[maxOperator], operators[maxOperator], values[maxOperator + 1], this._compilerContext);
+      const newValue = this._codeGenerator.binaryOperator(
+        values[maxOperator],
+        operators[maxOperator],
+        values[maxOperator + 1],
+        this._compilerContext,
+      );
       if (!newValue.success) {
         return newValue;
       }
@@ -357,9 +372,9 @@ export class ExpressionCompiler {
     return this.isLeftSquareBracket(index);
   }
 
-  private appendFunctionCall(ret: GeneratedCode, position: TokenPosition, parentAt0: boolean): boolean {
+  private appendFunctionCall(ret: CodeFragment, position: TokenPosition, parentAt0: boolean): boolean {
     let token = this._tokens[this._from];
-    const args: GeneratedCode[] = [];
+    const args: CodeFragment[] = [];
     this._from++;
     this._compilerContext.setRowType(RowType.FunctionCall);
     let namedStarted = false;
@@ -379,7 +394,7 @@ export class ExpressionCompiler {
       }
       if (isRightBracket(token)) {
         this._from++;
-        CodeGenerator.appendFunctionCall(ret, args, this._compilerContext, position, parentAt0);
+        this._codeGenerator.appendFunctionCall(ret, args, this._compilerContext, position, parentAt0);
         return true;
       }
       if (namedStarted && !argName) {
@@ -408,13 +423,13 @@ export class ExpressionCompiler {
     }
   }
 
-  private compileIdentifierAndFunctionIndexer(): GeneratedCode {
+  private compileIdentifierAndFunctionIndexer(): CodeFragment {
     const first = this._tokens[this._from];
     if (!this.isAnyAccessor(this._from + 1)) {
       if (isIdentifier(first)) {
         const block = this._compilerContext.getCurrentBlock();
         const scopeType = block.scopeChange[first.identifier];
-        const reference = CodeGenerator.createVarReference(
+        const reference = this._codeGenerator.createVarReference(
           first.identifier,
           scopeType !== undefined ? scopeType : ReferenceScope.Default,
           first.getPosition(),
@@ -424,8 +439,8 @@ export class ExpressionCompiler {
       }
     }
     this._from++;
-    const ret = new GeneratedCode();
-    ret.add(InstructionType.ReadObject, first.getPosition(), first.identifier, ReferenceScope.Default);
+    const ret = this._codeGenerator.createFragment();
+    this._codeGenerator.appendReadObject(ret, first.getPosition(), first.identifier);
     ret.success = true;
     this.compileAnyAccessor(ret, first.identifier);
     if (!ret.success) {
@@ -436,14 +451,14 @@ export class ExpressionCompiler {
     return ret;
   }
 
-  private compileAnyAccessor(ret: GeneratedCode, fromIdentifier?: number) {
+  private compileAnyAccessor(ret: CodeFragment, fromIdentifier?: number) {
     while (this.isAnyAccessor(this._from)) {
       const current = this._tokens[this._from];
       if (this.isPropertyAccessor(this._from)) {
         const identifier = this._tokens[this._from + 1].identifier;
         this._from += 2;
         if (!this.isAnyAccessor(this._from)) {
-          CodeGenerator.appendPropertyReference(ret, 0, identifier, current.getPosition());
+          this._codeGenerator.appendPropertyReference(ret, 0, identifier, current.getPosition());
           break;
         }
         if (this.isLeftBracket(this._from)) {
@@ -451,10 +466,10 @@ export class ExpressionCompiler {
           this._compilerContext.updateRowDescriptor({
             functionName: this._compiledCode.identifiers[identifier],
           });
-          ret.add(InstructionType.ReadProperty, current.getPosition(), identifier, 0, 1);
+          this._codeGenerator.appendReadProperty(ret, current.getPosition(), identifier, 0, 1);
           this.appendFunctionCall(ret, current.getPosition(), true);
         } else {
-          ret.add(InstructionType.ReadProperty, current.getPosition(), identifier, 0, 0);
+          this._codeGenerator.appendReadProperty(ret, current.getPosition(), identifier, 0, 0);
           continue;
         }
       }
@@ -466,8 +481,8 @@ export class ExpressionCompiler {
           return;
         }
         this._from = indexArg.finish;
-        let indexTo: GeneratedCode = null;
-        let indexInterval: GeneratedCode = null;
+        let indexTo: CodeFragment = null;
+        let indexInterval: CodeFragment = null;
         let token = this._tokens[this._from];
         if (isColon(token)) {
           this._compilerContext.updateRowDescriptor({
@@ -492,30 +507,30 @@ export class ExpressionCompiler {
         }
         if (!isRightSquareBracket(token)) {
           this._compilerContext.addError(PyErrorType.ExpectedEndOfIndexer, current);
-          const ret = new GeneratedCode();
+          const ret = this._codeGenerator.createFragment();
           ret.success = false;
           return;
         }
         this._from++;
         if (!this.isAnyAccessor(this._from)) {
           if (indexTo) {
-            CodeGenerator.appendArrayRange(ret, 0, indexArg, indexTo, indexInterval, current.getPosition(), true);
+            this._codeGenerator.appendArrayRange(ret, 0, indexArg, indexTo, indexInterval, current.getPosition(), true);
           } else {
-            CodeGenerator.appendArrayIndexerReference(ret, 0, indexArg, current.getPosition());
+            this._codeGenerator.appendArrayIndexerReference(ret, 0, indexArg, current.getPosition());
           }
           break;
         }
         if (indexTo) {
-          CodeGenerator.appendArrayRange(ret, 0, indexArg, indexTo, indexInterval, current.getPosition(), false);
+          this._codeGenerator.appendArrayRange(ret, 0, indexArg, indexTo, indexInterval, current.getPosition(), false);
         } else {
-          CodeGenerator.appendTo(ret, indexArg, 1);
-          ret.add(InstructionType.ReadArrayIndex, current.getPosition(), 0, 1, 0);
+          this._codeGenerator.appendTo(ret, indexArg, 1);
+          this._codeGenerator.appendReadArrayIndex(ret, current.getPosition(), 0, 1, 0);
         }
         continue;
       }
       if (this.isLeftBracket(this._from)) {
         if (!this.appendFunctionCall(ret, current.getPosition(), false)) {
-          const ret = new GeneratedCode();
+          const ret = this._codeGenerator.createFragment();
           ret.success = false;
           return;
         }
@@ -529,7 +544,7 @@ export class ExpressionCompiler {
     }
   }
 
-  private compileComprehension(value: GeneratedCode): GeneratedCode {
+  private compileComprehension(value: CodeFragment): CodeFragment {
     this._compilerContext.updateRowDescriptor({
       hasComprehension: true,
     });
@@ -564,7 +579,7 @@ export class ExpressionCompiler {
           return value;
         }
         this._from = expression.finish;
-        const part = new CompilerBlockContext();
+        const part = new CompilerBlockContext(this._codeGenerator.createFragment());
         part.position = forToken.getPosition();
         part.type = CompilerBlockType.For;
         part.arg1 = id;
@@ -578,7 +593,7 @@ export class ExpressionCompiler {
           return value;
         }
         this._from = expression.finish;
-        const part = new CompilerBlockContext();
+        const part = new CompilerBlockContext(this._codeGenerator.createFragment());
         part.position = token.getPosition();
         part.type = CompilerBlockType.If;
         part.arg2 = expression;
@@ -588,12 +603,12 @@ export class ExpressionCompiler {
       }
     }
 
-    return CodeGenerator.comprehension(value, parts, this._compilerContext);
+    return this._codeGenerator.comprehension(value, parts, this._compilerContext);
   }
 
-  private compileListInstantiation(startToken: Token, values: GeneratedCode[]): boolean {
+  private compileListInstantiation(startToken: Token, values: CodeFragment[]): boolean {
     this._compilerContext.setRowType(RowType.List);
-    const records: GeneratedCode[] = [];
+    const records: CodeFragment[] = [];
     let token = startToken;
     for (;;) {
       let prevToken = token || startToken;
@@ -635,7 +650,7 @@ export class ExpressionCompiler {
       values.push(records[0]);
       return true;
     }
-    const array = CodeGenerator.list(records, startToken.getPosition());
+    const array = this._codeGenerator.list(records, startToken.getPosition());
     if (!array.success) {
       return false;
     }
@@ -643,9 +658,9 @@ export class ExpressionCompiler {
     return true;
   }
 
-  private compileTupleInstantiation(startToken: Token, values: GeneratedCode[]): boolean {
+  private compileTupleInstantiation(startToken: Token, values: CodeFragment[]): boolean {
     this._compilerContext.setRowType(RowType.Tuple);
-    const records: GeneratedCode[] = [];
+    const records: CodeFragment[] = [];
     let token = startToken;
     for (;;) {
       let prevToken = token;
@@ -688,7 +703,7 @@ export class ExpressionCompiler {
       // it is comma
       this._from++;
     }
-    const tuple = CodeGenerator.tuple(records, startToken.getPosition());
+    const tuple = this._codeGenerator.tuple(records, startToken.getPosition());
     if (!tuple.success) {
       return false;
     }
@@ -696,9 +711,9 @@ export class ExpressionCompiler {
     return true;
   }
 
-  private compileSetOrDictionary(startToken: Token, values: GeneratedCode[]): boolean {
+  private compileSetOrDictionary(startToken: Token, values: CodeFragment[]): boolean {
     this._compilerContext.setRowType(RowType.Set);
-    const records: GeneratedCode[] = [];
+    const records: CodeFragment[] = [];
     const literals: string[] = [];
     let isDictionary = false;
     let token = startToken;
@@ -761,8 +776,8 @@ export class ExpressionCompiler {
       this._from++;
     }
     const code = isDictionary
-      ? CodeGenerator.dictionary(literals, records, this._compilerContext, startToken.getPosition())
-      : CodeGenerator.set(records, startToken.getPosition());
+      ? this._codeGenerator.dictionary(literals, records, this._compilerContext, startToken.getPosition())
+      : this._codeGenerator.set(records, startToken.getPosition());
     if (!code.success) {
       return false;
     }
@@ -770,7 +785,7 @@ export class ExpressionCompiler {
     return true;
   }
 
-  private compileIfExpression(condition: GeneratedCode, from: Token): GeneratedCode {
+  private compileIfExpression(condition: CodeFragment, from: Token): CodeFragment {
     this._compilerContext.updateRowDescriptor({
       hasIfExpression: true,
     });
@@ -784,7 +799,7 @@ export class ExpressionCompiler {
     if (this._from >= this._end || !isKeywordElse(token)) {
       const source = token || this._tokens[this._tokens.length - 1];
       this._compilerContext.addError(PyErrorType.IfExpressionExpectedElse, source);
-      const ret = new GeneratedCode();
+      const ret = this._codeGenerator.createFragment();
       ret.success = false;
       return ret;
     }
@@ -797,12 +812,12 @@ export class ExpressionCompiler {
 
     this._from = elseExpression.finish;
 
-    const ret = CodeGenerator.conditionalExpression(condition, ifExpression, elseExpression, this._compilerContext, from.getPosition());
+    const ret = this._codeGenerator.conditionalExpression(condition, ifExpression, elseExpression, this._compilerContext, from.getPosition());
     ret.finish = this._from;
     return ret;
   }
 
-  private compileLambdaExpression(startToken: Token): GeneratedCode {
+  private compileLambdaExpression(startToken: Token): CodeFragment {
     this._compilerContext.updateRowDescriptor({
       hasLambda: true,
     });
@@ -816,7 +831,7 @@ export class ExpressionCompiler {
       }
       if (!isIdentifier(token) || (!isColon(nextToken) && !isComma(nextToken))) {
         this._compilerContext.addError(PyErrorType.ExpectedFunctionArgumentList, token || this._tokens[this._tokens.length - 1]);
-        const ret = new GeneratedCode();
+        const ret = this._codeGenerator.createFragment();
         ret.success = false;
         return ret;
       }
@@ -827,7 +842,7 @@ export class ExpressionCompiler {
       }
     }
     const body = this.compileInternal(this._from, false, false, false);
-    body.add(InstructionType.Ret, startToken.getPosition(), 0);
+    this._codeGenerator.appendReturnValue(body, startToken.getPosition(), 0);
     this._from = body.finish;
     const func = new FunctionBody();
     const funcDef = this._compiledCode.functions.length;
@@ -842,23 +857,23 @@ export class ExpressionCompiler {
       ret.initReg = -1;
       return ret;
     });
-    func.code = body.code;
-    return CodeGenerator.readFunctionDef(funcDef, startToken.getPosition());
+    func.code = this._codeGenerator.getFullCode(body);
+    return this._codeGenerator.readFunctionDef(funcDef, startToken.getPosition());
   }
 
-  private compileValue(from: number): GeneratedCode {
+  private compileValue(from: number): CodeFragment {
     const token = this._tokens[from];
-    let ret: GeneratedCode;
+    let ret: CodeFragment;
     if (token.type === TokenType.Keyword) {
       switch (token.keyword) {
         case KeywordType.False:
-          ret = CodeGenerator.bool(0, token.getPosition());
+          ret = this._codeGenerator.bool(0, token.getPosition());
           break;
         case KeywordType.True:
-          ret = CodeGenerator.bool(1, token.getPosition());
+          ret = this._codeGenerator.bool(1, token.getPosition());
           break;
         case KeywordType.None:
-          ret = CodeGenerator.none(token.getPosition());
+          ret = this._codeGenerator.none(token.getPosition());
           break;
       }
       if (ret && ret.success) {
@@ -868,14 +883,14 @@ export class ExpressionCompiler {
     }
     if (!isLiteral(token)) {
       this._compilerContext.addError(PyErrorType.ExpectedLiteral, token);
-      ret = new GeneratedCode();
+      ret = this._codeGenerator.createFragment();
       ret.success = false;
       return ret;
     }
     const literal = this._compiledCode.literals[token.literal];
     if (literal.type === LiteralType.FormattedString) {
       let hasErrors = false;
-      const values: GeneratedCode[] = [];
+      const values: CodeFragment[] = [];
       const newValue = literal.string.replace(/{([^}]+)}/g, (_, arg) => {
         const savedTokens = this._compiledCode.tokens;
         this._compiledCode.tokens = [];
@@ -887,7 +902,14 @@ export class ExpressionCompiler {
           t => t.type !== TokenType.Indent && t.type !== TokenType.Dedent && t.type !== TokenType.NewLine,
         );
         this._compiledCode.tokens = savedTokens;
-        const compiler = new ExpressionCompiler(tokens, tokens.length, this._compilerContext, this._lexicalContext, this._compiledCode);
+        const compiler = new ExpressionCompiler(
+          tokens,
+          tokens.length,
+          this._compilerContext,
+          this._lexicalContext,
+          this._compiledCode,
+          this._codeGenerator,
+        );
         const value = compiler.compileInternal(0, true, true, true);
         const ret = `{${values.length.toString()}}`;
         values.push(value);
@@ -897,7 +919,7 @@ export class ExpressionCompiler {
         return ret;
       });
       if (hasErrors) {
-        ret = new GeneratedCode();
+        ret = this._codeGenerator.createFragment();
         ret.success = false;
         return ret;
       }
@@ -907,9 +929,9 @@ export class ExpressionCompiler {
       };
       this._compiledCode.literals.push(newLiteral);
       this._compilerContext.update();
-      ret = CodeGenerator.formattedLiteral(newLiteral, values, this._compilerContext, token.getPosition());
+      ret = this._codeGenerator.formattedLiteral(newLiteral, values, this._compilerContext, token.getPosition());
     } else {
-      ret = CodeGenerator.literal(literal, this._compilerContext, token.getPosition());
+      ret = this._codeGenerator.literal(literal, this._compilerContext, token.getPosition());
     }
     if (ret.success) {
       ret.finish = from + 1;

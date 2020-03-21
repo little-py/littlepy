@@ -1,4 +1,3 @@
-import { Instruction } from '../common/Instructions';
 import { GlobalScope, ObjectScope } from './ObjectScope';
 import { StackEntry, StackEntryType } from './StackEntry';
 import { NumberObject } from './objects/NumberObject';
@@ -10,10 +9,6 @@ import { Callable } from '../api/Callable';
 import { ExceptionObject } from './objects/ExceptionObject';
 import { StringObject } from './objects/StringObject';
 import { BytesObject } from './objects/BytesObject';
-import { CompiledModule } from '../compiler/CompiledModule';
-import { ArgumentType, FunctionArgument, FunctionBody, FunctionType } from '../common/FunctionBody';
-import { LiteralType } from '../compiler/Literal';
-import { InstructionType } from '../common/InstructionType';
 import { ContinueContext, ContinueContextType } from './ContinueContext';
 import { ModuleObject } from './objects/ModuleObject';
 import { ReferenceObject, ReferenceType } from './objects/ReferenceObject';
@@ -33,7 +28,6 @@ import { PyBreakpoint } from '../api/Breakpoint';
 import { IterableObject } from './objects/IterableObject';
 import { ContainerObject } from './objects/ContainerObject';
 import { ExceptionType } from '../api/ExceptionType';
-import { ReferenceScope } from '../common/ReferenceScope';
 import { FrozenSetObject } from './objects/FrozenSetObject';
 import { embeddedModules } from './embedded/EmbeddedModules';
 import { stringFormat } from './FormatString';
@@ -45,6 +39,13 @@ import { objectUtils } from './ObjectUtilsImpl';
 import { PyObject } from '../api/Object';
 import { PyFunction } from '../api/Function';
 import { UniqueErrorCode } from '../api/UniqueErrorCode';
+import { CompiledModule } from '../api/CompiledModule';
+import { ArgumentType, FunctionArgument, FunctionBody, FunctionType } from '../api/FunctionBody';
+import { Instruction } from '../generator/Instructions';
+import { ReferenceScope } from '../api/ReferenceScope';
+import { InstructionType } from '../generator/InstructionType';
+import { LiteralType } from '../api/Literal';
+import { FullCodeInst } from '../generator/FullCodeInst';
 
 setObjectUtils(objectUtils);
 
@@ -127,7 +128,7 @@ export class RunContext extends RunContextBase {
       return;
     }
     const func = functionStack.functionBody;
-    const instruction = functionStack.functionBody.code[this._currentInstruction];
+    const instruction = (functionStack.functionBody.code as FullCodeInst).instructions[this._currentInstruction];
     this._position = {
       module: func.module,
       func,
@@ -166,7 +167,7 @@ export class RunContext extends RunContextBase {
 
   public debug() {
     const functionStack = this.getCurrentFunctionStack();
-    const code = functionStack.functionBody.code;
+    const code = (functionStack.functionBody.code as FullCodeInst).instructions;
     const current = code[functionStack.instruction];
     if (current) {
       this.updateLocation(current);
@@ -452,13 +453,13 @@ export class RunContext extends RunContextBase {
     }
     this._position = undefined;
     const functionStack = this.getCurrentFunctionStack();
-    const code = functionStack.functionBody.code;
+    const code = functionStack.functionBody.code as FullCodeInst;
     try {
-      if (functionStack.instruction >= code.length) {
+      if (functionStack.instruction >= code.instructions.length) {
         this.onCodeBlockFinished(functionStack);
         return true;
       }
-      const current = code[functionStack.instruction];
+      const current = code.instructions[functionStack.instruction];
       this._currentInstruction = functionStack.instruction;
       this.updateLocation(current);
       functionStack.instruction++;
@@ -1177,7 +1178,7 @@ export class RunContext extends RunContextBase {
 
   private stepInternal(current: Instruction) {
     const functionStack = this.getCurrentFunctionStack();
-    const module = functionStack.functionBody.module;
+    const module = functionStack.functionBody.module as CompiledModule;
     switch (current.type) {
       case InstructionType.LeaveCycle:
         this.stepLeaveCycle();
@@ -1475,8 +1476,9 @@ export class RunContext extends RunContextBase {
         stackEntry.scope.objects[argName] = args[i];
       }
     }
-    if (stackEntry.functionBody.code.length > 0) {
-      this.updateLocation(stackEntry.functionBody.code[0]);
+    const code = stackEntry.functionBody.code as FullCodeInst;
+    if (code.instructions.length > 0) {
+      this.updateLocation(code.instructions[0]);
     }
     return stackEntry;
   }
@@ -1514,7 +1516,7 @@ export class RunContext extends RunContextBase {
   }
 
   private getCurrentModule(): CompiledModule {
-    return this.getCurrentFunctionStack().functionBody.module;
+    return this.getCurrentFunctionStack().functionBody.module as CompiledModule;
   }
 
   private createLiteral(literalId: number, functionStack: StackEntry, startReg: number): PyObject {
@@ -1726,7 +1728,7 @@ export class RunContext extends RunContextBase {
   private exitFunction(value: PyObject) {
     const context = new ContinueContext();
     context.stack = this.getCurrentFunctionStack();
-    context.instruction = context.stack.functionBody.code.length;
+    context.instruction = (context.stack.functionBody.code as FullCodeInst).instructions.length;
     context.returnValue = value;
     if (value instanceof NoneObject && context.stack.defaultReturnValue) {
       context.returnValue = context.stack.defaultReturnValue;
@@ -1806,7 +1808,7 @@ export class RunContext extends RunContextBase {
     if (!this._currentStack.trySection || this._currentStack.finallyHandled) {
       return false;
     }
-    const instruction = functionStack.functionBody.code[this._currentStack.endInstruction];
+    const instruction = (functionStack.functionBody.code as FullCodeInst).instructions[this._currentStack.endInstruction];
     if (instruction.type !== InstructionType.GotoFinally) {
       return false;
     }
@@ -1836,16 +1838,16 @@ export class RunContext extends RunContextBase {
         continue;
       }
       const functionStack = entry.functionEntry;
-      const code = functionStack.functionBody.code;
+      const code = functionStack.functionBody.code as FullCodeInst;
       let from = entry.endInstruction;
-      if (code[from].type === InstructionType.GotoFinally) {
+      if (code.instructions[from].type === InstructionType.GotoFinally) {
         from++;
       }
       let suitableLabel = -1;
-      while (from < code.length && code[from].type === InstructionType.GotoExcept) {
-        const id = code[from].arg1;
+      while (from < code.instructions.length && code.instructions[from].type === InstructionType.GotoExcept) {
+        const id = code.instructions[from].arg1;
         if (id === -1) {
-          suitableLabel = code[from].arg2;
+          suitableLabel = code.instructions[from].arg2;
           break;
         }
         const classObject = this.getObject(functionStack.functionBody.module.identifiers[id], undefined, true);
@@ -1855,7 +1857,7 @@ export class RunContext extends RunContextBase {
           continue;
         }
         if (classObject instanceof ExceptionClassObject && exception.matchesTo(classObject)) {
-          suitableLabel = code[from].arg2;
+          suitableLabel = code.instructions[from].arg2;
           break;
         }
         from++;

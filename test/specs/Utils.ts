@@ -1,8 +1,8 @@
-import { CompiledModule } from '../../src/compiler/CompiledModule';
 import { Compiler } from '../../src/compiler/Compiler';
 import { RunContext } from '../../src/machine/RunContext';
 import { PyBreakpoint } from '../../src/api/Breakpoint';
 import { CompileOptions } from '../../src/api/CompileOptions';
+import { CompiledModule } from '../../src/api/CompiledModule';
 
 export function compileModule(source: string, name: string, options?: CompileOptions) {
   const pos = source.indexOf('\n');
