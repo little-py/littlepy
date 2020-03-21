@@ -424,7 +424,7 @@ export class CodeGeneratorInst implements CodeGenerator {
 
   forCycleInternal(ret: CodeFragmentInst, forPart: CompilerBlockContext, noBreakPart: CompilerBlockContext, context: CompilerContext) {
     this.appendTo(ret, forPart.arg2 as CodeFragmentInst);
-    ret.add(InstructionType.ReadProperty, forPart.position, context.getIdentifier('__iter__'), 0, 1);
+    ret.add(InstructionType.ReadProperty, forPart.position, context.getIdentifierCode('__iter__'), 0, 1);
     ret.add(InstructionType.CallMethod, forPart.position, 0, 1, 0);
     const endLabel = context.getNewLabel();
     const startLabel = context.getNewLabel();
@@ -432,7 +432,7 @@ export class CodeGeneratorInst implements CodeGenerator {
     ret.add(InstructionType.ForCycle, forPart.position, endLabel, noBreakLabel);
     ret.add(InstructionType.CreateVarRef, forPart.position, forPart.arg1, 1, ReferenceScope.Default);
     ret.add(InstructionType.Label, forPart.position, startLabel);
-    ret.add(InstructionType.ReadProperty, forPart.position, context.getIdentifier('__next__'), 0, 3);
+    ret.add(InstructionType.ReadProperty, forPart.position, context.getIdentifierCode('__next__'), 0, 3);
     ret.add(InstructionType.CallMethod, forPart.position, 0, 3, 2);
     ret.add(InstructionType.CopyValue, forPart.position, 2, 1);
     this.appendTo(ret, forPart.blockCode as CodeFragmentInst, 2);
@@ -584,7 +584,7 @@ export class CodeGeneratorInst implements CodeGenerator {
     const ret = new CodeFragmentInst();
     ret.add(InstructionType.CreateVarRef, position, identifier, 0, ReferenceScope.Default);
     this.appendTo(ret, expression, 1);
-    ret.add(InstructionType.ReadProperty, position, context.getIdentifier('__enter__'), 1, 2);
+    ret.add(InstructionType.ReadProperty, position, context.getIdentifierCode('__enter__'), 1, 2);
     ret.add(InstructionType.CallMethod, position, 1, 2, 2);
     ret.add(InstructionType.CopyValue, position, 2, 0);
     ret.add(InstructionType.EnterTry, position, block.code.length + 2);
@@ -596,9 +596,9 @@ export class CodeGeneratorInst implements CodeGenerator {
 
     // call __exit__ with exception
     ret.add(InstructionType.ReadObject, position, identifier, 0);
-    ret.add(InstructionType.ReadProperty, position, context.getIdentifier('__exit__'), 0, 1);
-    ret.add(InstructionType.ReadObject, position, context.getIdentifier('__sys__'), 2);
-    ret.add(InstructionType.ReadProperty, position, context.getIdentifier('exc_info'), 2, 3);
+    ret.add(InstructionType.ReadProperty, position, context.getIdentifierCode('__exit__'), 0, 1);
+    ret.add(InstructionType.ReadObject, position, context.getIdentifierCode('__sys__'), 2);
+    ret.add(InstructionType.ReadProperty, position, context.getIdentifierCode('exc_info'), 2, 3);
     ret.add(InstructionType.CallMethod, position, 2, 3, 2);
     ret.add(InstructionType.RegArg, position, 2, 0, 1);
     ret.add(InstructionType.CallMethod, position, 0, 1, 0);
@@ -616,7 +616,7 @@ export class CodeGeneratorInst implements CodeGenerator {
 
     // call __exit__ without exception
     ret.add(InstructionType.ReadObject, position, identifier, 0);
-    ret.add(InstructionType.ReadProperty, position, context.getIdentifier('__exit__'), 0, 1);
+    ret.add(InstructionType.ReadProperty, position, context.getIdentifierCode('__exit__'), 0, 1);
     ret.add(InstructionType.None, position, 2);
     ret.add(InstructionType.RegArg, position, 2, 0, 0);
     ret.add(InstructionType.RegArg, position, 2, 1, 0);
@@ -629,7 +629,7 @@ export class CodeGeneratorInst implements CodeGenerator {
   }
 
   importDirective(path: string, context: CompilerContext, position: TokenPosition): CodeFragmentInst {
-    const id = context.getIdentifier(path);
+    const id = context.getIdentifierCode(path);
     const ret = new CodeFragmentInst();
     ret.add(InstructionType.Import, position, id);
     ret.success = true;
@@ -637,8 +637,8 @@ export class CodeGeneratorInst implements CodeGenerator {
   }
 
   importAsDirective(path: string, rename: string, context: CompilerContext, position: TokenPosition): CodeFragmentInst {
-    const id = context.getIdentifier(path);
-    const as = context.getIdentifier(rename);
+    const id = context.getIdentifierCode(path);
+    const as = context.getIdentifierCode(rename);
     const ret = new CodeFragmentInst();
     ret.add(InstructionType.ImportAs, position, id, as);
     ret.success = true;
@@ -646,8 +646,8 @@ export class CodeGeneratorInst implements CodeGenerator {
   }
 
   importFromDirective(func: string, module: string, context: CompilerContext, position: TokenPosition): CodeFragmentInst {
-    const funcId = context.getIdentifier(func);
-    const moduleId = context.getIdentifier(module);
+    const funcId = context.getIdentifierCode(func);
+    const moduleId = context.getIdentifierCode(module);
     const ret = new CodeFragmentInst();
     ret.add(InstructionType.ImportFrom, position, funcId, moduleId);
     ret.success = true;
@@ -740,7 +740,7 @@ export class CodeGeneratorInst implements CodeGenerator {
         code.add(InstructionType.RegArg, position, argReg++, argIndex);
         argIndex++;
       } else {
-        const nameId = compilerContext.getIdentifier(arg.nameLiteral);
+        const nameId = compilerContext.getIdentifierCode(arg.nameLiteral);
         code.add(InstructionType.RegArgName, position, argReg++, nameId);
       }
     }
@@ -898,7 +898,7 @@ export class CodeGeneratorInst implements CodeGenerator {
 
   createReference(identifiers: string[], compilerContext: CompilerContext, position: TokenPosition): CodeFragmentInst {
     const ret = new CodeFragmentInst();
-    ret.add(InstructionType.CreateVarRef, position, compilerContext.getIdentifier(identifiers[0]), 0, ReferenceScope.Default);
+    ret.add(InstructionType.CreateVarRef, position, compilerContext.getIdentifierCode(identifiers[0]), 0, ReferenceScope.Default);
     ret.success = true;
     return ret;
   }
@@ -972,7 +972,7 @@ export class CodeGeneratorInst implements CodeGenerator {
     const ret = new CodeFragmentInst();
     ret.add(InstructionType.Dictionary, position, 0);
     for (let i = 0; i < literals.length; i++) {
-      const identifier = compilerContext.getIdentifier(literals[i]);
+      const identifier = compilerContext.getIdentifierCode(literals[i]);
       this.appendTo(ret, values[i], 1);
       ret.add(InstructionType.DictionaryAdd, null, 1, identifier, 0);
     }

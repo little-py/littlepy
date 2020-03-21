@@ -51,7 +51,7 @@ export interface CodeGenerator {
     position: TokenPosition,
     isReference: boolean,
   ): void;
-  createVarReference(identifier: number, scope: ReferenceScope, position: TokenPosition): CodeFragment;
+  createVarReference(identifier: number, scope: ReferenceScope, position: TokenPosition, compilerContext: CompilerContext): CodeFragment;
   list(records: CodeFragment[], position: TokenPosition): CodeFragment;
   tuple(records: CodeFragment[], position: TokenPosition): CodeFragment;
   dictionary(literals: string[], values: CodeFragment[], compilerContext: CompilerContext, position: TokenPosition): CodeFragment;
@@ -75,8 +75,15 @@ export interface CodeGenerator {
   appendCopyValue(fragment: CodeFragment): void;
   hasArrayIndex(fragment: CodeFragment): boolean;
   hasOperator(fragment: CodeFragment): boolean;
-  appendReadObject(fragment: CodeFragment, position: TokenPosition, identifier: number): void;
-  appendReadProperty(fragment: CodeFragment, position: TokenPosition, identifier: number, from: number, to: number): void;
+  appendReadObject(fragment: CodeFragment, position: TokenPosition, identifier: number, compilerContext: CompilerContext): void;
+  appendReadProperty(
+    fragment: CodeFragment,
+    position: TokenPosition,
+    identifier: number,
+    from: number,
+    to: number,
+    compilerContext: CompilerContext,
+  ): void;
   appendReadArrayIndex(fragment: CodeFragment, position: TokenPosition, from: number, index: number, to: number): void;
   appendReturnValue(fragment: CodeFragment, position: TokenPosition, from: number);
 }
