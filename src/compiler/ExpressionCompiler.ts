@@ -435,6 +435,9 @@ export class ExpressionCompiler {
           first.getPosition(),
           this._compilerContext,
         );
+        this._compilerContext.updateRowDescriptor({
+          introducedVariable: this._compiledCode.identifiers[first.identifier],
+        });
         this._from++;
         return reference;
       }
@@ -465,7 +468,7 @@ export class ExpressionCompiler {
         if (this.isLeftBracket(this._from)) {
           this._compilerContext.setRowType(RowType.FunctionCall);
           this._compilerContext.updateRowDescriptor({
-            functionName: this._compiledCode.identifiers[identifier],
+            functionName: [this._compiledCode.identifiers[identifier]],
           });
           this._codeGenerator.appendReadProperty(ret, current.getPosition(), identifier, 0, 1, this._compilerContext);
           this.appendFunctionCall(ret, current.getPosition(), true);
@@ -538,7 +541,7 @@ export class ExpressionCompiler {
         this._compilerContext.setRowType(RowType.FunctionCall);
         if (fromIdentifier !== undefined) {
           this._compilerContext.updateRowDescriptor({
-            functionName: this._compiledCode.identifiers[fromIdentifier],
+            functionName: [this._compiledCode.identifiers[fromIdentifier]],
           });
         }
       }
