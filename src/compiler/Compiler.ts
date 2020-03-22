@@ -1,14 +1,14 @@
-import {LexicalContext} from './LexicalContext';
-import {CompilerContext} from '../api/CompilerContext';
-import {DelimiterType, OperatorType, Token, TokenPosition, TokenType} from '../api/Token';
-import {ArgumentType, FunctionArgument, FunctionBody, FunctionType} from '../api/FunctionBody';
-import {KeywordType} from '../api/Keyword';
-import {ExpressionCompiler} from './ExpressionCompiler';
-import {CompiledModule} from '../api/CompiledModule';
-import {LexicalAnalyzer} from './LexicalAnalyzer';
-import {RowDescriptor} from '../api/RowDescriptor';
-import {RowType} from '../api/RowType';
-import {PyErrorType} from '../api/ErrorType';
+import { LexicalContext } from './LexicalContext';
+import { CompilerContext } from '../api/CompilerContext';
+import { DelimiterType, OperatorType, Token, TokenPosition, TokenType } from '../api/Token';
+import { ArgumentType, FunctionArgument, FunctionBody, FunctionType } from '../api/FunctionBody';
+import { KeywordType } from '../api/Keyword';
+import { ExpressionCompiler } from './ExpressionCompiler';
+import { CompiledModule } from '../api/CompiledModule';
+import { LexicalAnalyzer } from './LexicalAnalyzer';
+import { RowDescriptor } from '../api/RowDescriptor';
+import { RowType } from '../api/RowType';
+import { PyErrorType } from '../api/ErrorType';
 import {
   isAssignmentDelimiter,
   isBlockKeyword,
@@ -23,13 +23,13 @@ import {
   isRightBracket,
   isSemicolon,
 } from './TokenUtils';
-import {CompileOptions} from '../api/CompileOptions';
-import {CodeGenerator} from '../api/CodeGenerator';
-import {CodeGeneratorInst} from '../generator/CodeGeneratorInst';
-import {CompilerBlockContext, CompilerBlockType} from '../api/CompilerBlockContext';
-import {LiteralType} from '../api/Literal';
-import {CodeFragment} from '../api/CodeFragment';
-import {ReferenceScope} from '../api/ReferenceScope';
+import { CompileOptions } from '../api/CompileOptions';
+import { CodeGenerator } from '../api/CodeGenerator';
+import { CodeGeneratorInst } from '../generator/CodeGeneratorInst';
+import { CompilerBlockContext, CompilerBlockType } from '../api/CompilerBlockContext';
+import { LiteralType } from '../api/Literal';
+import { CodeFragment } from '../api/CodeFragment';
+import { ReferenceScope } from '../api/ReferenceScope';
 
 export class Compiler {
   private readonly _compiledModule: CompiledModule;
