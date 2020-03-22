@@ -8,6 +8,45 @@ import { Literal, LiteralType } from './Literal';
 import { PyModule } from './Module';
 import { CodeFragment } from './CodeFragment';
 
+function getRowTypePriority(rowType: RowType): number {
+  switch (rowType) {
+    case RowType.Unknown:
+    case RowType.Pass:
+      return 0;
+    case RowType.Comment:
+      return 1;
+    case RowType.Expression:
+      return 2;
+    case RowType.AssignmentOperator:
+      return 3;
+    case RowType.FunctionCall:
+      return 4;
+    case RowType.IfBlock:
+    case RowType.ElseBlock:
+    case RowType.ElifBlock:
+      return 5;
+    case RowType.TryBlock:
+    case RowType.ExceptBlock:
+    case RowType.FinallyBlock:
+      return 6;
+    case RowType.Return:
+    case RowType.Continue:
+    case RowType.Break:
+    case RowType.Yield:
+    case RowType.Raise:
+      return 7;
+    case RowType.ForCycle:
+    case RowType.WhileCycle:
+      return 8;
+    case RowType.FunctionDefinition:
+      return 9;
+    case RowType.Import:
+    case RowType.ImportAs:
+    case RowType.ImportFrom:
+      return 10;
+  }
+}
+
 // it is for external usage
 /* istanbul ignore next */
 export function getRowTypeDescription(rowType: RowType): string {
@@ -111,7 +150,21 @@ export class CompilerContext {
 
   public setRowType(type: RowType) {
     this.createRowDescriptor();
-    this.rowDescriptors[this.row].type = type;
+    const descriptor = this.rowDescriptors[this.row];
+    if (descriptor.type === type) {
+      return;
+    }
+    if (descriptor.type === RowType.Unknown) {
+      descriptor.type = type;
+    } else {
+      descriptor.subTypes = descriptor.subTypes || [];
+      if (getRowTypePriority(descriptor.type) < getRowTypePriority(type)) {
+        descriptor.subTypes.push(descriptor.type);
+        descriptor.type = type;
+      } else {
+        descriptor.subTypes.push(type);
+      }
+    }
   }
 
   public updateRowDescriptor(type: Partial<Omit<RowDescriptor, 'type'>>) {

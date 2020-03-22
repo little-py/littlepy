@@ -2,6 +2,7 @@ import { RowType } from './RowType';
 
 export class RowDescriptor {
   type: RowType;
+  subTypes?: RowType[];
   usesVariables?: boolean;
   isInline?: boolean;
   isArrayAssignment?: boolean;
@@ -10,8 +11,9 @@ export class RowDescriptor {
   hasRangeAccessor?: boolean;
   hasIfExpression?: boolean;
   hasComprehension?: boolean;
-  introducesVariable?: boolean;
+  introducedVariable?: string;
   hasLambda?: boolean;
-  functionName?: string;
+  functionName?: string[];
+  className?: string;
   literals?: string[];
 }

@@ -1,14 +1,14 @@
-import { LexicalContext } from './LexicalContext';
-import { CompilerContext } from '../api/CompilerContext';
-import { DelimiterType, OperatorType, Token, TokenPosition, TokenType } from '../api/Token';
-import { ArgumentType, FunctionArgument, FunctionBody, FunctionType } from '../api/FunctionBody';
-import { KeywordType } from '../api/Keyword';
-import { ExpressionCompiler } from './ExpressionCompiler';
-import { CompiledModule } from '../api/CompiledModule';
-import { LexicalAnalyzer } from './LexicalAnalyzer';
-import { RowDescriptor } from '../api/RowDescriptor';
-import { RowType } from '../api/RowType';
-import { PyErrorType } from '../api/ErrorType';
+import {LexicalContext} from './LexicalContext';
+import {CompilerContext} from '../api/CompilerContext';
+import {DelimiterType, OperatorType, Token, TokenPosition, TokenType} from '../api/Token';
+import {ArgumentType, FunctionArgument, FunctionBody, FunctionType} from '../api/FunctionBody';
+import {KeywordType} from '../api/Keyword';
+import {ExpressionCompiler} from './ExpressionCompiler';
+import {CompiledModule} from '../api/CompiledModule';
+import {LexicalAnalyzer} from './LexicalAnalyzer';
+import {RowDescriptor} from '../api/RowDescriptor';
+import {RowType} from '../api/RowType';
+import {PyErrorType} from '../api/ErrorType';
 import {
   isAssignmentDelimiter,
   isBlockKeyword,
@@ -23,13 +23,13 @@ import {
   isRightBracket,
   isSemicolon,
 } from './TokenUtils';
-import { CompileOptions } from '../api/CompileOptions';
-import { CodeGenerator } from '../api/CodeGenerator';
-import { CodeGeneratorInst } from '../generator/CodeGeneratorInst';
-import { CompilerBlockContext, CompilerBlockType } from '../api/CompilerBlockContext';
-import { LiteralType } from '../api/Literal';
-import { CodeFragment } from '../api/CodeFragment';
-import { ReferenceScope } from '../api/ReferenceScope';
+import {CompileOptions} from '../api/CompileOptions';
+import {CodeGenerator} from '../api/CodeGenerator';
+import {CodeGeneratorInst} from '../generator/CodeGeneratorInst';
+import {CompilerBlockContext, CompilerBlockType} from '../api/CompilerBlockContext';
+import {LiteralType} from '../api/Literal';
+import {CodeFragment} from '../api/CodeFragment';
+import {ReferenceScope} from '../api/ReferenceScope';
 
 export class Compiler {
   private readonly _compiledModule: CompiledModule;
@@ -662,6 +662,10 @@ export class Compiler {
     func.name = this._compiledModule.identifiers[identifier];
     func.module = this._compiledModule;
     func.inheritsFrom = inheritsFrom;
+    this._compilerContext.setRowType(RowType.Class);
+    this._compilerContext.updateRowDescriptor({
+      className: func.name,
+    });
 
     const block = this._compilerContext.enterBlock(first.getPosition(), this._codeGenerator.createFragment());
     block.type = CompilerBlockType.Class;
@@ -956,6 +960,10 @@ export class Compiler {
     block.indent = this._indent;
     block.arg1 = this._line[from + 1].identifier;
     block.arg2 = expression;
+
+    this._compilerContext.updateRowDescriptor({
+      introducedVariable: this._compiledModule.identifiers[block.arg1],
+    });
 
     return this.parseEndOfBlockDefinition(from + 2);
   }

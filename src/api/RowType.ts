@@ -30,4 +30,5 @@ export enum RowType {
   Dictionary = 'Dictionary',
   Tuple = 'Tuple',
   List = 'List',
+  Class = 'Class',
 }
