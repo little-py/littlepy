@@ -1,7 +1,6 @@
 import { LexicalContext } from './LexicalContext';
 import { CompilerContext } from '../api/CompilerContext';
 import { DelimiterType, OperatorType, Token, TokenPosition, TokenType } from '../api/Token';
-import { ArgumentType, FunctionArgument, FunctionBody, FunctionType } from '../api/FunctionBody';
 import { KeywordType } from '../api/Keyword';
 import { ExpressionCompiler } from './ExpressionCompiler';
 import { CompiledModule } from '../api/CompiledModule';
@@ -30,6 +29,8 @@ import { CompilerBlockContext, CompilerBlockType } from '../api/CompilerBlockCon
 import { LiteralType } from '../api/Literal';
 import { CodeFragment } from '../api/CodeFragment';
 import { ReferenceScope } from '../api/ReferenceScope';
+import { FunctionBody } from '../api/FunctionBody';
+import { ArgumentType, FunctionArgument, FunctionType } from '../api/Function';
 
 export class Compiler {
   private readonly _compiledModule: CompiledModule;
