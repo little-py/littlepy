@@ -3,7 +3,8 @@ import { LexicalContext } from './LexicalContext';
 import { KeywordType } from '../api/Keyword';
 import { CompiledModule } from '../api/CompiledModule';
 import { PyErrorType } from '../api/ErrorType';
-import { ArgumentType, FunctionArgument, FunctionBody, FunctionType } from '../api/FunctionBody';
+import { FunctionBody } from '../api/FunctionBody';
+import { ArgumentType, FunctionArgument, FunctionType } from '../api/Function';
 import {
   getTokenOperatorPriority,
   isBinaryOperator,

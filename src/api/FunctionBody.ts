@@ -1,26 +1,7 @@
-import { PyFunction } from './Function';
+import { FunctionArgument, FunctionType, PyFunction } from './Function';
 import { PyModule } from './Module';
 import { FullCode } from './FullCode';
 import { CodeGenerator } from './CodeGenerator';
-
-export enum ArgumentType {
-  Normal,
-  KeywordArguments, // ie **arg, will be wrapped as dictionary
-  ArbitraryArguments, // ie *arg, will be wrapped as tuple
-}
-
-export class FunctionArgument {
-  public id: number;
-  public initReg: number;
-  public type: ArgumentType;
-}
-
-export enum FunctionType {
-  Regular = 'Regular',
-  Class = 'Class',
-  ClassMember = 'ClassMember',
-  Module = 'Module',
-}
 
 export class FunctionBody implements PyFunction {
   public name: string;
