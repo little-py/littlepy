@@ -463,7 +463,7 @@ export class ExpressionCompiler {
         const identifier = this._tokens[this._from + 1].identifier;
         this._from += 2;
         if (!this.isAnyAccessor(this._from)) {
-          this._codeGenerator.appendPropertyReference(ret, 0, identifier, current.getPosition());
+          this._codeGenerator.appendPropertyReference(ret, 0, identifier, current.getPosition(), this._compilerContext);
           break;
         }
         if (this.isLeftBracket(this._from)) {
