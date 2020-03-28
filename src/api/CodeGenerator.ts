@@ -40,7 +40,7 @@ export interface CodeGenerator {
   unaryOperators(unaryOperators: Token[], source: CodeFragment): CodeFragment;
   binaryOperator(left: CodeFragment, op: Token, right: CodeFragment, compilerContext: CompilerContext): CodeFragment;
   createReference(identifiers: string[], compilerContext: CompilerContext, position: TokenPosition): CodeFragment;
-  appendPropertyReference(code: CodeFragment, objectReg: number, identifier: number, position: TokenPosition);
+  appendPropertyReference(code: CodeFragment, objectReg: number, identifier: number, position: TokenPosition, compilerContext: CompilerContext);
   appendArrayIndexerReference(code: CodeFragment, objectReg: number, indexExpression: CodeFragment, position: TokenPosition): void;
   appendArrayRange(
     code: CodeFragment,
