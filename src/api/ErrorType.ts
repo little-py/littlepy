@@ -3,6 +3,7 @@ export enum PyErrorType {
   UnknownChar = 'unknownChar',
   MismatchedIndent = 'mismatchedIndent',
   UnknownEscapeChar = 'unknownEscapeChar',
+  InvalidNumericLiteral = 'invalidNumericLiteral',
 
   // Compiler errors
   BlockExpectedColon = 'blockExpectedColon',
@@ -67,6 +68,7 @@ export enum PyErrorType {
   ExpectedIdentifierForDel = 'expectedIdentifierForDel',
   WithExpectedAs = 'withExpectedAs',
   ExpectedOnlyIdentifier = 'expectedOnlyIdentifier',
+  ExpectedIndent = 'expectedIndent',
 
   ExpectedEndOfExpression = 'expectedEndOfExpression',
   ErrorUnexpectedScenario01 = 'errorUnexpectedScenario01',

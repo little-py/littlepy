@@ -177,7 +177,10 @@ export class LexicalAnalyzer {
       return;
     }
 
-    this.addError(PyErrorType.UnknownChar, this._row, this._col, this._sourcePos, 1);
+    const lastError = this._compiledCode.errors[this._compiledCode.errors.length - 1];
+    if (!lastError || lastError.col !== this._col || lastError.row !== this._row) {
+      this.addError(PyErrorType.UnknownChar, this._row, this._col, this._sourcePos, 1);
+    }
     this.skipToNextLine();
   }
 
@@ -414,6 +417,10 @@ export class LexicalAnalyzer {
       this.nextChar();
       this._col++;
     }
+    if (isIdentifierChar(this._currentChar) || isStringMarkerChar(this._currentChar)) {
+      this.addError(PyErrorType.InvalidNumericLiteral, this._row, this._col, this._sourcePos, 1);
+      return false;
+    }
     token.literal = this._compiledCode.literals.length;
     token.length = this._sourcePos - start;
     if (token.length === 0) {
@@ -628,11 +635,12 @@ export class LexicalAnalyzer {
         }
         break;
       case '!':
-        if (c2 === '=') {
-          token.type = TokenType.Operator;
-          token.operator = OperatorType.NotEqual;
-          len = 2;
+        if (c2 !== '=') {
+          return false;
         }
+        token.type = TokenType.Operator;
+        token.operator = OperatorType.NotEqual;
+        len = 2;
         break;
       case '(':
         token.type = TokenType.Delimiter;

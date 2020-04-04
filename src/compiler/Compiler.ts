@@ -43,6 +43,7 @@ export class Compiler {
   private _offset: number;
   private _indent: number;
   private _insideIndentedBlocks = false;
+  private _expectIndent = false;
   private readonly _codeGenerator: CodeGenerator;
 
   private constructor(code: CompiledModule, lexicalContext: LexicalContext, options?: CompileOptions) {
@@ -90,19 +91,6 @@ export class Compiler {
     this._indent = 0;
 
     while (this._offset < this._compiledModule.tokens.length) {
-      if (!this.scanLine()) {
-        // safety check -- should never happen
-        /* istanbul ignore next */
-        return false;
-      }
-      if (!this._line.length) {
-        continue;
-      }
-      if (this._calculateExpression) {
-        this.parseLineAsExpression();
-      } else {
-        this.parseCombinedLine();
-      }
       if (this._pendingIndentedTokens.length) {
         this._line = this._pendingIndentedTokens;
         this._pendingIndentedTokens = [];
@@ -119,6 +107,27 @@ export class Compiler {
           /* istanbul ignore next */
           return false;
         }
+      }
+      const lastIndent = this._indent;
+      if (!this.scanLine()) {
+        // safety check -- should never happen
+        /* istanbul ignore next */
+        return false;
+      }
+      if (this._expectIndent) {
+        this._expectIndent = false;
+        if (this._indent <= lastIndent) {
+          const tokens = this._compiledModule.tokens;
+          this._compilerContext.addError(PyErrorType.ExpectedIndent, this._line[0] || tokens[this._offset] || tokens[tokens.length - 1]);
+        }
+      }
+      if (!this._line.length) {
+        continue;
+      }
+      if (this._calculateExpression) {
+        this.parseLineAsExpression();
+      } else {
+        this.parseCombinedLine();
       }
     }
 
@@ -397,6 +406,8 @@ export class Compiler {
     }
     if (from + 1 < this._line.length) {
       this._pendingIndentedTokens = this._line.slice(from + 1);
+    } else {
+      this._expectIndent = true;
     }
     return true;
   }

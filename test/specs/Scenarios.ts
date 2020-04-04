@@ -2632,6 +2632,14 @@ line2"""
     `,
     output: ['value: 15'],
   },
+  {
+    input: `
+      if True:
+
+        print("true")
+    `,
+    output: ['true'],
+  },
 ];
 
 export default scenarios;
