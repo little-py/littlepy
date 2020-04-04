@@ -587,6 +587,19 @@ const errors: ErrorScenario[] = [
     `,
     error: PyErrorType.ExpectedFunctionArgumentList,
   },
+  {
+    input: `
+      if True:
+      print("true")
+    `,
+    error: PyErrorType.ExpectedIndent,
+  },
+  {
+    input: `
+      print(100x)
+    `,
+    error: PyErrorType.InvalidNumericLiteral,
+  },
 ];
 
 describe('compiler and machine tests', () => {
