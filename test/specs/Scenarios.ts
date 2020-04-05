@@ -2641,7 +2641,6 @@ line2"""
     output: ['true'],
   },
   {
-    onlyThis: true,
     input: `
         class Point:
           def __init__(self, x, y):
