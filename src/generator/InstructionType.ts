@@ -46,8 +46,8 @@ export enum InstructionType {
   Raise = 'Raise', // raises exception with value in reg1; if reg1 == -1 then re-raise the exception (only inside of except... block)
   GetBool = 'GetBool', // takes reg1, calculates bool value based on it ant puts into reg2
   LogicalNot = 'LogicalNot', // applies logical not to reg1 and puts result in reg2
-  LogicalAnd = 'LogicalAnd', // if reg1 is false puts false in reg2 otherwise skips next count3 instructions
-  LogicalOr = 'LogicalOr', // if reg1 is true puts true in reg2 otherwise skips next count3 instructions
+  LogicalAnd = 'LogicalAnd', // if reg1 is false puts false in reg2 and skips next count3 instructions
+  LogicalOr = 'LogicalOr', // if reg1 is true puts true in reg2 and skips next count3 instructions
   Pass = 'Pass', // nothing to do
   Invert = 'Invert', // calculates (-reg1) and puts into reg2
   List = 'List', // creates list and puts it into reg1

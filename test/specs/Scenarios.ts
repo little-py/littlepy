@@ -2640,6 +2640,24 @@ line2"""
     `,
     output: ['true'],
   },
+  {
+    onlyThis: true,
+    input: `
+        class Point:
+          def __init__(self, x, y):
+            self.x = x
+            self.y = y
+        p1 = Point(10, 20)
+        p2 = Point(20, 30)
+        p3 = Point(30, 40)
+        p4 = Point(40, 50)
+        if p3.x > p4.x:
+          print('False')
+        if p4.x > p3.x and p3.x > p2.x and p2.x > p1.x:
+          print('True')
+      `,
+    output: ['True'],
+  },
 ];
 
 export default scenarios;

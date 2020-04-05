@@ -166,10 +166,10 @@ export function createDebugInformation(module: PyModule, instructions: Instructi
         i.debug = `reg${i.arg2} = not reg${i.arg1}`;
         break;
       case InstructionType.LogicalAnd:
-        i.debug = `if reg${i.arg1} == False: reg${i.arg2} = False else: skip next instruction`;
+        i.debug = `if reg${i.arg1} == False: reg${i.arg2} = False else: skip next ${i.arg3} instructions`;
         break;
       case InstructionType.LogicalOr:
-        i.debug = `if reg${i.arg1} == True reg${i.arg2} = True else: skip next instruction`;
+        i.debug = `if reg${i.arg1} == True reg${i.arg2} = True else: skip next ${i.arg3} instructions`;
         break;
       case InstructionType.Invert:
         i.debug = `reg${i.arg2} = -reg${i.arg1}`;
@@ -789,13 +789,16 @@ export class CodeGeneratorInst implements CodeGenerator {
     const ret = new CodeFragmentInst();
     this.appendTo(ret, left);
     let opType = InstructionType.Pass;
+    let addOp = true;
     if (op.type === TokenType.Keyword) {
       switch (op.keyword) {
         case KeywordType.And:
           opType = InstructionType.LogicalAnd;
+          addOp = false;
           break;
         case KeywordType.Or:
           opType = InstructionType.LogicalOr;
+          addOp = false;
           break;
       }
       if (opType !== InstructionType.Pass) {
@@ -891,7 +894,9 @@ export class CodeGeneratorInst implements CodeGenerator {
       compilerContext.addError(PyErrorType.ErrorUnexpectedScenario05, op);
       return ret;
     }
-    ret.add(opType, op.getPosition(), 0, 1, 0);
+    if (addOp) {
+      ret.add(opType, op.getPosition(), 0, 1, 0);
+    }
     ret.success = true;
     return ret;
   }
