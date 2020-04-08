@@ -2641,7 +2641,6 @@ line2"""
     output: ['true'],
   },
   {
-    onlyThis: true,
     input: `
         class Point:
           def __init__(self, x, y):
@@ -2657,6 +2656,13 @@ line2"""
           print('True')
       `,
     output: ['True'],
+  },
+  {
+    input: `
+      喜悦 = 'Joy'
+      print(喜悦)
+    `,
+    output: ['Joy'],
   },
 ];
 
