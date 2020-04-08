@@ -2657,6 +2657,13 @@ line2"""
       `,
     output: ['True'],
   },
+  {
+    input: `
+      喜悦 = 'Joy'
+      print(喜悦)
+    `,
+    output: ['Joy'],
+  },
 ];
 
 export default scenarios;
