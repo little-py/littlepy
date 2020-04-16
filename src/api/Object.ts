@@ -8,8 +8,8 @@ export class PyObject {
   public id: number = PyObject.idCounter++;
   public name: string;
 
-  public getAttributeNames() {
-    return Object.keys(this.attributes);
+  public getAttributeNames(): string[] {
+    return this.attributes ? Object.keys(this.attributes) : [];
   }
 
   public getAttribute(name: string): PyObject {
