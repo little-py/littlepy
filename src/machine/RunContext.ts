@@ -68,6 +68,7 @@ export class RunContext extends RunContextBase {
   private _position: PyMachinePosition;
   private _paused = false;
   private _pausedCallback: () => boolean;
+  private _pausedRun: boolean;
   public onWriteLine: (line: string) => void = null;
   public onLeaveFunction: (name: string, scope: PyScope) => void;
   public onReadLine: (prompt: string, callback: (result: string) => void) => void = (prompt, callback) => callback('');
@@ -143,7 +144,8 @@ export class RunContext extends RunContextBase {
   public run() {
     while (this.step()) {
       if (this._paused) {
-        this._pausedCallback = () => false;
+        this._pausedCallback = undefined;
+        this._pausedRun = true;
         break;
       }
     }
@@ -400,7 +402,9 @@ export class RunContext extends RunContextBase {
       return;
     }
     this._paused = false;
-    if (this._pausedCallback) {
+    if (this._pausedRun) {
+      this.run();
+    } else {
       this.debugUntilCondition(this._pausedCallback);
     }
   }
@@ -416,6 +420,7 @@ export class RunContext extends RunContextBase {
       }
       if (this._paused) {
         this._pausedCallback = callback;
+        this._pausedRun = false;
         break;
       }
       if (this.isFinished()) {
