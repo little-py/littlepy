@@ -125,7 +125,7 @@ class ExportedFunctions {
     let output = '';
     for (let i = 0; i < args.length; i++) {
       if (i > 0) {
-        output += ' ';
+        output += kwargs.sep ? kwargs.sep.toString() : ' ';
       }
       let arg = args[i];
       if (arg instanceof ReferenceObject) {
