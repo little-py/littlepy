@@ -2664,6 +2664,12 @@ line2"""
     `,
     output: ['Joy'],
   },
+  {
+    input: `
+      print('10', '20', sep=';')
+    `,
+    output: ['10;20'],
+  },
 ];
 
 export default scenarios;
