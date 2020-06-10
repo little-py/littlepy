@@ -511,7 +511,10 @@ export class RunContext extends RunContextBase {
       inheritsFrom.push(new PyInheritance(id, obj));
     }
     if (isException) {
-      return new ExceptionClassObject(body, context, exceptionType, inheritsFrom);
+      const functionStack = this.getCurrentFunctionStack();
+      const func = functionStack.functionBody;
+      const instruction = (func.code as FullCodeInst).instructions[this._currentInstruction];
+      return new ExceptionClassObject(body, context, exceptionType, func.module, instruction.row, instruction.column, inheritsFrom);
     } else {
       return new PyClass(body, context, inheritsFrom);
     }
