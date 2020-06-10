@@ -8,7 +8,8 @@
     "outDir": "build",
     "types": ["jest"],
     "esModuleInterop": true,
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
+    "moduleResolution": "Node"
   },
   "include": ["src/**/*", "types/global.d.ts"]
 }
