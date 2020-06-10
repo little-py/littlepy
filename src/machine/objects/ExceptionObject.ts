@@ -5,6 +5,7 @@ import { PyException } from '../../api/Exception';
 import { PyObject } from '../../api/Object';
 import { PyInheritance } from '../../api/Class';
 import { UniqueErrorCode } from '../../api/UniqueErrorCode';
+import { PyModule } from '../../api/Module';
 
 const MAP_PUBLIC_EXCEPTION_NAME_TO_CODE = {
   BaseException: ExceptionType.Base,
@@ -141,6 +142,9 @@ export class ExceptionObject extends PyException {
     super(inherits || []);
     this.exceptionType = t;
     this.uniqueError = u;
+    this.module = null;
+    this.row = 0;
+    this.column = 0;
     this.message = EXCEPTION_DESCRIPTION[this.exceptionType] || '';
     if (params.length) {
       this.params = params;
@@ -241,4 +245,7 @@ export class ExceptionObject extends PyException {
   public readonly uniqueError: UniqueErrorCode;
   public readonly message: string;
   public readonly params: string[];
+  public module: PyModule;
+  public row: number;
+  public column: number;
 }

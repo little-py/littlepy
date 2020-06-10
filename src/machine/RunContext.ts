@@ -511,10 +511,7 @@ export class RunContext extends RunContextBase {
       inheritsFrom.push(new PyInheritance(id, obj));
     }
     if (isException) {
-      const functionStack = this.getCurrentFunctionStack();
-      const func = functionStack.functionBody;
-      const instruction = (func.code as FullCodeInst).instructions[this._currentInstruction];
-      return new ExceptionClassObject(body, context, exceptionType, func.module, instruction.row, instruction.column, inheritsFrom);
+      return new ExceptionClassObject(body, context, exceptionType, inheritsFrom);
     } else {
       return new PyClass(body, context, inheritsFrom);
     }
@@ -1827,6 +1824,16 @@ export class RunContext extends RunContextBase {
   }
 
   public raiseException(exception: ExceptionObject) {
+    if (!exception.module) {
+      const functionStack = this.getCurrentFunctionStack();
+      if (functionStack) {
+        const func = functionStack.functionBody;
+        const instruction = (func.code as FullCodeInst).instructions[this._currentInstruction];
+        exception.module = func.module;
+        exception.row = instruction.row;
+        exception.column = instruction.column;
+      }
+    }
     let exceptionEntry: StackEntry;
     let exceptionInstruction: number;
     for (let entry = this._currentStack; ; entry = entry.parent) {
