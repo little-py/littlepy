@@ -21,7 +21,7 @@ export class PyObject {
     return ret || this.getNativeMethod(name);
   }
 
-  public setAttribute(name: string, value: PyObject) {
+  public setAttribute(name: string, value: PyObject): void {
     const property = this[name] as NativeProperty;
     if (property && property.setter) {
       getObjectUtils().writeNativeProperty(this, property, value);
@@ -31,7 +31,7 @@ export class PyObject {
     this.attributes[name] = value;
   }
 
-  public deleteAttribute(name: string) {
+  public deleteAttribute(name: string): void {
     delete this.attributes[name];
   }
 
@@ -43,7 +43,7 @@ export class PyObject {
     return '(object)';
   }
 
-  public toBoolean() {
+  public toBoolean(): boolean {
     return true;
   }
 

@@ -4,7 +4,7 @@ import { PyBreakpoint } from '../../src/api/Breakpoint';
 import { CompileOptions } from '../../src/api/CompileOptions';
 import { CompiledModule } from '../../src/api/CompiledModule';
 
-export function compileModule(source: string, name: string, options?: CompileOptions) {
+export function compileModule(source: string, name: string, options?: CompileOptions): CompiledModule {
   const pos = source.indexOf('\n');
   if (pos >= 0 && !source.substr(0, pos).trim()) {
     source = source.substr(pos + 1);

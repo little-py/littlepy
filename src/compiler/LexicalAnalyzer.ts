@@ -27,7 +27,7 @@ export class LexicalAnalyzer {
     this._compiledCode.errors.push(new PyError(type, row, col, length, position, context));
   }
 
-  public parse(source: string, context: LexicalContext) {
+  public parse(source: string, context: LexicalContext): void {
     this._indentStack = [];
     this._context = context;
     this._source = source;
@@ -96,6 +96,7 @@ export class LexicalAnalyzer {
       this.nextChar();
       this._col++;
       while (this._sourcePos < this._source.length) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         if (this._currentChar === '\r' || this._currentChar === '\n') {
           break;
@@ -197,7 +198,7 @@ export class LexicalAnalyzer {
         this.addToken(token);
         this._indentStack.push(this._col);
       } else {
-        const it = this._indentStack.findIndex(c => c === this._col);
+        const it = this._indentStack.findIndex((c) => c === this._col);
         if (it < 0) {
           this.addError(PyErrorType.MismatchedIndent, this._row, 0, this._sourcePos - this._col, this._col);
           this.skipToNextLine();
@@ -216,7 +217,7 @@ export class LexicalAnalyzer {
   }
 
   private skipToNextLine() {
-    while (this._sourcePos < this._source.length && (this._currentChar !== '\r' && this._currentChar !== '\n')) {
+    while (this._sourcePos < this._source.length && this._currentChar !== '\r' && this._currentChar !== '\n') {
       this.nextChar();
     }
     this.nextLine();
@@ -236,12 +237,14 @@ export class LexicalAnalyzer {
   private nextLine() {
     if (this._currentChar === '\r') {
       this.nextChar();
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       if (this._currentChar === '\n') {
         this.nextChar();
       }
     } else if (this._currentChar === '\n') {
       this.nextChar();
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       if (this._currentChar === '\r') {
         this.nextChar();
@@ -315,6 +318,7 @@ export class LexicalAnalyzer {
       if (!isRaw && this._currentChar === '\\') {
         this.nextChar();
         this._col++;
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         if (this._currentChar === '\r' || this._currentChar === '\n') {
           this.nextLine();
@@ -322,26 +326,31 @@ export class LexicalAnalyzer {
         }
         let escapedChar;
         switch (this._currentChar) {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
           case 'n':
             escapedChar = '\n';
             this.nextChar();
             this._col++;
             break;
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
           case 'r':
             escapedChar = '\r';
             this.nextChar();
             this._col++;
             break;
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
           case 't':
             escapedChar = '\t';
             this.nextChar();
             this._col++;
             break;
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
           case "'":
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
           case '"':
           case '\\':
@@ -349,8 +358,10 @@ export class LexicalAnalyzer {
             this.nextChar();
             this._col++;
             break;
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
           case 'a':
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
           case 'b':
             this.nextChar();

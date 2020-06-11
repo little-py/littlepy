@@ -15,7 +15,7 @@ export abstract class IterableObject extends PyObject {
   abstract getCount(): number;
 
   @pyFunction
-  public __iter__() {
+  public __iter__(): IteratorObject {
     return new IteratorObject(this);
   }
 
@@ -24,7 +24,7 @@ export abstract class IterableObject extends PyObject {
     @pyParam('element') element: PyObject,
     @pyParam('start', PropertyType.Number, 0) start: number,
     @pyParam('end', PropertyType.Number, -1) end: number,
-  ) {
+  ): number {
     if (end === -1) {
       end = this.getCount();
     }

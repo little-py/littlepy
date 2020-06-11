@@ -64,23 +64,23 @@ export function isIdentifier(token: Token): boolean {
   return token && token.type === TokenType.Identifier;
 }
 
-export function isKeywordIn(token: Token) {
+export function isKeywordIn(token: Token): boolean {
   return token && token.type === TokenType.Keyword && token.keyword === KeywordType.In;
 }
 
-export function isKeywordElse(token: Token) {
+export function isKeywordElse(token: Token): boolean {
   return token && token.type === TokenType.Keyword && token.keyword === KeywordType.Else;
 }
 
-export function isKeywordAs(token: Token) {
+export function isKeywordAs(token: Token): boolean {
   return token && token.type === TokenType.Keyword && token.keyword === KeywordType.As;
 }
 
-export function isDelimiterEqual(token: Token) {
+export function isDelimiterEqual(token: Token): boolean {
   return token && token.type === TokenType.Delimiter && token.delimiter === DelimiterType.EqualSign;
 }
 
-export function isOperatorMultiply(token: Token) {
+export function isOperatorMultiply(token: Token): boolean {
   return token && token.type === TokenType.Operator && token.operator === OperatorType.Multiply;
 }
 

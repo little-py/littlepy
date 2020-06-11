@@ -18,17 +18,17 @@ export class TupleObject extends ContainerObject {
     return this.items[index];
   }
 
-  public addItem(obj: PyObject) {
+  public addItem(obj: PyObject): void {
     this.items.push(obj);
   }
 
   public contains(value: PyObject): boolean {
-    return this.items.findIndex(r => r.equals(value)) >= 0;
+    return this.items.findIndex((r) => r.equals(value)) >= 0;
   }
 
   public toString(): string {
     const items = `${this.items
-      .map(r => {
+      .map((r) => {
         if (r instanceof StringObject) {
           return `'${r.toString()}'`;
         } else {

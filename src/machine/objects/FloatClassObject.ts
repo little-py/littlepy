@@ -14,7 +14,7 @@ export class FloatClassObject extends PyClass {
 
   @pyFunction
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public fromhex(@pyParam('bytes') bytes: PyObject) {
+  public fromhex(@pyParam('bytes') bytes: PyObject): void {
     getObjectUtils().throwException(ExceptionType.NotImplementedError, UniqueErrorCode.NotImplemented, 'fromhex');
   }
 }

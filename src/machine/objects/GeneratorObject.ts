@@ -23,17 +23,23 @@ export class GeneratorObject extends IteratorObject {
   public finished = false;
 
   @pyFunction
-  public __iter__() {
+  public __iter__(): IteratorObject {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     return this;
   }
 
   @pyFunction
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  public __next__(@pyParam('', PropertyType.Machine) runContext: RunContext, @pyParam('', PropertyType.CallContext) callContext: CallContext) {
+  public __next__(
+    @pyParam('', PropertyType.Machine) runContext: RunContext,
+    @pyParam('', PropertyType.CallContext) callContext: CallContext,
+  ): PyObject {
     if (this.finished) {
       getObjectUtils().throwException(ExceptionType.StopIteration, UniqueErrorCode.CalledNextOnFinishedIterator);
       /* istanbul ignore next */
-      return;
+      return undefined;
     }
     if (this.pendingValue) {
       const ret = this.pendingValue;
@@ -41,7 +47,7 @@ export class GeneratorObject extends IteratorObject {
       return ret;
     }
     this.stackHead.parent = runContext.getStackEntry();
-    this.stackHead.onFinish = ret => callContext.onFinish(ret, null);
+    this.stackHead.onFinish = (ret) => callContext.onFinish(ret, null);
     runContext.setStackEntry(this.stackTail);
     return new CallableIgnore();
   }

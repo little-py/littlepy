@@ -16,7 +16,7 @@ export class ListObject extends ContainerObject {
   private readonly items: PyObject[];
 
   public contains(value: PyObject): boolean {
-    return this.items.findIndex(r => r.equals(value)) >= 0;
+    return this.items.findIndex((r) => r.equals(value)) >= 0;
   }
 
   public getCount(): number {
@@ -30,11 +30,11 @@ export class ListObject extends ContainerObject {
     return this.items[index];
   }
 
-  public setItem(index: number, value: PyObject) {
+  public setItem(index: number, value: PyObject): void {
     this.items[index] = value;
   }
 
-  public addItem(value: PyObject) {
+  public addItem(value: PyObject): void {
     this.items.push(value);
   }
 
@@ -42,13 +42,13 @@ export class ListObject extends ContainerObject {
     return this.items.length > 0;
   }
 
-  public removeItem(index: number) {
+  public removeItem(index: number): void {
     this.items.splice(index, 1);
   }
 
   public toString(): string {
     return `[${this.items
-      .map(r => {
+      .map((r) => {
         if (r instanceof StringObject) {
           return `'${r.toString()}'`;
         } else {
@@ -59,12 +59,12 @@ export class ListObject extends ContainerObject {
   }
 
   @pyFunction
-  public __iter__() {
+  public __iter__(): IteratorObject {
     return new IteratorObject(this);
   }
 
   @pyFunction
-  public append(@pyParam('element') element: PyObject) {
+  public append(@pyParam('element') element: PyObject): void {
     this.items.push(element);
   }
 }

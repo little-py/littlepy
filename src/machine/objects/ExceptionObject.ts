@@ -234,11 +234,11 @@ export class ExceptionObject extends PyException {
       return true;
     }
     for (const inherited of classObject.inheritsFrom) {
-      if (this.classInheritance.findIndex(c => c.object.id === inherited.object.id) < 0) {
+      if (this.classInheritance.findIndex((c) => c.object.id === inherited.object.id) < 0) {
         return false;
       }
     }
-    return this.classInheritance.findIndex(c => c.object.id === classObject.id) >= 0;
+    return this.classInheritance.findIndex((c) => c.object.id === classObject.id) >= 0;
   }
 
   public readonly exceptionType: ExceptionType;

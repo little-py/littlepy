@@ -13,45 +13,44 @@ export class SetObject extends FrozenSetObject {
     super(items);
   }
 
-  public addItem(value: PyObject) {
+  public addItem(value: PyObject): void {
     if (!this.contains(value)) {
       this.items.push(value);
     }
   }
 
   public toString(): string {
-    return `{${this.items.map(o => (o instanceof StringObject ? `'${o.toString()}'` : o.toString())).join(', ')}}`;
+    return `{${this.items.map((o) => (o instanceof StringObject ? `'${o.toString()}'` : o.toString())).join(', ')}}`;
   }
 
   @pyFunction
-  public union(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
+  public union(@pyParam('other', PropertyType.Iterable) other: IterableObject): FrozenSetObject {
     return this.unionBase(new SetObject(), other);
   }
 
   @pyFunction
-  public intersection(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
+  public intersection(@pyParam('other', PropertyType.Iterable) other: IterableObject): FrozenSetObject {
     return this.intersectionBase(new SetObject(), other);
   }
 
   @pyFunction
-  public difference(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
+  public difference(@pyParam('other', PropertyType.Iterable) other: IterableObject): FrozenSetObject {
     return this.differenceBase(new SetObject(), other);
   }
 
   @pyFunction
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public symmetric_difference(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
+  public symmetric_difference(@pyParam('other', PropertyType.Iterable) other: IterableObject): FrozenSetObject {
     return this.symmetricDifferenceBase(new SetObject(), other);
   }
 
   @pyFunction
-  public add(@pyParam('obj') obj: PyObject) {
+  public add(@pyParam('obj') obj: PyObject): void {
     this.addItem(obj);
   }
 
   @pyFunction
-  public remove(@pyParam('obj') obj: PyObject) {
-    const pos = this.items.findIndex(r => r.equals(obj));
+  public remove(@pyParam('obj') obj: PyObject): void {
+    const pos = this.items.findIndex((r) => r.equals(obj));
     if (pos >= 0) {
       this.items.splice(pos, 1);
     } else {
@@ -60,15 +59,15 @@ export class SetObject extends FrozenSetObject {
   }
 
   @pyFunction
-  public discard(@pyParam('obj') obj: PyObject) {
-    const pos = this.items.findIndex(r => r.equals(obj));
+  public discard(@pyParam('obj') obj: PyObject): void {
+    const pos = this.items.findIndex((r) => r.equals(obj));
     if (pos >= 0) {
       this.items.splice(pos, 1);
     }
   }
 
   @pyFunction
-  public update(@pyParamArgs args: PyObject[]) {
+  public update(@pyParamArgs args: PyObject[]): void {
     for (const item of args) {
       if (item instanceof IterableObject) {
         for (let i = 0; i < item.getCount(); i++) {
@@ -81,7 +80,7 @@ export class SetObject extends FrozenSetObject {
   }
 
   @pyFunction
-  public clear() {
+  public clear(): void {
     this.items.splice(0, this.items.length);
   }
 }

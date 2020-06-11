@@ -8,7 +8,7 @@ import { PyStackEntry } from './StackEntry';
 export type FinishCallback = (returnValue: PyObject, error: PyException) => void;
 
 export abstract class PyMachine {
-  abstract updateBreakpoints(breakpoints: PyBreakpoint[]);
+  abstract updateBreakpoints(breakpoints: PyBreakpoint[]): void;
   abstract getPosition(): PyMachinePosition;
   abstract getGlobalScope(): PyScope;
   abstract getCurrentScope(): PyScope;
@@ -21,13 +21,13 @@ export abstract class PyMachine {
   abstract debugOut(): void;
   abstract debugOver(): void;
   abstract isFinished(): boolean;
-  abstract startCallModule(name: string, finishCallback?: FinishCallback);
-  abstract startCallFunction(moduleName: string, funcName: string, args: PyObject[], finishCallback?: FinishCallback);
+  abstract startCallModule(name: string, finishCallback?: FinishCallback): void;
+  abstract startCallFunction(moduleName: string, funcName: string, args: PyObject[], finishCallback?: FinishCallback): void;
   abstract getOutput(): string[];
   abstract getOutputText(): string;
   abstract getStackEntries(): PyStackEntry[];
-  abstract pause();
-  abstract resume();
+  abstract pause(): void;
+  abstract resume(): void;
   abstract isPaused(): boolean;
 
   onWriteLine: (line: string) => void;

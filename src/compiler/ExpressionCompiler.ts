@@ -855,7 +855,7 @@ export class ExpressionCompiler {
     func.module = this._compiledCode;
     func.type = FunctionType.Regular;
     func.name = this._compilerContext.getLambdaFunctionName();
-    func.arguments = args.map(arg => {
+    func.arguments = args.map((arg) => {
       const ret = new FunctionArgument();
       ret.type = ArgumentType.Normal;
       ret.id = arg;
@@ -904,7 +904,7 @@ export class ExpressionCompiler {
         lexicalAnalyzer.parse(arg, lexicalContext);
         this._compilerContext.update();
         const tokens = this._compiledCode.tokens.filter(
-          t => t.type !== TokenType.Indent && t.type !== TokenType.Dedent && t.type !== TokenType.NewLine,
+          (t) => t.type !== TokenType.Indent && t.type !== TokenType.Dedent && t.type !== TokenType.NewLine,
         );
         this._compiledCode.tokens = savedTokens;
         const compiler = new ExpressionCompiler(

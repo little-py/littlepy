@@ -20,15 +20,15 @@ export class FrozenSetObject extends ContainerObject {
   }
 
   public contains(value: PyObject): boolean {
-    return this.items.findIndex(r => r.equals(value)) >= 0;
+    return this.items.findIndex((r) => r.equals(value)) >= 0;
   }
 
   public toString(): string {
-    return `frozenset({${this.items.map(o => (o instanceof StringObject ? `'${o.toString()}'` : o.toString())).join(', ')}})`;
+    return `frozenset({${this.items.map((o) => (o instanceof StringObject ? `'${o.toString()}'` : o.toString())).join(', ')}})`;
   }
 
   @pyFunction
-  public __iter__() {
+  public __iter__(): IteratorObject {
     return new IteratorObject(this);
   }
 
@@ -37,7 +37,7 @@ export class FrozenSetObject extends ContainerObject {
   }
 
   @pyFunction
-  public isdisjoint(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
+  public isdisjoint(@pyParam('other', PropertyType.Iterable) other: IterableObject): BooleanObject {
     let found = false;
     for (const item of this.items) {
       for (let i = 0; i < other.getCount(); i++) {
@@ -71,16 +71,16 @@ export class FrozenSetObject extends ContainerObject {
   }
 
   @pyFunction
-  public issubset(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
+  public issubset(@pyParam('other', PropertyType.Iterable) other: IterableObject): BooleanObject {
     return BooleanObject.toBoolean(FrozenSetObject.issubset(this, other));
   }
 
   @pyFunction
-  issuperset(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
+  issuperset(@pyParam('other', PropertyType.Iterable) other: IterableObject): BooleanObject {
     return BooleanObject.toBoolean(FrozenSetObject.issubset(other, this));
   }
 
-  protected unionBase(ret: FrozenSetObject, other: IterableObject) {
+  protected unionBase(ret: FrozenSetObject, other: IterableObject): FrozenSetObject {
     for (const item of this.items) {
       ret.items.push(item);
     }
@@ -94,11 +94,11 @@ export class FrozenSetObject extends ContainerObject {
   }
 
   @pyFunction
-  public union(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
+  public union(@pyParam('other', PropertyType.Iterable) other: IterableObject): FrozenSetObject {
     return this.unionBase(new FrozenSetObject(), other);
   }
 
-  protected intersectionBase(ret: FrozenSetObject, other: IterableObject) {
+  protected intersectionBase(ret: FrozenSetObject, other: IterableObject): FrozenSetObject {
     for (let i = 0; i < other.getCount(); i++) {
       const item = other.getItem(i);
       if (this.contains(item)) {
@@ -109,11 +109,11 @@ export class FrozenSetObject extends ContainerObject {
   }
 
   @pyFunction
-  public intersection(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
+  public intersection(@pyParam('other', PropertyType.Iterable) other: IterableObject): FrozenSetObject {
     return this.intersectionBase(new FrozenSetObject(), other);
   }
 
-  protected differenceBase(ret: FrozenSetObject, other: IterableObject) {
+  protected differenceBase(ret: FrozenSetObject, other: IterableObject): FrozenSetObject {
     for (const item of this.items) {
       let found = false;
       for (let i = 0; i < other.getCount(); i++) {
@@ -130,11 +130,11 @@ export class FrozenSetObject extends ContainerObject {
   }
 
   @pyFunction
-  public difference(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
+  public difference(@pyParam('other', PropertyType.Iterable) other: IterableObject): FrozenSetObject {
     return this.differenceBase(new FrozenSetObject(), other);
   }
 
-  protected symmetricDifferenceBase(ret: FrozenSetObject, other: IterableObject) {
+  protected symmetricDifferenceBase(ret: FrozenSetObject, other: IterableObject): FrozenSetObject {
     this.differenceBase(ret, other);
     for (let i = 0; i < other.getCount(); i++) {
       const item = other.getItem(i);
@@ -146,8 +146,7 @@ export class FrozenSetObject extends ContainerObject {
   }
 
   @pyFunction
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public symmetric_difference(@pyParam('other', PropertyType.Iterable) other: IterableObject) {
+  public symmetric_difference(@pyParam('other', PropertyType.Iterable) other: IterableObject): FrozenSetObject {
     return this.symmetricDifferenceBase(new FrozenSetObject(), other);
   }
 

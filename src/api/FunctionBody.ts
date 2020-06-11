@@ -16,7 +16,7 @@ export class FunctionBody implements PyFunction {
   public debug?: string;
 
   /* istanbul ignore next */
-  public initialize(codeGenerator: CodeGenerator) {
+  public initialize(codeGenerator: CodeGenerator): void {
     if (!DEBUG) {
       return;
     }

@@ -36,9 +36,9 @@ export function calculateResolutionOrder(classDef: PyInheritance): PyInheritance
         continue;
       }
       for (let j = 0; j < secondLevelList.length; j++) {
-        secondLevelList[j] = secondLevelList[j].filter(c => c.object.id !== candidate.object.id);
+        secondLevelList[j] = secondLevelList[j].filter((c) => c.object.id !== candidate.object.id);
       }
-      secondLevelList = secondLevelList.filter(l => l.length > 0);
+      secondLevelList = secondLevelList.filter((l) => l.length > 0);
       break;
     }
     if (!good || !candidate) {

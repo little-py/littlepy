@@ -32,7 +32,7 @@ function createCallContext({
 }): CallContext {
   return {
     onFinish,
-    indexedArgs: (indexed || []).map(object => ({
+    indexedArgs: (indexed || []).map((object) => ({
       object,
       expand: false,
     })),
@@ -277,7 +277,7 @@ describe('Native function', () => {
     nativeWrapper(test, method)(
       createCallContext({}),
       createRunContext({
-        raiseException: exception => {
+        raiseException: (exception) => {
           raisedException = exception;
         },
       }),
@@ -295,7 +295,7 @@ describe('Native function', () => {
         indexed: [new NumberObject(10), new NumberObject(20)],
       }),
       createRunContext({
-        raiseException: exception => {
+        raiseException: (exception) => {
           raisedException = exception;
         },
       }),
@@ -310,7 +310,7 @@ describe('Native function', () => {
     let returnValue: PyObject;
     nativeWrapper(test, method)(
       createCallContext({
-        onFinish: ret => {
+        onFinish: (ret) => {
           returnValue = ret;
         },
         indexed: [new NumberObject(10)],
@@ -403,7 +403,7 @@ describe('Native function', () => {
         indexed: [new StringObject('xyz')],
       }),
       createRunContext({
-        raiseException: exception => {
+        raiseException: (exception) => {
           raisedException = exception;
         },
       }),
@@ -420,7 +420,7 @@ describe('Native function', () => {
         indexed: [new StringObject('xyz')],
       }),
       createRunContext({
-        raiseException: exception => {
+        raiseException: (exception) => {
           raisedException = exception;
         },
       }),
@@ -437,7 +437,7 @@ describe('Native function', () => {
         indexed: [new StringObject('xyz')],
       }),
       createRunContext({
-        raiseException: exception => {
+        raiseException: (exception) => {
           raisedException = exception;
         },
       }),
@@ -455,7 +455,7 @@ describe('Native function', () => {
         indexed: [new NumberObject(20)],
       }),
       createRunContext({
-        raiseException: exception => {
+        raiseException: (exception) => {
           raisedException = exception;
         },
       }),
@@ -478,7 +478,7 @@ describe('Native function', () => {
     nativeWrapper(test, method)(
       createCallContext({}),
       createRunContext({
-        raiseException: exception => {
+        raiseException: (exception) => {
           raisedException = exception;
         },
       }),
@@ -493,7 +493,7 @@ describe('Native function', () => {
     nativeWrapper(test, method)(
       createCallContext({}),
       createRunContext({
-        raiseException: exception => {
+        raiseException: (exception) => {
           raisedException = exception;
         },
       }),

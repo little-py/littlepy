@@ -4,7 +4,7 @@ import { NativeProperty } from '../machine/NativeTypes';
 import { UniqueErrorCode } from './UniqueErrorCode';
 
 export interface ObjectUtils {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/ban-types,@typescript-eslint/no-explicit-any
   createNativeMethod(func: Function, instance: any, name: string): PyObject;
   throwException(type: ExceptionType, uniqueCode: UniqueErrorCode, ...args: string[]): void;
   createTuple(items: PyObject[]): PyObject;
@@ -21,7 +21,7 @@ export interface ObjectUtils {
 
 let objectUtils: ObjectUtils;
 
-export function setObjectUtils(utils: ObjectUtils) {
+export function setObjectUtils(utils: ObjectUtils): void {
   objectUtils = utils;
 }
 

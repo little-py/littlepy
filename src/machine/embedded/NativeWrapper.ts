@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { CallContext } from '../../api/CallContext';
 import { CallableIgnore, MemberWithMetadata, NativeFinishCallback, NativeParam, RunContextBase } from '../NativeTypes';
 import { ExceptionObject } from '../objects/ExceptionObject';
@@ -14,9 +15,12 @@ import { PropertyType } from '../../api/Native';
 import { getObjectUtils } from '../../api/ObjectUtils';
 import { UniqueErrorCode } from '../../api/UniqueErrorCode';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function nativeWrapper(instance: any, member: MemberWithMetadata) {
-  function wrapper(callContext: CallContext, runContext: RunContextBase) {
+export function nativeWrapper(
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+  instance: any,
+  member: MemberWithMetadata,
+): (callContext: CallContext, runContext: RunContextBase) => boolean | PyObject {
+  function wrapper(callContext: CallContext, runContext: RunContextBase): boolean | PyObject {
     let ignoreParams = false;
     let hasCallback = false;
     const params = member.pythonParams || [];
@@ -37,7 +41,7 @@ export function nativeWrapper(instance: any, member: MemberWithMetadata) {
         }
         if (args) {
           ignoreParams = true;
-          return callContext.indexedArgs.map(a => a.object);
+          return callContext.indexedArgs.map((a) => a.object);
         }
         if (kwargs) {
           return callContext.namedArgs;

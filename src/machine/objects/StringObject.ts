@@ -38,7 +38,7 @@ export class StringObject extends ContainerObject {
     return this.value;
   }
 
-  public equals(to: PyObject): boolean | boolean {
+  public equals(to: PyObject): boolean {
     if (to instanceof StringObject) {
       return this.value === to.value;
     }
@@ -116,7 +116,7 @@ export class StringObject extends ContainerObject {
   public format(@pyParamArgs indexed: PyObject[], @pyParamKwargs named: { [key: string]: PyObject }): string {
     return StringObject.applyFormat(
       this.value,
-      i => {
+      (i) => {
         const v = indexed[i];
         if (!v) {
           getObjectUtils().throwException(ExceptionType.FunctionArgumentError, UniqueErrorCode.IndexerIsOutOfRange, i.toString());
@@ -124,7 +124,7 @@ export class StringObject extends ContainerObject {
           return v;
         }
       },
-      key => {
+      (key) => {
         const v = named[key];
         if (!v) {
           getObjectUtils().throwException(ExceptionType.FunctionArgumentError, UniqueErrorCode.IndexerIsOutOfRange, key);
@@ -182,11 +182,11 @@ export class StringObject extends ContainerObject {
 
   @pyFunction
   public index(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types
     @pyParam('sub', PropertyType.String) sub: any,
     @pyParam('start', PropertyType.Number, 0) start: number,
     @pyParam('end', PropertyType.Number, -1) end: number,
-  ) {
+  ): number {
     if (end === -1) {
       end = this.value.length;
     }
@@ -312,7 +312,7 @@ export class StringObject extends ContainerObject {
   }
 
   @pyFunction
-  public isupper() {
+  public isupper(): boolean {
     for (let i = 0; i < this.value.length; i++) {
       const c = this.value[i];
       if (c.toUpperCase() !== c) {
@@ -334,18 +334,18 @@ export class StringObject extends ContainerObject {
     return ret;
   }
 
-  private justifyAny(width: number, separator: string, left: boolean) {
+  private justifyAny(width: number, separator: string, left: boolean): string {
     const repeat = separator.repeat(Math.max(0, width - this.value.length));
     return left ? this.value + repeat : repeat + this.value;
   }
 
   @pyFunction
-  public ljust(@pyParam('width', PropertyType.Number) width: number, @pyParam('separator', PropertyType.String, ' ') separator: string) {
+  public ljust(@pyParam('width', PropertyType.Number) width: number, @pyParam('separator', PropertyType.String, ' ') separator: string): string {
     return this.justifyAny(width, separator, true);
   }
 
   @pyFunction
-  public rjust(@pyParam('width', PropertyType.Number) width: number, @pyParam('separator', PropertyType.String, ' ') separator: string) {
+  public rjust(@pyParam('width', PropertyType.Number) width: number, @pyParam('separator', PropertyType.String, ' ') separator: string): string {
     return this.justifyAny(width, separator, false);
   }
 
@@ -367,22 +367,21 @@ export class StringObject extends ContainerObject {
   }
 
   @pyFunction
-  public lstrip(@pyParam('sep', PropertyType.String, ' \t\r\n') sep: string) {
+  public lstrip(@pyParam('sep', PropertyType.String, ' \t\r\n') sep: string): string {
     return this.stripAny(this.value, sep, true);
   }
 
   @pyFunction
-  public rstrip(@pyParam('sep', PropertyType.String, ' \t\r\n') sep: string) {
+  public rstrip(@pyParam('sep', PropertyType.String, ' \t\r\n') sep: string): string {
     return this.stripAny(this.value, sep, false);
   }
 
   @pyFunction
-  public strip(@pyParam('sep', PropertyType.String, ' \t\r\n') sep: string) {
+  public strip(@pyParam('sep', PropertyType.String, ' \t\r\n') sep: string): string {
     return this.stripAny(this.stripAny(this.value, sep, false), sep, true);
   }
 
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public partitionAny(part: string, left: boolean) {
+  public partitionAny(part: string, left: boolean): PyObject {
     const pos = left ? this.value.indexOf(part) : this.value.lastIndexOf(part);
     if (pos <= 0) {
       if (left) {
@@ -399,12 +398,12 @@ export class StringObject extends ContainerObject {
   }
 
   @pyFunction
-  public partition(@pyParam('part', PropertyType.String) part: string) {
+  public partition(@pyParam('part', PropertyType.String) part: string): PyObject {
     return this.partitionAny(part, true);
   }
 
   @pyFunction
-  public rpartition(@pyParam('part', PropertyType.String) part: string) {
+  public rpartition(@pyParam('part', PropertyType.String) part: string): PyObject {
     return this.partitionAny(part, false);
   }
 
@@ -458,7 +457,7 @@ export class StringObject extends ContainerObject {
     return pos;
   }
 
-  private splitAny(sep: string, maxCount: number, left: boolean) {
+  private splitAny(sep: string, maxCount: number, left: boolean): PyObject {
     let last = left ? 0 : this.value.length;
     const values: string[] = [];
     for (let count = 0; ; count++) {
@@ -537,21 +536,21 @@ export class StringObject extends ContainerObject {
       }
     }
 
-    return getObjectUtils().createList(values.map(v => new StringObject(v)));
+    return getObjectUtils().createList(values.map((v) => new StringObject(v)));
   }
 
   @pyFunction
-  public split(@pyParam('sep', PropertyType.String, '') sep: string, @pyParam('maxsplit', PropertyType.Number, -1) maxsplit: number) {
+  public split(@pyParam('sep', PropertyType.String, '') sep: string, @pyParam('maxsplit', PropertyType.Number, -1) maxsplit: number): PyObject {
     return this.splitAny(sep, maxsplit, true);
   }
 
   @pyFunction
-  public rsplit(@pyParam('sep', PropertyType.String, '') sep: string, @pyParam('maxsplit', PropertyType.Number, -1) maxsplit: number) {
+  public rsplit(@pyParam('sep', PropertyType.String, '') sep: string, @pyParam('maxsplit', PropertyType.Number, -1) maxsplit: number): PyObject {
     return this.splitAny(sep, maxsplit, false);
   }
 
   @pyFunction
-  public splitlines() {
+  public splitlines(): PyObject {
     const ret: StringObject[] = [];
     let last = 0;
     for (let i = 0; ; ) {
@@ -578,7 +577,7 @@ export class StringObject extends ContainerObject {
   }
 
   @pyFunction
-  public swapcase() {
+  public swapcase(): StringObject {
     const lower = this.value.toLowerCase();
     const upper = this.value.toUpperCase();
     let ret = '';
@@ -596,7 +595,7 @@ export class StringObject extends ContainerObject {
   }
 
   @pyFunction
-  public title() {
+  public title(): StringObject {
     let ret = '';
     let upper = true;
     for (let i = 0; i < this.value.length; i++) {

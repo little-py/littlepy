@@ -603,7 +603,7 @@ const errors: ErrorScenario[] = [
 ];
 
 describe('compiler and machine tests', () => {
-  const onlyThis = errors.filter(s => s.onlyThis);
+  const onlyThis = errors.filter((s) => s.onlyThis);
   let scenarios: ErrorScenario[];
   if (onlyThis.length) {
     scenarios = onlyThis;
@@ -615,7 +615,7 @@ describe('compiler and machine tests', () => {
     const match = input.replace(/[\s\r\n\t]*$/, '');
     it(match, () => {
       const code = compileModule(input, 'main');
-      expect(code.errors.map(e => e.type)).toContain(error);
+      expect(code.errors.map((e) => e.type)).toContain(error);
     });
   }
 

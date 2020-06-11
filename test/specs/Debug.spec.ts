@@ -201,10 +201,10 @@ describe('Debug flow', () => {
     expect(runContext.getPosition().row).toEqual(1);
     const entries = runContext.getStackEntries();
     expect(entries).toHaveLength(2);
-    expect(entries.map(e => e.instruction)).toEqual([0, 5]);
+    expect(entries.map((e) => e.instruction)).toEqual([0, 5]);
   });
 
-  it('should call exit function on unhandled exception', done => {
+  it('should call exit function on unhandled exception', (done) => {
     const source = 'arg1.arg2 = 10';
     const code = compileModule(source, 'main');
     const runContext = new RunContext({

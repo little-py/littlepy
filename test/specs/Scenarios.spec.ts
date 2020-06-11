@@ -2,7 +2,7 @@ import SCENARIOS, { TestScenario } from './Scenarios';
 import { compileModule, runModules } from './Utils';
 
 describe('compiler and machine tests', () => {
-  const onlyThis = SCENARIOS.filter(s => s.onlyThis);
+  const onlyThis = SCENARIOS.filter((s) => s.onlyThis);
   let scenarios: TestScenario[];
   if (onlyThis.length) {
     scenarios = onlyThis;

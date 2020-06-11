@@ -27,14 +27,13 @@ export class NumberObject extends PyObject {
   public readonly value: number;
 
   @pyFunction
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  public bit_length() {
+  public bit_length(): void {
     getObjectUtils().throwException(ExceptionType.NotImplementedError, UniqueErrorCode.NotImplemented, 'bit_length');
   }
 
   @pyFunction
-  // eslint-disable-next-line @typescript-eslint/camelcase,@typescript-eslint/no-unused-vars
-  public to_bytes(@pyParam('bytes') bytes: PyObject) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public to_bytes(@pyParam('bytes') bytes: PyObject): void {
     getObjectUtils().throwException(ExceptionType.NotImplementedError, UniqueErrorCode.NotImplemented, 'to_bytes');
   }
 }
