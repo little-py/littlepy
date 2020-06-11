@@ -8,7 +8,6 @@ import { PropertyType } from '../../api/Native';
 
 class PythonSys {
   @pyFunction
-  // eslint-disable-next-line @typescript-eslint/camelcase
   public exc_info(@pyParam('', PropertyType.Machine) runContext: RunContext): TupleObject {
     const exception = runContext.getCurrentException();
     let items: PyObject[];

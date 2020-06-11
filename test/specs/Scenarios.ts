@@ -2602,13 +2602,31 @@ line2"""
   },
   {
     input: `
+      print(min([40, 100, 20]))
+    `,
+    output: ['20'],
+  },
+  {
+    input: `
       print(max(40, 100, 20))
     `,
     output: ['100'],
   },
   {
     input: `
+      print(max([40, 100, 20]))
+    `,
+    output: ['100'],
+  },
+  {
+    input: `
       print(sum(40, 100, 20))
+    `,
+    output: ['160'],
+  },
+  {
+    input: `
+      print(sum([40, 100, 20]))
     `,
     output: ['160'],
   },

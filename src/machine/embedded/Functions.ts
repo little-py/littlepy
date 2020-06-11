@@ -78,6 +78,13 @@ class ExportedFunctions {
     if (args.length === 0) {
       throw new ExceptionObject(ExceptionType.ValueError, UniqueErrorCode.ExpectedNonEmptyArgs);
     }
+    if (args.length === 1 && args[0] instanceof IterableObject) {
+      const iterable = args[0] as IterableObject;
+      args = [];
+      for (let i = 0; i < iterable.getCount(); i++) {
+        args.push(iterable.getItem(i));
+      }
+    }
     let ret = getObjectUtils().toNumber(args[0], 'args');
     for (let i = 1; i < args.length; i++) {
       const next = getObjectUtils().toNumber(args[i], 'args');
@@ -93,6 +100,13 @@ class ExportedFunctions {
     if (args.length === 0) {
       throw new ExceptionObject(ExceptionType.ValueError, UniqueErrorCode.ExpectedNonEmptyArgs);
     }
+    if (args.length === 1 && args[0] instanceof IterableObject) {
+      const iterable = args[0] as IterableObject;
+      args = [];
+      for (let i = 0; i < iterable.getCount(); i++) {
+        args.push(iterable.getItem(i));
+      }
+    }
     let ret = getObjectUtils().toNumber(args[0], 'args');
     for (let i = 1; i < args.length; i++) {
       const next = getObjectUtils().toNumber(args[i], 'args');
@@ -107,6 +121,13 @@ class ExportedFunctions {
   sum(@pyParamArgs args: PyObject[]) {
     if (args.length === 0) {
       throw new ExceptionObject(ExceptionType.ValueError, UniqueErrorCode.ExpectedNonEmptyArgs);
+    }
+    if (args.length === 1 && args[0] instanceof IterableObject) {
+      const iterable = args[0] as IterableObject;
+      args = [];
+      for (let i = 0; i < iterable.getCount(); i++) {
+        args.push(iterable.getItem(i));
+      }
     }
     let ret = 0;
     for (let i = 0; i < args.length; i++) {
