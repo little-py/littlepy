@@ -119,7 +119,7 @@ export class CompilerContext {
     this.update();
   }
 
-  public update() {
+  public update(): void {
     for (; this.parsedLiterals < this.compiledCode.literals.length; this.parsedLiterals++) {
       const literal = this.compiledCode.literals[this.parsedLiterals];
       switch (literal.type & LiteralType.LiteralMask) {
@@ -148,7 +148,7 @@ export class CompilerContext {
     }
   }
 
-  public setRowType(type: RowType) {
+  public setRowType(type: RowType): void {
     this.createRowDescriptor();
     const descriptor = this.rowDescriptors[this.row];
     if (descriptor.type === type) {
@@ -167,7 +167,7 @@ export class CompilerContext {
     }
   }
 
-  public updateRowDescriptor(type: Partial<Omit<RowDescriptor, 'type'>>) {
+  public updateRowDescriptor(type: Partial<Omit<RowDescriptor, 'type'>>): void {
     this.createRowDescriptor();
     for (const key of Object.keys(type)) {
       const value = type[key];
@@ -180,7 +180,7 @@ export class CompilerContext {
     }
   }
 
-  public addError(type: PyErrorType, token: Token, context?: PyErrorContext) {
+  public addError(type: PyErrorType, token: Token, context?: PyErrorContext): void {
     this.compiledCode.errors.push(new PyError(type, token.row, token.col, token.length, token.offset, context));
   }
 
@@ -260,7 +260,7 @@ export class CompilerContext {
     return newContext;
   }
 
-  public leaveBlock() {
+  public leaveBlock(): void {
     this.blocks.pop();
   }
 
@@ -268,7 +268,7 @@ export class CompilerContext {
     return this.blocks.length;
   }
 
-  public getLambdaFunctionName() {
+  public getLambdaFunctionName(): string {
     return `<lambda>.${this.lambdaFunctionIndex++}`;
   }
 }

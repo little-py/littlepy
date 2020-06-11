@@ -14,7 +14,7 @@ import { PyModule } from '../api/Module';
 import { FunctionBody } from '../api/FunctionBody';
 
 /* istanbul ignore next */
-export function createDebugInformation(module: PyModule, instructions: Instruction[]) {
+export function createDebugInformation(module: PyModule, instructions: Instruction[]): void {
   /* istanbul ignore next */
   const functionToText = (arg: number): string => {
     const func = module.functions[arg];
@@ -378,11 +378,11 @@ export class CodeGeneratorInst implements CodeGenerator {
 
   getFullCode(code: CodeFragmentInst): FullCodeInst {
     return {
-      instructions: code.code.map(i => i.copy()),
+      instructions: code.code.map((i) => i.copy()),
     };
   }
 
-  appendTo(tgt: CodeFragmentInst, src: CodeFragmentInst, shiftRight = 0) {
+  appendTo(tgt: CodeFragmentInst, src: CodeFragmentInst, shiftRight = 0): void {
     for (const sc of src.code) {
       const tc = sc.copy();
       if (shiftRight) {
@@ -415,14 +415,14 @@ export class CodeGeneratorInst implements CodeGenerator {
     const ret = new CodeFragmentInst();
     ret.add(InstructionType.List, parts[0].position, 0);
     this.appendTo(ret, intermediate, 1);
-    const pos = ret.code.findIndex(c => c.type === InstructionType.Literal && c.arg2 === -1);
+    const pos = ret.code.findIndex((c) => c.type === InstructionType.Literal && c.arg2 === -1);
     const reg = ret.code[pos].arg1;
     ret.code[pos] = new Instruction(InstructionType.ListAdd, parts[parts.length - 1].position, reg, 0);
     ret.success = true;
     return ret;
   }
 
-  forCycleInternal(ret: CodeFragmentInst, forPart: CompilerBlockContext, noBreakPart: CompilerBlockContext, context: CompilerContext) {
+  forCycleInternal(ret: CodeFragmentInst, forPart: CompilerBlockContext, noBreakPart: CompilerBlockContext, context: CompilerContext): void {
     this.appendTo(ret, forPart.arg2 as CodeFragmentInst);
     ret.add(InstructionType.ReadProperty, forPart.position, context.getIdentifierCode('__iter__'), 0, 1);
     ret.add(InstructionType.CallMethod, forPart.position, 0, 1, 0);
@@ -908,12 +908,12 @@ export class CodeGeneratorInst implements CodeGenerator {
     return ret;
   }
 
-  appendPropertyReference(code: CodeFragmentInst, objectReg: number, identifier: number, position: TokenPosition) {
+  appendPropertyReference(code: CodeFragmentInst, objectReg: number, identifier: number, position: TokenPosition): void {
     code.add(InstructionType.Identifier, position, objectReg + 1, identifier);
     code.add(InstructionType.CreatePropertyRef, position, objectReg, objectReg + 1, objectReg);
   }
 
-  appendArrayIndexerReference(code: CodeFragmentInst, objectReg: number, indexExpression: CodeFragmentInst, position: TokenPosition) {
+  appendArrayIndexerReference(code: CodeFragmentInst, objectReg: number, indexExpression: CodeFragmentInst, position: TokenPosition): void {
     this.appendTo(code, indexExpression, objectReg + 1);
     code.add(InstructionType.CreateArrayIndexRef, position, objectReg, objectReg + 1, objectReg);
   }
@@ -926,7 +926,7 @@ export class CodeGeneratorInst implements CodeGenerator {
     indexInterval: CodeFragmentInst,
     position: TokenPosition,
     isReference: boolean,
-  ) {
+  ): void {
     this.appendTo(code, indexFrom, objectReg + 1);
     this.appendTo(code, indexTo, objectReg + 2);
     if (indexInterval) {
@@ -1079,11 +1079,11 @@ export class CodeGeneratorInst implements CodeGenerator {
   }
 
   hasArrayIndex(fragment: CodeFragmentInst): boolean {
-    return fragment.code.findIndex(c => c.isArrayIndex()) >= 0;
+    return fragment.code.findIndex((c) => c.isArrayIndex()) >= 0;
   }
 
   hasOperator(fragment: CodeFragmentInst): boolean {
-    return fragment.code.findIndex(c => c.isOperator()) >= 0;
+    return fragment.code.findIndex((c) => c.isOperator()) >= 0;
   }
 
   appendReadObject(fragment: CodeFragmentInst, position: TokenPosition, identifier: number): void {
@@ -1098,7 +1098,7 @@ export class CodeGeneratorInst implements CodeGenerator {
     fragment.add(InstructionType.ReadArrayIndex, position, from, index, to);
   }
 
-  appendReturnValue(fragment: CodeFragmentInst, position: TokenPosition, from: number) {
+  appendReturnValue(fragment: CodeFragmentInst, position: TokenPosition, from: number): void {
     fragment.add(InstructionType.Ret, position, from);
   }
 }

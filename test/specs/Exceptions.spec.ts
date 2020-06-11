@@ -859,7 +859,7 @@ const errors: ErrorScenario[] = [
 ];
 
 describe('Exceptions', () => {
-  const onlyThis = errors.filter(s => s.onlyThis);
+  const onlyThis = errors.filter((s) => s.onlyThis);
   let scenarios: ErrorScenario[];
   if (onlyThis.length) {
     scenarios = onlyThis;

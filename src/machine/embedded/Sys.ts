@@ -5,6 +5,7 @@ import { createNativeModule } from './Utils';
 import { PyObject } from '../../api/Object';
 import { pyFunction, pyParam } from '../../api/Decorators';
 import { PropertyType } from '../../api/Native';
+import { ModuleObject } from '../objects/ModuleObject';
 
 class PythonSys {
   @pyFunction
@@ -22,6 +23,6 @@ class PythonSys {
 
 const sysInstance = new PythonSys();
 
-export const sys = () => {
+export const sys = (): ModuleObject => {
   return createNativeModule(sysInstance, 'sys');
 };

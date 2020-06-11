@@ -21,7 +21,7 @@ class ObjectUtilsImpl implements ObjectUtils {
     return new ListObject(items);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/ban-types
   createNativeMethod(func: Function, instance: any, name: string): PyObject {
     if (!func) {
       return null;

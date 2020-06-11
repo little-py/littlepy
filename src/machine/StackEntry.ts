@@ -28,18 +28,18 @@ export class StackEntry implements PyStackEntry {
     this.functionEntry = t === StackEntryType.Function ? this : parent && parent.functionEntry;
   }
 
-  public setIndexedArg(index: number, object: PyObject, expand: boolean) {
+  public setIndexedArg(index: number, object: PyObject, expand: boolean): void {
     this.callContext.indexedArgs[index] = {
       object,
       expand,
     };
   }
 
-  public setNamedArg(name: string, obj: PyObject) {
+  public setNamedArg(name: string, obj: PyObject): void {
     this.callContext.namedArgs[name] = obj;
   }
 
-  public setReg(num: number, value: PyObject) {
+  public setReg(num: number, value: PyObject): void {
     this.regs[num] = value;
   }
 

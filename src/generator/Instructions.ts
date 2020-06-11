@@ -3,26 +3,19 @@ import { TokenPosition } from '../api/Token';
 
 export class Instruction {
   public debug?: string;
-  public readonly type: InstructionType;
-  public arg1: number;
-  public arg2: number;
-  public arg3: number;
-  public arg4: InstructionType;
-  public arg5: number;
-  public arg6: number;
   public readonly row: number;
   public readonly column: number;
   public readonly position: number;
 
   public constructor(
-    type: InstructionType, //
+    public readonly type: InstructionType, //
     position: TokenPosition,
-    arg1,
-    arg2,
-    arg3 = 0,
-    arg4 = InstructionType.None,
-    arg5 = 0,
-    arg6 = 0,
+    public arg1: number,
+    public arg2: number,
+    public arg3 = 0,
+    public arg4 = InstructionType.None,
+    public arg5 = 0,
+    public arg6 = 0,
   ) {
     if (position) {
       this.position = position.position;
@@ -33,7 +26,6 @@ export class Instruction {
       this.row = -1;
       this.column = -1;
     }
-    this.type = type;
     this.arg1 = arg1;
     this.arg2 = arg2;
     this.arg3 = arg3;

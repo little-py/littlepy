@@ -1,6 +1,5 @@
 import { PyErrorType } from './ErrorType';
 
-// eslint-disable-next-line @typescript-eslint/prefer-interface
 export type PyErrorContext = { [key: string]: string };
 
 export class PyError {

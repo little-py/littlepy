@@ -16,7 +16,7 @@ describe('Customize runContext', () => {
       print('test1')
       print("test2")
     `);
-    runContext.onWriteLine = line => accumulated.push(line);
+    runContext.onWriteLine = (line) => accumulated.push(line);
     runContext.run();
     expect(runContext.getOutputText()).toEqual('');
     expect(accumulated).toEqual(['test1', 'test2']);

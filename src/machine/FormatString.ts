@@ -7,7 +7,7 @@ import { PyObject } from '../api/Object';
 import { getObjectUtils } from '../api/ObjectUtils';
 import { UniqueErrorCode } from '../api/UniqueErrorCode';
 
-export const stringFormat = (self: StringObject, format: PyObject) => {
+export const stringFormat = (self: StringObject, format: PyObject): StringObject => {
   let dictionary: DictionaryObject;
   let iterable: IterableObject;
   if (format instanceof DictionaryObject) {
@@ -21,7 +21,7 @@ export const stringFormat = (self: StringObject, format: PyObject) => {
   let index = 0;
 
   const ret = self.value.replace(
-    /%(?:\(([^)]+)\))?(#|0|-| |\+)?([0-9]+|\*)?(?:\.([0-9]+))?(d|i|o|u|x|X|e|E|f|F|g|G|c|r|s|a|%)/g,
+    /%(?:\(([^)]+)\))?([#0\- +])?([0-9]+|\*)?(?:\.([0-9]+))?([diouxXeEfFgGcrsa%])/g,
     (_, mapper: string, modifier: string, length: string, precision: string, format: string) => {
       let arg: PyObject;
       if (mapper) {

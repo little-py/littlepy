@@ -25,8 +25,8 @@ export function pyParam(
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function pyFunction(target: any, propertyKey: string) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types
+export function pyFunction(target: any, propertyKey: string): void {
   const member = target[propertyKey] as MemberWithMetadata;
   member.pythonMethod = {
     name: '',
@@ -66,6 +66,7 @@ function pyGetterSetter(name: string | undefined, isGetter: boolean, type?: Prop
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types
 export const pySetter = (type: PropertyType, name?: string) => pyGetterSetter(name, false, type);
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const pyGetter = (name?: string) => pyGetterSetter(name, true);

@@ -88,17 +88,17 @@ export class RunContext extends RunContextBase {
     this._pausedCallback = null;
   }
 
-  public getGlobalScope() {
+  public getGlobalScope(): GlobalScope {
     return this._globalScope;
   }
 
-  public getUnhandledException() {
+  public getUnhandledException(): ExceptionObject {
     return this._unhandledException;
   }
 
   // public API
   /* istanbul ignore next */
-  public getCurrentScope() {
+  public getCurrentScope(): PyScope {
     return this.getCurrentFunctionStack().scope;
   }
 
@@ -110,7 +110,7 @@ export class RunContext extends RunContextBase {
     this.createGlobalScope();
   }
 
-  public updateBreakpoints(breakpoints: PyBreakpoint[]) {
+  public updateBreakpoints(breakpoints: PyBreakpoint[]): void {
     this._breakpoints = {};
     for (const breakpoint of breakpoints) {
       const key = `${breakpoint.moduleId}_${breakpoint.row}`;
@@ -141,7 +141,7 @@ export class RunContext extends RunContextBase {
     return this._position;
   }
 
-  public run() {
+  public run(): void {
     while (this.step()) {
       if (this._paused) {
         this._pausedCallback = undefined;
@@ -157,7 +157,7 @@ export class RunContext extends RunContextBase {
     }
   }
 
-  public stop() {
+  public stop(): void {
     this._finished = true;
     while (this._currentStack.parent) {
       this._currentStack = this._currentStack.parent;
@@ -168,7 +168,7 @@ export class RunContext extends RunContextBase {
     this.onLastStackFinished();
   }
 
-  public debug() {
+  public debug(): void {
     const functionStack = this.getCurrentFunctionStack();
     const code = (functionStack.functionBody.code as FullCodeInst).instructions;
     const current = code[functionStack.instruction];
@@ -185,11 +185,11 @@ export class RunContext extends RunContextBase {
     this.debugUntilCondition();
   }
 
-  public debugIn() {
+  public debugIn(): void {
     this.debugUntilCondition(() => true);
   }
 
-  public setStackEntry(stackEntry: StackEntry) {
+  public setStackEntry(stackEntry: StackEntry): void {
     this._currentStack = stackEntry;
   }
 
@@ -197,7 +197,7 @@ export class RunContext extends RunContextBase {
     return this._currentStack;
   }
 
-  public debugOut() {
+  public debugOut(): void {
     const currentStack = this.getCurrentFunctionStack();
     const parentStack = currentStack && currentStack.parent && currentStack.parent.functionEntry;
     if (!parentStack) {
@@ -207,7 +207,7 @@ export class RunContext extends RunContextBase {
     }
   }
 
-  public debugOver() {
+  public debugOver(): void {
     const currentStack = this.getCurrentFunctionStack();
     if (!currentStack) {
       return;
@@ -224,10 +224,10 @@ export class RunContext extends RunContextBase {
   }
 
   private getModuleFunction(module: CompiledModule) {
-    return Object.values(module.functions).find(f => f.type === FunctionType.Module);
+    return Object.values(module.functions).find((f) => f.type === FunctionType.Module);
   }
 
-  public startCallModule(name: string, finishCallback: (returnValue: PyObject, error: ExceptionObject) => void = undefined) {
+  public startCallModule(name: string, finishCallback: (returnValue: PyObject, error: ExceptionObject) => void = undefined): void {
     if (!this._finished) {
       throw Error('Run context is not finished');
     }
@@ -286,7 +286,7 @@ export class RunContext extends RunContextBase {
     funcName: string,
     args: PyObject[] = [],
     finishCallback: (returnValue: PyObject, error: ExceptionObject) => void = undefined,
-  ) {
+  ): void {
     if (!this._finished) {
       throw Error('Run context is not finished');
     }
@@ -338,11 +338,11 @@ export class RunContext extends RunContextBase {
     }
   }
 
-  public write(output: string) {
+  public write(output: string): void {
     this._cachedOutputLine += output;
   }
 
-  public writeLine(output: string) {
+  public writeLine(output: string): void {
     output = this._cachedOutputLine + output;
     this._cachedOutputLine = '';
     for (;;) {
@@ -370,7 +370,7 @@ export class RunContext extends RunContextBase {
     return this._output;
   }
 
-  public getOutputText() {
+  public getOutputText(): string {
     return this._output.join('\n');
   }
 
@@ -393,11 +393,11 @@ export class RunContext extends RunContextBase {
     return this._paused;
   }
 
-  public pause() {
+  public pause(): void {
     this._paused = true;
   }
 
-  public resume() {
+  public resume(): void {
     if (!this._paused) {
       return;
     }
@@ -660,7 +660,7 @@ export class RunContext extends RunContextBase {
     functionStack.setNamedArg(module.identifiers[current.arg2], arg);
   }
 
-  private stepCallFunc(current: Instruction, module: CompiledModule, functionStack: StackEntry) {
+  private stepCallFunc(current: Instruction, functionStack: StackEntry) {
     const functionObj = functionStack.getReg(current.arg1, true, this);
     // safety check
     /* istanbul ignore next */
@@ -677,7 +677,7 @@ export class RunContext extends RunContextBase {
     });
   }
 
-  private stepCallMethod(current: Instruction, module: CompiledModule, functionStack: StackEntry) {
+  private stepCallMethod(current: Instruction, functionStack: StackEntry) {
     const functionObj = functionStack.getReg(current.arg2, true, this);
     if (!(functionObj instanceof Callable)) {
       throw new ExceptionObject(ExceptionType.NotAFunction, UniqueErrorCode.ExpectedCallableObject, [], functionObj.toString());
@@ -721,7 +721,7 @@ export class RunContext extends RunContextBase {
     this.raiseException(arg);
   }
 
-  private stepForCycle(current: Instruction, module: CompiledModule, functionStack: StackEntry) {
+  private stepForCycle(current: Instruction, functionStack: StackEntry) {
     const stack = this.enterStack(StackEntryType.ForCycle, 'for');
     stack.nextPosition = 0;
     stack.startInstruction = this._currentInstruction;
@@ -748,8 +748,8 @@ export class RunContext extends RunContextBase {
     const obj = functionStack.getReg(current.arg2, true, this);
     const listObject = obj as ListObject;
     let listItem = functionStack.getReg(current.arg1, true, this);
-    if (listItem instanceof TupleObject && listItem.items.findIndex(t => t instanceof ReferenceObject) >= 0) {
-      listItem = new TupleObject(listItem.items.map(r => (r instanceof ReferenceObject ? r.getValue(this) : r)));
+    if (listItem instanceof TupleObject && listItem.items.findIndex((t) => t instanceof ReferenceObject) >= 0) {
+      listItem = new TupleObject(listItem.items.map((r) => (r instanceof ReferenceObject ? r.getValue(this) : r)));
     }
     listObject.addItem(listItem);
   }
@@ -859,7 +859,6 @@ export class RunContext extends RunContextBase {
           sourceObject.getCount().toString(),
           targetObject.getCount().toString(),
         );
-        return;
       }
       for (let i = 0; i < sourceObject.getCount(); i++) {
         const targetItem = targetObject.getItem(i);
@@ -940,7 +939,7 @@ export class RunContext extends RunContextBase {
   private stepImport(current: Instruction, currentModule: CompiledModule, functionStack: StackEntry) {
     this.ensureAtModuleLevel(functionStack);
     const name = currentModule.identifiers[current.arg1];
-    this.importModule(name, importedModule => {
+    this.importModule(name, (importedModule) => {
       functionStack.scope.objects[name] = importedModule;
     });
   }
@@ -949,7 +948,7 @@ export class RunContext extends RunContextBase {
     this.ensureAtModuleLevel(functionStack);
     const rename = currentModule.identifiers[current.arg2];
     const name = currentModule.identifiers[current.arg1];
-    this.importModule(name, importedModule => {
+    this.importModule(name, (importedModule) => {
       functionStack.scope.objects[rename] = importedModule;
     });
   }
@@ -958,7 +957,7 @@ export class RunContext extends RunContextBase {
     this.ensureAtModuleLevel(functionStack);
     const id = currentModule.identifiers[current.arg1];
     const module = currentModule.identifiers[current.arg2];
-    this.importModule(module, importedModule => {
+    this.importModule(module, (importedModule) => {
       functionStack.scope.objects[id] = importedModule.getAttribute(id);
     });
   }
@@ -989,7 +988,7 @@ export class RunContext extends RunContextBase {
     this.enterFunction(
       moduleContext,
       moduleFunction,
-      ret => {
+      (ret) => {
         const moduleObject = ret as ModuleObject;
         onFinished(moduleObject);
         const functionStack = this.getCurrentFunctionStack();
@@ -1254,10 +1253,10 @@ export class RunContext extends RunContextBase {
         this.stepRegArgName(current, module, functionStack);
         break;
       case InstructionType.CallFunc:
-        this.stepCallFunc(current, module, functionStack);
+        this.stepCallFunc(current, functionStack);
         break;
       case InstructionType.CallMethod:
-        this.stepCallMethod(current, module, functionStack);
+        this.stepCallMethod(current, functionStack);
         break;
       case InstructionType.Ret:
         this.stepRet(current, functionStack);
@@ -1266,7 +1265,7 @@ export class RunContext extends RunContextBase {
         this.stepRaise(current, functionStack);
         break;
       case InstructionType.ForCycle:
-        this.stepForCycle(current, module, functionStack);
+        this.stepForCycle(current, functionStack);
         break;
       case InstructionType.WhileCycle:
         this.stepWhileCycle(current, functionStack);
@@ -1550,7 +1549,7 @@ export class RunContext extends RunContextBase {
     if (!inherits) {
       throw new ExceptionObject(ExceptionType.ResolutionOrder, UniqueErrorCode.CannotBuildResolutionOrder);
     }
-    const coreExceptions = inherits.filter(c => c.object instanceof ExceptionClassObject && c.object.inheritsFrom.length === 0);
+    const coreExceptions = inherits.filter((c) => c.object instanceof ExceptionClassObject && c.object.inheritsFrom.length === 0);
     if (coreExceptions.length > 1) {
       throw new ExceptionObject(ExceptionType.CannotDeriveFromMultipleException, UniqueErrorCode.CannotDeriveFromMultipleException);
     }
@@ -1574,17 +1573,17 @@ export class RunContext extends RunContextBase {
     callback(ret);
   }
 
-  public callFunction(func: Callable, parent: PyObject, onFinish: (ret: PyObject, exception: ExceptionObject) => boolean | void | undefined) {
+  public callFunction(func: Callable, parent: PyObject, onFinish: (ret: PyObject, exception: ExceptionObject) => boolean | void | undefined): void {
     const currentStack = this.getCurrentFunctionStack();
 
     const indexedArgsWithExpand = currentStack.callContext.indexedArgs;
-    const expandArg = indexedArgsWithExpand.findIndex(a => a.expand && a.object instanceof IterableObject);
+    const expandArg = indexedArgsWithExpand.findIndex((a) => a.expand && a.object instanceof IterableObject);
     if (expandArg >= 0) {
-      this.expandArgument(indexedArgsWithExpand[expandArg].object as IterableObject, items => {
+      this.expandArgument(indexedArgsWithExpand[expandArg].object as IterableObject, (items) => {
         currentStack.callContext.indexedArgs.splice(
           expandArg,
           1,
-          ...items.map(object => ({
+          ...items.map((object) => ({
             object,
             expand: false,
           })),
@@ -1594,7 +1593,7 @@ export class RunContext extends RunContextBase {
       return;
     }
 
-    let indexedArgs = currentStack.callContext.indexedArgs.map(a => a.object);
+    let indexedArgs = currentStack.callContext.indexedArgs.map((a) => a.object);
 
     if (parent && parent instanceof SuperProxyObject) {
       parent = (parent as SuperProxyObject).classInstance;
@@ -1823,7 +1822,7 @@ export class RunContext extends RunContextBase {
     return true;
   }
 
-  public raiseException(exception: ExceptionObject) {
+  public raiseException(exception: ExceptionObject): void {
     if (!exception.module) {
       const functionStack = this.getCurrentFunctionStack();
       if (functionStack) {
@@ -2148,7 +2147,7 @@ export class RunContext extends RunContextBase {
     return this._currentException;
   }
 
-  public onUnhandledException(exception: ExceptionObject) {
+  public onUnhandledException(exception: ExceptionObject): void {
     this._unhandledException = exception;
     let stack = this._currentStack;
     if (!stack) {
@@ -2166,7 +2165,7 @@ export class RunContext extends RunContextBase {
     return new NumberObject(value);
   }
 
-  public raiseUnknownIdentifier(identifier: string) {
+  public raiseUnknownIdentifier(identifier: string): void {
     this.raiseException(new ExceptionObject(ExceptionType.UnknownIdentifier, UniqueErrorCode.UnknownIdentifier, [], identifier));
   }
 

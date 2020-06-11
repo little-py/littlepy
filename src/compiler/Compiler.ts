@@ -309,12 +309,12 @@ export class Compiler {
   }
 
   private parseCombinedLine(): boolean {
-    if (isBlockKeyword(this._line[0]) || this._line.findIndex(t => isSemicolon(t)) < 0) {
+    if (isBlockKeyword(this._line[0]) || this._line.findIndex((t) => isSemicolon(t)) < 0) {
       return this.parseLine(false);
     }
     let originalLine = this._line;
     while (originalLine.length) {
-      const semi = originalLine.findIndex(t => isSemicolon(t));
+      const semi = originalLine.findIndex((t) => isSemicolon(t));
       if (semi < 0) {
         this._line = originalLine;
         return this.parseLine(true);

@@ -11,7 +11,7 @@ describe('resolution order', () => {
     B.name = 'B';
     const C = new PyClass(null, null, [new PyInheritance('A', A), new PyInheritance('B', B)]);
     C.name = 'C';
-    const order = calculateResolutionOrder(new PyInheritance('C', C)).map(o => o.name);
+    const order = calculateResolutionOrder(new PyInheritance('C', C)).map((o) => o.name);
     expect(order).toEqual(['C', 'A', 'B', 'O']);
   });
   it('wrong', () => {
@@ -43,7 +43,7 @@ describe('resolution order', () => {
     B.name = 'B';
     const C = new PyClass(null, null, [new PyInheritance('A', A), new PyInheritance('B', B)]);
     C.name = 'C';
-    const order = calculateResolutionOrder(new PyInheritance('C', C)).map(o => o.name);
+    const order = calculateResolutionOrder(new PyInheritance('C', C)).map((o) => o.name);
     expect(order).toEqual(['C', 'A', 'B', 'Y', 'X', 'O']);
   });
   it('complex', () => {
@@ -61,7 +61,7 @@ describe('resolution order', () => {
     B.name = 'B';
     const A = new PyClass(null, null, [new PyInheritance('B', B), new PyInheritance('C', C)]);
     A.name = 'A';
-    const order = calculateResolutionOrder(new PyInheritance('A', A)).map(o => o.name);
+    const order = calculateResolutionOrder(new PyInheritance('A', A)).map((o) => o.name);
     expect(order).toEqual(['A', 'B', 'C', 'D', 'E', 'F', 'O']);
   });
 });

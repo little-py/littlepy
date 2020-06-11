@@ -4,6 +4,7 @@ import { PyObject } from './Object';
 import { PyFunction } from './Function';
 
 export class Callable extends PyObject {
+  // eslint-disable-next-line @typescript-eslint/ban-types
   public constructor(body: PyFunction = null, context: FunctionContext = null, nativeFunction: Function = null, newNativeFunction: Function = null) {
     super();
     const doc = new StringObject((body && body.documentation) || '');
@@ -18,7 +19,9 @@ export class Callable extends PyObject {
 
   public readonly context: FunctionContext;
   public readonly body: PyFunction;
+  // eslint-disable-next-line @typescript-eslint/ban-types
   public readonly nativeFunction: Function;
+  // eslint-disable-next-line @typescript-eslint/ban-types
   public readonly newNativeFunction: Function;
 
   /* istanbul ignore next */

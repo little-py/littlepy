@@ -86,6 +86,7 @@ export class ReferenceObject extends PyObject {
           return;
         }
         if (this.indexInterval && !(this.indexer instanceof NumberObject)) {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
           runContext.raiseException(new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedNumberObject, [], this.indexer.toString()));
           /* istanbul ignore next */
@@ -109,7 +110,7 @@ export class ReferenceObject extends PyObject {
     return functionScope;
   }
 
-  public deleteValue(runContext: RunContext) {
+  public deleteValue(runContext: RunContext): void {
     switch (this.referenceType) {
       case ReferenceType.Variable: {
         const name = this.parent as StringObject;
@@ -148,7 +149,7 @@ export class ReferenceObject extends PyObject {
     }
   }
 
-  public setValue(value: PyObject, runContext: RunContext) {
+  public setValue(value: PyObject, runContext: RunContext): void {
     switch (this.referenceType) {
       case ReferenceType.Index: {
         if (this.parent instanceof ListObject && this.indexer instanceof NumberObject) {

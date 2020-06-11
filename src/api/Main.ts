@@ -22,8 +22,8 @@ export class LittlePy {
     return new RunContext(modules as { [key: string]: CompiledModule }, breakpoints);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public static toPythonObject(object: any): PyObject {
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+  public static toPythonObject(object: never): PyObject {
     return getObjectUtils().toPyObject(object, true);
   }
 

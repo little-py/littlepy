@@ -3,6 +3,7 @@ import { pyFunction, pyParam } from '../../api/Decorators';
 import { PropertyType } from '../../api/Native';
 import { IterableObject } from '../objects/IterableObject';
 import { PyObject } from '../../api/Object';
+import { ModuleObject } from '../objects/ModuleObject';
 
 export class PythonRandom {
   private readonly _random: () => number;
@@ -17,7 +18,7 @@ export class PythonRandom {
   }
 
   @pyFunction
-  uniform(@pyParam('a', PropertyType.Number) a: number, @pyParam('b', PropertyType.Number) b: number) {
+  uniform(@pyParam('a', PropertyType.Number) a: number, @pyParam('b', PropertyType.Number) b: number): number {
     if (a > b) {
       const t = a;
       a = b;
@@ -55,6 +56,6 @@ export class PythonRandom {
 
 const pythonRandom = new PythonRandom();
 
-export function createRandomModule() {
+export function createRandomModule(): ModuleObject {
   return createNativeModule(pythonRandom, 'random');
 }

@@ -25,7 +25,7 @@ export class DictionaryObject extends ContainerObject {
     if (typeof index === 'number') {
       return this._keys[index];
     }
-    const pos = this._keys.findIndex(k => k.value === index);
+    const pos = this._keys.findIndex((k) => k.value === index);
     if (pos < 0) {
       getObjectUtils().throwException(ExceptionType.IndexError, UniqueErrorCode.CannotFindDictionaryKey, index);
     }
@@ -34,11 +34,11 @@ export class DictionaryObject extends ContainerObject {
 
   public contains(value: PyObject): boolean {
     const name = value.toString();
-    return this._keys.findIndex(n => n.value === name) >= 0;
+    return this._keys.findIndex((n) => n.value === name) >= 0;
   }
 
-  public setItem(key: string, value: PyObject) {
-    const pos = this._keys.findIndex(k => k.value === key);
+  public setItem(key: string, value: PyObject): void {
+    const pos = this._keys.findIndex((k) => k.value === key);
     if (pos < 0) {
       this._keys.push(new StringObject(key));
       this._values.push(value);
@@ -57,8 +57,8 @@ export class DictionaryObject extends ContainerObject {
   }
 
   @pyFunction
-  public pop(@pyParam('key', PropertyType.String) key: string, @pyParam('def', PropertyType.Object, null) def: PyObject) {
-    const pos = this._keys.findIndex(k => k.value === key);
+  public pop(@pyParam('key', PropertyType.String) key: string, @pyParam('def', PropertyType.Object, null) def: PyObject): PyObject {
+    const pos = this._keys.findIndex((k) => k.value === key);
     if (pos < 0) {
       if (def) {
         return def;
@@ -71,8 +71,8 @@ export class DictionaryObject extends ContainerObject {
     return ret;
   }
 
-  public removeItem(key: string) {
-    const pos = this._keys.findIndex(k => k.value === key);
+  public removeItem(key: string): void {
+    const pos = this._keys.findIndex((k) => k.value === key);
     if (pos < 0) {
       getObjectUtils().throwException(ExceptionType.KeyError, UniqueErrorCode.CannotFindDictionaryKey, key);
     }
@@ -81,18 +81,18 @@ export class DictionaryObject extends ContainerObject {
   }
 
   @pyFunction
-  public keys() {
+  public keys(): SetObject {
     return new SetObject(this._keys);
   }
 
   @pyFunction
-  public values() {
+  public values(): SetObject {
     return new SetObject(this._values);
   }
 
   @pyFunction
-  public get(@pyParam('key', PropertyType.String) key: string, @pyParam('default', PropertyType.Object, null) def: PyObject) {
-    const pos = this._keys.findIndex(k => k.value === key);
+  public get(@pyParam('key', PropertyType.String) key: string, @pyParam('default', PropertyType.Object, null) def: PyObject): PyObject {
+    const pos = this._keys.findIndex((k) => k.value === key);
     if (pos < 0) {
       if (def) {
         return def;
@@ -103,13 +103,13 @@ export class DictionaryObject extends ContainerObject {
   }
 
   @pyFunction
-  public clear() {
+  public clear(): void {
     this._keys.splice(0, this._keys.length);
     this._values.splice(0, this._values.length);
   }
 
   @pyFunction
-  public popitem() {
+  public popitem(): TupleObject {
     const pos = this._keys.length - 1;
     const key = this._keys[pos];
     if (!key) {

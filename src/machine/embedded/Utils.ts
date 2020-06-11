@@ -7,7 +7,7 @@ export function getClassObject(object: PyClass, name: string): PyClass {
   return object;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types
 export function createNativeModule(object: any, name: string): ModuleObject {
   const ret = new ModuleObject();
   ret.name = name;

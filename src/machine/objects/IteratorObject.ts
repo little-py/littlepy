@@ -14,12 +14,12 @@ export class IteratorObject extends PyObject {
   }
 
   @pyFunction
-  public __iter__() {
+  public __iter__(): IteratorObject {
     return this;
   }
 
   @pyFunction
-  public __next__() {
+  public __next__(): PyObject {
     if (this.index >= this.iterableObject.getCount()) {
       getObjectUtils().throwException(ExceptionType.StopIteration, UniqueErrorCode.IteratorFinished);
       /* istanbul ignore next */
