@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Compiler } from '../compiler/Compiler';
 import { CompiledModule } from './CompiledModule';
 import { RunContext } from '../machine/RunContext';
@@ -23,7 +24,7 @@ export class LittlePy {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  public static toPythonObject(object: never): PyObject {
+  public static toPythonObject(object: any): PyObject {
     return getObjectUtils().toPyObject(object, true);
   }
 
