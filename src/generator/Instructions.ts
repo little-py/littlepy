@@ -3,9 +3,9 @@ import { TokenPosition } from '../api/Token';
 
 export class Instruction {
   public debug?: string;
-  public readonly row: number;
-  public readonly column: number;
-  public readonly position: number;
+  public row: number;
+  public column: number;
+  public position: number;
 
   public constructor(
     public readonly type: InstructionType, //
