@@ -31,6 +31,8 @@ import { CodeFragment } from '../api/CodeFragment';
 import { ReferenceScope } from '../api/ReferenceScope';
 import { FunctionBody } from '../api/FunctionBody';
 import { ArgumentType, FunctionArgument, FunctionType } from '../api/Function';
+import { FullCodeInst } from '../generator/FullCodeInst';
+import { InstructionType } from '../generator/InstructionType';
 
 export class Compiler {
   private readonly _compiledModule: CompiledModule;
@@ -149,7 +151,38 @@ export class Compiler {
     func.code = this._codeGenerator.getFullCode(block.blockCode);
     func.initialize(this._codeGenerator);
 
+    for (const func of this._compiledModule.functions) {
+      this.adjustFunctionCodePositions(func);
+    }
+
     return true;
+  }
+
+  private adjustFunctionCodePositions(func: FunctionBody) {
+    // This code is to make sure labels without position are positioned to the next line, this helps with detecting debug position
+    if (!func.code) {
+      return;
+    }
+    const code = (func.code as FullCodeInst).instructions;
+    const endRow = this._compiledModule.tokens.length > 0 ? this._compiledModule.tokens[this._compiledModule.tokens.length - 1].row + 1 : 1;
+    for (let i = 0; i < code.length; i++) {
+      const inst = code[i];
+      if (inst.type === InstructionType.Label && inst.row === -1) {
+        let j = i + 1;
+        for (; j < code.length; j++) {
+          const ref = code[j];
+          if (ref.row !== -1) {
+            inst.row = ref.row;
+            inst.column = ref.column;
+            inst.position = ref.position;
+            break;
+          }
+        }
+        if (j >= code.length) {
+          inst.row = endRow;
+        }
+      }
+    }
   }
 
   private scanLine(): boolean {
