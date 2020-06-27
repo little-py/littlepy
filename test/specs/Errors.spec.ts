@@ -600,6 +600,18 @@ const errors: ErrorScenario[] = [
     `,
     error: PyErrorType.InvalidNumericLiteral,
   },
+  {
+    input: `def func(a, b`,
+    error: PyErrorType.ExpectedEndOfFunctionDef,
+  },
+  {
+    input: `def func(a*`,
+    error: PyErrorType.ExpectedEndOfFunctionDef,
+  },
+  {
+    input: `def func(a**`,
+    error: PyErrorType.ExpectedEndOfFunctionDef,
+  },
 ];
 
 describe('compiler and machine tests', () => {

@@ -164,7 +164,7 @@ export class Compiler {
       return;
     }
     const code = (func.code as FullCodeInst).instructions;
-    const endRow = this._compiledModule.tokens.length > 0 ? this._compiledModule.tokens[this._compiledModule.tokens.length - 1].row + 1 : 1;
+    const endRow = this._compiledModule.tokens.length > 0 ? this._compiledModule.tokens[this._compiledModule.tokens.length - 1].row : 0;
     for (let i = 0; i < code.length; i++) {
       const inst = code[i];
       if (inst.type === InstructionType.Label && inst.row === -1) {
@@ -558,10 +558,18 @@ export class Compiler {
       if (isOperatorMultiply(current)) {
         starCount = 1;
         from++;
+        if (from >= this._line.length) {
+          this._compilerContext.addError(PyErrorType.ExpectedEndOfFunctionDef, this._line[this._line.length - 1]);
+          return false;
+        }
         current = this._line[from];
       } else if (current && current.type === TokenType.Operator && current.operator === OperatorType.Power) {
         starCount = 2;
         from++;
+        if (from >= this._line.length) {
+          this._compilerContext.addError(PyErrorType.ExpectedEndOfFunctionDef, this._line[this._line.length - 1]);
+          return false;
+        }
         current = this._line[from];
       }
       if (current.type !== TokenType.Identifier) {
@@ -584,6 +592,10 @@ export class Compiler {
       arg.id = current.identifier;
       arg.initReg = -1;
       from++;
+      if (from >= this._line.length) {
+        this._compilerContext.addError(PyErrorType.ExpectedEndOfFunctionDef, this._line[this._line.length - 1]);
+        return false;
+      }
       current = this._line[from];
       if (current.type !== TokenType.Delimiter) {
         continue;
