@@ -1,5 +1,5 @@
-import {PyErrorType} from '../../src/api/ErrorType';
-import {compileModule} from './Utils';
+import { PyErrorType } from '../../src/api/ErrorType';
+import { compileModule } from './Utils';
 
 interface ErrorScenario {
   input: string;
