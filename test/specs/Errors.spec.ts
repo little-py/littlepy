@@ -1,5 +1,5 @@
-import { PyErrorType } from '../../src/api/ErrorType';
-import { compileModule } from './Utils';
+import {PyErrorType} from '../../src/api/ErrorType';
+import {compileModule} from './Utils';
 
 interface ErrorScenario {
   input: string;
@@ -599,6 +599,18 @@ const errors: ErrorScenario[] = [
       print(100x)
     `,
     error: PyErrorType.InvalidNumericLiteral,
+  },
+  {
+    input: `def func(a, b`,
+    error: PyErrorType.ExpectedEndOfFunctionDef,
+  },
+  {
+    input: `def func(a*`,
+    error: PyErrorType.ExpectedEndOfFunctionDef,
+  },
+  {
+    input: `def func(a**`,
+    error: PyErrorType.ExpectedEndOfFunctionDef,
   },
 ];
 
