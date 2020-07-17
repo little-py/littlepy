@@ -416,6 +416,7 @@ export class CodeGeneratorInst implements CodeGenerator {
     ret.add(InstructionType.List, parts[0].position, 0);
     this.appendTo(ret, intermediate, 1);
     const pos = ret.code.findIndex((c) => c.type === InstructionType.Literal && c.arg2 === -1);
+    // noinspection UnnecessaryLocalVariableJS
     const reg = ret.code[pos].arg1;
     ret.code[pos] = new Instruction(InstructionType.ListAdd, parts[parts.length - 1].position, reg, 0);
     ret.success = true;
@@ -1100,5 +1101,31 @@ export class CodeGeneratorInst implements CodeGenerator {
 
   appendReturnValue(fragment: CodeFragmentInst, position: TokenPosition, from: number): void {
     fragment.add(InstructionType.Ret, position, from);
+  }
+
+  adjustFunctionCodePositions(func: FunctionBody, endRow: number): void {
+    // This code is to make sure labels without position are positioned to the next line, this helps with detecting debug position
+    if (!func.code) {
+      return;
+    }
+    const code = (func.code as FullCodeInst).instructions;
+    for (let i = 0; i < code.length; i++) {
+      const inst = code[i];
+      if (inst.type === InstructionType.Label && inst.row === -1) {
+        let j = i + 1;
+        for (; j < code.length; j++) {
+          const ref = code[j];
+          if (ref.row !== -1) {
+            inst.row = ref.row;
+            inst.column = ref.column;
+            inst.position = ref.position;
+            break;
+          }
+        }
+        if (j >= code.length) {
+          inst.row = endRow;
+        }
+      }
+    }
   }
 }
