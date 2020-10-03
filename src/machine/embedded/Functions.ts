@@ -74,6 +74,11 @@ class ExportedFunctions {
   }
 
   @pyFunction
+  ord(@pyParam('c', PropertyType.String) c: string) {
+    return c.charCodeAt(0);
+  }
+
+  @pyFunction
   min(@pyParamArgs args: PyObject[]) {
     if (args.length === 0) {
       throw new ExceptionObject(ExceptionType.ValueError, UniqueErrorCode.ExpectedNonEmptyArgs);
