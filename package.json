@@ -14,7 +14,7 @@
     "url": "https://gitlab.com/littlepy/littlepy"
   },
   "name": "littlepy",
-  "version": "1.0.54",
+  "version": "1.0.55",
   "main": "lib/littlepy.js",
   "license": "MIT",
   "private": false,
