@@ -17,6 +17,7 @@ import { pyFunction, pyParam, pyParamArgs, pyParamKwargs } from '../../api/Decor
 import { PropertyType } from '../../api/Native';
 import { getObjectUtils } from '../../api/ObjectUtils';
 import { UniqueErrorCode } from '../../api/UniqueErrorCode';
+import { StringObject } from '../objects/StringObject';
 
 class RangeObject extends IterableObject {
   private readonly items: number[];
@@ -304,6 +305,38 @@ class ExportedFunctions {
       callContext.onFinish(getObjectUtils().toPyObject(result, false), null);
     });
     return new CallableIgnore();
+  }
+
+  @pyFunction
+  int(@pyParam('x', PropertyType.Object, 0) x: PyObject, @pyParam('base', PropertyType.Number, 10) base: number) {
+    if (x instanceof NumberObject) {
+      return new NumberObject(x.value);
+    }
+    if (x instanceof StringObject) {
+      return new NumberObject(parseInt(x.value, base));
+    }
+    return new NumberObject(0);
+  }
+
+  @pyFunction
+  float(@pyParam('x', PropertyType.Object, 0) x: PyObject) {
+    if (x instanceof NumberObject) {
+      return new NumberObject(x.value);
+    }
+    if (x instanceof StringObject) {
+      return new NumberObject(parseFloat(x.value));
+    }
+    return new NumberObject(0);
+  }
+
+  @pyFunction
+  round(@pyParam('x', PropertyType.Number) x: number, @pyParam('ndigits', PropertyType.Number, 0) digits: number) {
+    if (digits > 0) {
+      const base = Math.pow(10, Math.round(digits));
+      return new NumberObject(Math.round((x + Number.EPSILON) * base) / base);
+    } else {
+      return new NumberObject(Math.round(x));
+    }
   }
 }
 

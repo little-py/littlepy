@@ -39,7 +39,7 @@ export class PyObject {
     return this === to;
   }
 
-  toString(): string {
+  public toString(): string {
     return '(object)';
   }
 

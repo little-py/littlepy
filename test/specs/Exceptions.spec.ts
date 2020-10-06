@@ -517,31 +517,6 @@ const errors: ErrorScenario[] = [
   },
   {
     input: `
-      print(int.from_bytes(b'\x00\x10', byteorder='big'))
-      print(int.from_bytes(b'\x00\x10', byteorder='little'))
-      print(int.from_bytes(b'\xfc\x00', byteorder='big', signed=True))
-      print(int.from_bytes(b'\xfc\x00', byteorder='big', signed=False))
-      print(int.from_bytes([255, 0, 0], byteorder='big'))
-    `,
-    // TBD: binary operations aren't supported
-    // output: ['16', '4096', '-1024', '64512', '16711680'],
-    // expectedException: ExceptionType.NotImplementedError,
-    error: UniqueErrorCode.NotImplemented,
-    args: ['from_bytes'],
-  },
-  {
-    input: `
-      # print((3.12).hex())
-      print(float.fromhex('0x1.8f5c28f5c28f6p+1'))
-    `,
-    // TBD: binary operations aren't supported
-    // output: ["'0x1.8f5c28f5c28f6p+1'", '3.12'],
-    // expectedException: ExceptionType.NotImplementedError,
-    error: UniqueErrorCode.NotImplemented,
-    args: ['fromhex'],
-  },
-  {
-    input: `
       print(hash(30.2) == hash(30.2))
     `,
     // TBD: hash operations aren't supported

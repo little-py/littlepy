@@ -2688,6 +2688,55 @@ line2"""
     `,
     output: ['10;20'],
   },
+  {
+    input: `
+      x = 10.2345
+      print(round(x, 2))
+    `,
+    output: ['10.23'],
+  },
+  {
+    input: `
+      x = 10.2345
+      print(round(x))
+    `,
+    output: ['10'],
+  },
+  {
+    input: `
+      x = int(10)
+      print(x)
+    `,
+    output: ['10'],
+  },
+  {
+    input: `
+      x = int('10')
+      print(x)
+    `,
+    output: ['10'],
+  },
+  {
+    input: `
+      x = int(False)
+      print(x)
+    `,
+    output: ['0'],
+  },
+  {
+    input: `
+      x = float(10)
+      print(x)
+    `,
+    output: ['10'],
+  },
+  {
+    input: `
+      x = float('22.3')
+      print(x)
+    `,
+    output: ['22.3'],
+  },
 ];
 
 export default scenarios;
