@@ -1,10 +1,7 @@
 import { exceptions } from './Exceptions';
 import { sys } from './Sys';
 import { ExceptionType } from '../../api/ExceptionType';
-import { IntegerClassObject } from '../objects/IntegerClassObject';
-import { FloatClassObject } from '../objects/FloatClassObject';
 import { exportedFunctions } from './Functions';
-import { getClassObject } from './Utils';
 import { mathFunctions } from './Math';
 import { PyObject } from '../../api/Object';
 import { getObjectUtils } from '../../api/ObjectUtils';
