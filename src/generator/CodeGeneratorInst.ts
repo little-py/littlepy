@@ -445,6 +445,7 @@ export class CodeGeneratorInst implements CodeGenerator {
     }
 
     ret.add(InstructionType.Label, null, endLabel);
+    ret.add(InstructionType.LeaveCycle, null);
   }
 
   // public static forCycle(variable: string, position: TokenPosition, expression: GeneratedCode, body: GeneratedCode, context: CompilerContext): GeneratedCode {
