@@ -2737,6 +2737,20 @@ line2"""
     `,
     output: ['22.3'],
   },
+  {
+    input: `
+      while True:
+        print('a')
+        for x in range(1,10):
+          print(x)
+          break
+        print('b')
+        break
+      print('c')
+    `,
+    output: ['a', '1', 'b', 'c'],
+    onlyThis: true,
+  }
 ];
 
 export default scenarios;
