@@ -1504,7 +1504,7 @@ export class RunContext extends RunContextBase {
     return this.formatLocation(current);
   }
 
-  public formatLocation(instruction: Instruction) {
+  public formatLocation(instruction: Instruction): string {
     const module = this.getCurrentModule();
     return `${module.id}_${instruction.row}`;
   }

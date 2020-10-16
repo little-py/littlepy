@@ -6,7 +6,6 @@ import { PyObject } from '../../src/api/Object';
 import { ExceptionObject } from '../../src/machine/objects/ExceptionObject';
 import { ExceptionType } from '../../src/api/ExceptionType';
 import { FullCodeInst } from '../../src/generator/FullCodeInst';
-import { InstructionType } from '../../src/generator/InstructionType';
 
 describe('Debug flow', () => {
   it('should step from first to second line and initialize two variables', () => {
