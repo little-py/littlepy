@@ -250,7 +250,7 @@ describe('Debug flow', () => {
           break
       print('3')
     `;
-    let runContext = compileAndStartModule(source);
+    const runContext = compileAndStartModule(source);
     function checkReportedLine() {
       const functionStack = runContext.getCurrentFunctionStack();
       if (!functionStack) {
