@@ -5,7 +5,6 @@ import { PyScope } from '../../src/api/Scope';
 import { PyObject } from '../../src/api/Object';
 import { ExceptionObject } from '../../src/machine/objects/ExceptionObject';
 import { ExceptionType } from '../../src/api/ExceptionType';
-import { FullCodeInst } from '../../src/generator/FullCodeInst';
 
 describe('Debug flow', () => {
   it('should step from first to second line and initialize two variables', () => {
@@ -251,27 +250,11 @@ describe('Debug flow', () => {
       print('3')
     `;
     const runContext = compileAndStartModule(source);
-    function checkReportedLine() {
-      const functionStack = runContext.getCurrentFunctionStack();
-      if (!functionStack) {
-        return;
-      }
-      const func = functionStack.functionBody;
-      const instruction = (func.code as FullCodeInst).instructions[functionStack.instruction];
-      if (instruction && instruction.row >= 0) {
-        const line = runContext.formatLocation(instruction);
-        const currentLocation = runContext.getCurrentLocation();
-        if (currentLocation !== line) {
-          debugger;
-        }
-        expect(currentLocation).toEqual(line);
-      }
-    }
-    runContext.step();
+    runContext.debugIn();
     while (!runContext.isFinished()) {
-      checkReportedLine();
-      runContext.step();
-      checkReportedLine();
+      expect(runContext.getCurrentLocation()).toBeDefined();
+      runContext.debugIn();
     }
+    expect(runContext.getCurrentLocation()).toBeUndefined();
   });
 });
