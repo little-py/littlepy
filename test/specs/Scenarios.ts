@@ -2749,7 +2749,6 @@ line2"""
       print('c')
     `,
     output: ['a', '1', 'b', 'c'],
-    onlyThis: true,
   }
 ];
 

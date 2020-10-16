@@ -907,6 +907,7 @@ export class CodeGeneratorInst implements CodeGenerator {
     const ret = new CodeFragmentInst();
     ret.add(InstructionType.CreateVarRef, position, compilerContext.getIdentifierCode(identifiers[0]), 0, ReferenceScope.Default);
     ret.success = true;
+    ret.position = position;
     return ret;
   }
 
