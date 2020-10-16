@@ -5,6 +5,8 @@ import { PyScope } from '../../src/api/Scope';
 import { PyObject } from '../../src/api/Object';
 import { ExceptionObject } from '../../src/machine/objects/ExceptionObject';
 import { ExceptionType } from '../../src/api/ExceptionType';
+import { FullCodeInst } from '../../src/generator/FullCodeInst';
+import { InstructionType } from '../../src/generator/InstructionType';
 
 describe('Debug flow', () => {
   it('should step from first to second line and initialize two variables', () => {
@@ -127,6 +129,7 @@ describe('Debug flow', () => {
     runContext.debugOut();
     expect(runContext.getPosition().row).toEqual(5);
     runContext.debugOut();
+    expect(runContext.getPosition()).toBeUndefined();
     expect(runContext.isFinished()).toBeTruthy();
   });
 
@@ -224,5 +227,52 @@ describe('Debug flow', () => {
     const runContext = compileAndStartModule('');
     runContext.debug();
     expect(runContext.getPosition()).toBeUndefined();
+  });
+
+  it('should report correct positions', () => {
+    const source = `
+      a = 10
+      if a == 10:
+        print('3')
+      if a == 20:
+        print('4')
+      else:
+        b = 20
+        print('5')
+      def func():
+        print('i1')
+        print('i2')
+      print('1')
+      func()
+      print('2')
+      for x in range(1,5)
+        print(x)
+        if x == 3:
+          break
+      print('3')
+    `;
+    let runContext = compileAndStartModule(source);
+    function checkReportedLine() {
+      const functionStack = runContext.getCurrentFunctionStack();
+      if (!functionStack) {
+        return;
+      }
+      const func = functionStack.functionBody;
+      const instruction = (func.code as FullCodeInst).instructions[functionStack.instruction];
+      if (instruction && instruction.row >= 0) {
+        const line = runContext.formatLocation(instruction);
+        const currentLocation = runContext.getCurrentLocation();
+        if (currentLocation !== line) {
+          debugger;
+        }
+        expect(currentLocation).toEqual(line);
+      }
+    }
+    runContext.step();
+    while (!runContext.isFinished()) {
+      checkReportedLine();
+      runContext.step();
+      checkReportedLine();
+    }
   });
 });

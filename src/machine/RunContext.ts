@@ -37,11 +37,10 @@ import { PyException } from '../api/Exception';
 import { setObjectUtils } from '../api/ObjectUtils';
 import { objectUtils } from './ObjectUtilsImpl';
 import { PyObject } from '../api/Object';
-import { PyFunction } from '../api/Function';
+import { ArgumentType, FunctionArgument, FunctionType, PyFunction } from '../api/Function';
 import { UniqueErrorCode } from '../api/UniqueErrorCode';
 import { CompiledModule } from '../api/CompiledModule';
 import { FunctionBody } from '../api/FunctionBody';
-import { ArgumentType, FunctionArgument, FunctionType } from '../api/Function';
 import { Instruction } from '../generator/Instructions';
 import { ReferenceScope } from '../api/ReferenceScope';
 import { InstructionType } from '../generator/InstructionType';
@@ -64,7 +63,6 @@ export class RunContext extends RunContextBase {
   private _currentException: ExceptionObject;
   private _output: string[] = [];
   private _finished = true;
-  private _locationId: string;
   private _position: PyMachinePosition;
   private _paused = false;
   private _pausedCallback: () => boolean;
@@ -78,7 +76,6 @@ export class RunContext extends RunContextBase {
     this._finished = false;
     this._currentStack = undefined;
     this._output = [];
-    this._locationId = undefined;
     this._currentInstruction = -1;
     this._continueContext = undefined;
     this._unhandledException = undefined;
@@ -122,15 +119,15 @@ export class RunContext extends RunContextBase {
     if (this._position) {
       return this._position;
     }
-    if (this._currentInstruction === -1) {
-      return;
-    }
     const functionStack = this.getCurrentFunctionStack();
     if (!functionStack) {
       return;
     }
     const func = functionStack.functionBody;
-    const instruction = (functionStack.functionBody.code as FullCodeInst).instructions[this._currentInstruction];
+    const instruction = (func.code as FullCodeInst).instructions[functionStack.instruction];
+    if (!instruction) {
+      return;
+    }
     this._position = {
       module: func.module,
       func,
@@ -169,13 +166,8 @@ export class RunContext extends RunContextBase {
   }
 
   public debug(): void {
-    const functionStack = this.getCurrentFunctionStack();
-    const code = (functionStack.functionBody.code as FullCodeInst).instructions;
-    const current = code[functionStack.instruction];
-    if (current) {
-      this.updateLocation(current);
-    }
-    if (this._breakpoints[this._locationId]) {
+    const location = this.getCurrentLocation();
+    if (location && this._breakpoints[location]) {
       return;
     }
     this.debugUntilCondition();
@@ -414,8 +406,8 @@ export class RunContext extends RunContextBase {
       return;
     }
     while (!this.isFinished()) {
-      const current = this._locationId;
-      while (!this.isFinished() && this._locationId === current && !this._paused) {
+      const current = this.getCurrentLocation();
+      while (!this.isFinished() && this.getCurrentLocation() === current && !this._paused) {
         this.step();
       }
       if (this._paused) {
@@ -426,7 +418,8 @@ export class RunContext extends RunContextBase {
       if (this.isFinished()) {
         break;
       }
-      if (this._breakpoints[this._locationId]) {
+      const newLocation = this.getCurrentLocation();
+      if (newLocation && this._breakpoints[newLocation]) {
         break;
       }
       if (callback && callback()) {
@@ -436,6 +429,7 @@ export class RunContext extends RunContextBase {
   }
 
   private onCodeBlockFinished(functionStack: StackEntry) {
+    this._position = undefined;
     let retObject: PyObject;
     const { module, type } = functionStack.functionBody;
     if (type === FunctionType.Module) {
@@ -453,7 +447,18 @@ export class RunContext extends RunContextBase {
     this.exitFunction(retObject);
   }
 
-  private step(): boolean {
+  private onStepFinished() {
+    const currentStack = this.getCurrentFunctionStack();
+    if (!currentStack) {
+      return;
+    }
+    const code = currentStack.functionBody.code as FullCodeInst;
+    if (currentStack && currentStack.instruction === code.instructions.length) {
+      this.onCodeBlockFinished(currentStack);
+    }
+  }
+
+  public step(): boolean {
     if (this.isFinished()) {
       return false;
     }
@@ -467,7 +472,6 @@ export class RunContext extends RunContextBase {
       }
       const current = code.instructions[functionStack.instruction];
       this._currentInstruction = functionStack.instruction;
-      this.updateLocation(current);
       functionStack.instruction++;
       this.stepInternal(current);
     } catch (err) {
@@ -478,6 +482,9 @@ export class RunContext extends RunContextBase {
         /* istanbul ignore next */
         this.raiseException(new ExceptionObject(ExceptionType.SystemError, UniqueErrorCode.UnexpectedJsException));
       }
+    }
+    if (!this._unhandledException) {
+      this.onStepFinished();
     }
     return !this._unhandledException;
   }
@@ -1481,18 +1488,25 @@ export class RunContext extends RunContextBase {
         stackEntry.scope.objects[argName] = args[i];
       }
     }
-    const code = stackEntry.functionBody.code as FullCodeInst;
-    if (code.instructions.length > 0) {
-      this.updateLocation(code.instructions[0]);
-    }
     return stackEntry;
   }
 
-  private updateLocation(instruction: Instruction) {
-    if (instruction.row >= 0) {
-      const module = this.getCurrentModule();
-      this._locationId = `${module.id}_${instruction.row}`;
+  public getCurrentLocation(): string | undefined {
+    const functionStack = this.getCurrentFunctionStack();
+    if (!functionStack?.functionBody?.code) {
+      return undefined;
     }
+    const code = (functionStack.functionBody.code as FullCodeInst).instructions;
+    const current = code[functionStack.instruction];
+    if (!current) {
+      return undefined;
+    }
+    return this.formatLocation(current);
+  }
+
+  public formatLocation(instruction: Instruction) {
+    const module = this.getCurrentModule();
+    return `${module.id}_${instruction.row}`;
   }
 
   public getNoneObject(): PyObject {
@@ -1804,7 +1818,7 @@ export class RunContext extends RunContextBase {
     this.setContinueContext(null);
 
     if (raiseStopIteration) {
-      throw new ExceptionObject(ExceptionType.StopIteration, UniqueErrorCode.StopIteration);
+      this.raiseException(new ExceptionObject(ExceptionType.StopIteration, UniqueErrorCode.StopIteration));
     }
   }
 
@@ -1841,7 +1855,7 @@ export class RunContext extends RunContextBase {
         return;
       }
       if (exception.exceptionType === ExceptionType.StopIteration && entry.type === StackEntryType.ForCycle) {
-        exceptionEntry = entry.parent;
+        exceptionEntry = entry;
         if (entry.noBreakInstruction !== -1) {
           exceptionInstruction = entry.noBreakInstruction;
         } else {
