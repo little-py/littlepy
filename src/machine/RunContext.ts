@@ -125,7 +125,7 @@ export class RunContext extends RunContextBase {
     }
     const func = functionStack.functionBody;
     const instruction = (func.code as FullCodeInst).instructions[functionStack.instruction];
-    if (!instruction) {
+    if (!instruction || instruction.row < 0) {
       return;
     }
     this._position = {
@@ -407,8 +407,12 @@ export class RunContext extends RunContextBase {
     }
     while (!this.isFinished()) {
       const current = this.getCurrentLocation();
-      while (!this.isFinished() && this.getCurrentLocation() === current && !this._paused) {
+      while (!this.isFinished() && !this._paused) {
         this.step();
+        const newLocation = this.getCurrentLocation();
+        if (newLocation && newLocation !== current) {
+          break;
+        }
       }
       if (this._paused) {
         this._pausedCallback = callback;
@@ -1498,7 +1502,7 @@ export class RunContext extends RunContextBase {
     }
     const code = (functionStack.functionBody.code as FullCodeInst).instructions;
     const current = code[functionStack.instruction];
-    if (!current) {
+    if (!current || current.position < 0) {
       return undefined;
     }
     return this.formatLocation(current);
