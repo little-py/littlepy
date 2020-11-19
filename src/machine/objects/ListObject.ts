@@ -17,7 +17,7 @@ export class ListObject extends ContainerObject {
 
   private items: PyObject[];
 
-  public getValues() {
+  public getValues(): PyObject[] {
     return this.items;
   }
 
@@ -136,7 +136,7 @@ export class ListObject extends ContainerObject {
   }
 
   @pyFunction
-  public reverse() {
+  public reverse(): void {
     this.items = this.items.reverse();
   }
 }
