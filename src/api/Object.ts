@@ -39,6 +39,8 @@ export class PyObject {
     return this === to;
   }
 
+  // ignore unused 'to'
+  // eslint-disable-next-line
   public compare(to: PyObject): number {
     return -1;
   }
