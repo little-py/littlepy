@@ -39,6 +39,10 @@ export class PyObject {
     return this === to;
   }
 
+  public compare(to: PyObject): number {
+    return -1;
+  }
+
   public toString(): string {
     return '(object)';
   }
