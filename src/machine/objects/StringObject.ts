@@ -45,6 +45,19 @@ export class StringObject extends ContainerObject {
     return super.equals(to);
   }
 
+  public compare(to: PyObject): number {
+    if (to instanceof StringObject) {
+      if (this.value < to.value) {
+        return -1;
+      } else if (this.value === to.value) {
+        return 0;
+      } else {
+        return 1;
+      }
+    }
+    return super.compare(to);
+  }
+
   public contains(value: PyObject): boolean {
     const substr = value.toString();
     return this.value.indexOf(substr) >= 0;

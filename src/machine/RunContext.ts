@@ -2032,6 +2032,11 @@ export class RunContext extends RunContextBase {
           return new StringObject(left + right);
       }
     }
+    if (leftObj instanceof ListObject && rightObj instanceof ListObject && op === InstructionType.Add) {
+      const newList = new ListObject(leftObj.getValues());
+      newList.extend(rightObj);
+      return newList;
+    }
     switch (op) {
       case InstructionType.Equal:
       case InstructionType.NotEq: {

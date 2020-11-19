@@ -1668,6 +1668,155 @@ line2"""
   },
   {
     input: `
+      alist = ["apple", "banana", "cherry"]
+      alist.insert(1, "orange")
+      print(alist)
+    `,
+    output: ["['apple', 'orange', 'banana', 'cherry']"],
+  },
+  {
+    input: `
+      alist = ["apple", "banana", "cherry"]
+      tropical = ["mango", "pineapple", "papaya"]
+      alist.extend(tropical)
+      print(alist)
+    `,
+    output: ["['apple', 'banana', 'cherry', 'mango', 'pineapple', 'papaya']"],
+  },
+  {
+    input: `
+      alist = ["apple", "banana", "cherry"]
+      atuple = ("kiwi", "orange")
+      alist.extend(atuple)
+      print(alist)
+    `,
+    output: ["['apple', 'banana', 'cherry', 'kiwi', 'orange']"],
+  },
+  {
+    input: `
+      alist = ["apple", "banana", "cherry"]
+      alist.remove("banana")
+      print(alist)
+    `,
+    output: ["['apple', 'cherry']"],
+  },
+  {
+    input: `
+      alist = ["apple", "banana", "cherry"]
+      alist.pop(1)
+      print(alist)
+    `,
+    output: ["['apple', 'cherry']"],
+  },
+  {
+    input: `
+      alist = ["apple", "banana", "cherry"]
+      alist.pop()
+      print(alist)
+    `,
+    output: ["['apple', 'banana']"],
+  },
+  {
+    input: `
+      alist = ["apple", "banana", "cherry"]
+      del alist[0]
+      print(alist)
+    `,
+    output: ["['banana', 'cherry']"],
+  },
+  {
+    input: `
+      alist = ["apple", "banana", "cherry"]
+      alist.clear()
+      print(alist)
+    `,
+    output: ['[]'],
+  },
+  {
+    input: `
+      alist = ["orange", "mango", "kiwi", "pineapple", "banana"]
+      alist.sort()
+      print(alist)
+    `,
+    output: ["['banana', 'kiwi', 'mango', 'orange', 'pineapple']"],
+  },
+  {
+    input: `
+      alist = ["orange", "mango", "kiwi", "pineapple", "banana"]
+      alist.sort(reverse = True)
+      print(alist)
+    `,
+    output: ["['pineapple', 'orange', 'mango', 'kiwi', 'banana']"],
+  },
+  {
+    input: `
+      alist = [100, 50, 65, 82, 23]
+      alist.sort(reverse = True)
+      print(alist)
+    `,
+    output: ['[100, 82, 65, 50, 23]'],
+  },
+  {
+    input: `
+      alist = ["apple", "banana", "cherry"]
+      otherlist = alist.copy()
+      print(otherlist)
+    `,
+    output: ["['apple', 'banana', 'cherry']"],
+  },
+  {
+    input: `
+      alist = ["apple", "banana", "cherry"]
+      otherlist = list(alist)
+      print(otherlist)
+    `,
+    output: ["['apple', 'banana', 'cherry']"],
+  },
+  {
+    input: `
+      list1 = ["a", "b", "c"]
+      list2 = [1, 2, 3]
+      list3 = list1 + list2
+      print(list3)
+    `,
+    output: ["['a', 'b', 'c', 1, 2, 3]"],
+  },
+  {
+    input: `
+      list1 = ["a", "b" , "c"]
+      list2 = [1, 2, 3]
+      for x in list2:
+        list1.append(x)
+      print(list1)
+    `,
+    output: ["['a', 'b', 'c', 1, 2, 3]"],
+  },
+  {
+    input: `
+      points = [1, 4, 2, 9, 7, 8, 9, 3, 1]
+      x = points.count(9)
+      print(x)
+    `,
+    output: ['2'],
+  },
+  {
+    input: `
+      fruits = ['apple', 'banana', 'cherry']
+      x = fruits.index("cherry")
+      print(x)
+    `,
+    output: ['2'],
+  },
+  {
+    input: `
+      fruits = ['apple', 'banana', 'cherry']
+      fruits.reverse()
+      print(fruits)
+    `,
+    output: ["['cherry', 'banana', 'apple']"],
+  },
+  {
+    input: `
       print('test'.capitalize())
     `,
     output: ['Test'],
