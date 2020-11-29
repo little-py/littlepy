@@ -63,7 +63,7 @@ export function createDebugInformation(module: PyModule, instructions: Instructi
         }`;
         break;
       case InstructionType.CreateArrayIndexRef:
-        i.debug = `reg${i.arg3} = reference(reg${i.arg1}[${i.arg2}])`;
+        i.debug = `reg${i.arg3} = reference(reg${i.arg1}[reg${i.arg2}])`;
         break;
       case InstructionType.CreatePropertyRef:
         i.debug = `reg${i.arg3} = reference(reg${i.arg1}[reg${i.arg2}])`;
@@ -487,7 +487,7 @@ export class CodeGeneratorInst implements CodeGenerator {
           ret.add(InstructionType.GetBool, part.position, 0, 0);
           ret.add(InstructionType.Condition, part.position, 0, nextLabel);
           this.appendTo(ret, part.blockCode as CodeFragmentInst);
-          ret.add(InstructionType.GoTo, part.position, endLabel);
+          ret.add(InstructionType.GoTo, null, endLabel);
           ret.add(InstructionType.Label, null, nextLabel);
           break;
         }

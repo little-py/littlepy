@@ -132,7 +132,9 @@ export class Compiler {
     }
 
     if (this._pendingFinishedBlocks.length) {
-      this.parseFinishedBlocks(this._line[this._line.length - 1]);
+      if (this.parseFinishedBlocks(this._line[this._line.length - 1], this._pendingFinishedBlocks)) {
+        this._pendingFinishedBlocks = [];
+      }
     }
 
     // safety check -- should never happen
@@ -212,9 +214,11 @@ export class Compiler {
     const parentBlock = block.parent;
 
     if (this._pendingFinishedBlocks.length > 0) {
-      const pending = this._pendingFinishedBlocks[0];
-      if (pending.indent > block.indent) {
-        this.parseFinishedBlocks(token);
+      const pending = this._pendingFinishedBlocks.filter(b => b.indent > block.indent);
+      if (pending.length) {
+        if (this.parseFinishedBlocks(token, pending)) {
+          this._pendingFinishedBlocks = this._pendingFinishedBlocks.filter(b => b.indent <= block.indent);
+        }
       }
     }
 
@@ -264,28 +268,28 @@ export class Compiler {
     return true;
   }
 
-  private finishIfBlock() {
-    const ifCode = this._codeGenerator.condition(this._pendingFinishedBlocks, this._compilerContext);
+  private finishIfBlock(blocks: CompilerBlockContext[]) {
+    const ifCode = this._codeGenerator.condition(blocks, this._compilerContext);
     this._codeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, ifCode, 0);
     return true;
   }
 
-  private finishTryBlock() {
-    const tryCode = this._codeGenerator.tryExcept(this._pendingFinishedBlocks, this._compilerContext);
+  private finishTryBlock(blocks: CompilerBlockContext[]) {
+    const tryCode = this._codeGenerator.tryExcept(blocks, this._compilerContext);
     this._codeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, tryCode, 0);
     return true;
   }
 
-  private finishForBlock() {
-    const forCode = this._codeGenerator.forCycle(this._pendingFinishedBlocks, this._compilerContext);
+  private finishForBlock(blocks: CompilerBlockContext[]) {
+    const forCode = this._codeGenerator.forCycle(blocks, this._compilerContext);
     this._codeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, forCode, 0);
     return true;
   }
 
-  private parseFinishedBlocks(nextToken: Token) {
-    const firstBlock = this._pendingFinishedBlocks[0];
+  private parseFinishedBlocks(nextToken: Token, blocks: CompilerBlockContext[]): boolean {
+    const firstBlock = blocks[0];
     if (firstBlock.indent < this._indent) {
-      return;
+      return false;
     }
     const keyword =
       firstBlock.indent === this._indent && nextToken && nextToken.type === TokenType.Keyword ? (nextToken.keyword as KeywordType) : KeywordType.Pass;
@@ -296,25 +300,25 @@ export class Compiler {
           case KeywordType.Elif:
             return;
         }
-        this.finishIfBlock();
-        break;
+        this.finishIfBlock(blocks);
+        return true;
       case CompilerBlockType.Try:
         switch (keyword) {
           case KeywordType.Except:
           case KeywordType.Finally:
           case KeywordType.Else:
-            return;
+            return false;
         }
-        this.finishTryBlock();
-        break;
+        this.finishTryBlock(blocks);
+        return true;
       case CompilerBlockType.For:
         if (this._pendingFinishedBlocks.length === 1 && keyword === KeywordType.Else) {
-          return;
+          return false;
         }
-        this.finishForBlock();
-        break;
+        this.finishForBlock(blocks);
+        return true;
     }
-    this._pendingFinishedBlocks = [];
+    return false;
   }
 
   private parseCombinedLine(): boolean {
@@ -345,7 +349,9 @@ export class Compiler {
       }
     }
     if (this._pendingFinishedBlocks.length) {
-      this.parseFinishedBlocks(first);
+      if (this.parseFinishedBlocks(first, this._pendingFinishedBlocks)) {
+        this._pendingFinishedBlocks = [];
+      }
     }
     if (first.type === TokenType.Keyword) {
       switch (first.keyword) {
