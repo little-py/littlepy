@@ -214,10 +214,10 @@ export class Compiler {
     const parentBlock = block.parent;
 
     if (this._pendingFinishedBlocks.length > 0) {
-      const pending = this._pendingFinishedBlocks.filter(b => b.indent > block.indent);
+      const pending = this._pendingFinishedBlocks.filter((b) => b.indent > block.indent);
       if (pending.length) {
         if (this.parseFinishedBlocks(token, pending)) {
-          this._pendingFinishedBlocks = this._pendingFinishedBlocks.filter(b => b.indent <= block.indent);
+          this._pendingFinishedBlocks = this._pendingFinishedBlocks.filter((b) => b.indent <= block.indent);
         }
       }
     }
