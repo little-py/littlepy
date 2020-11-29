@@ -258,7 +258,7 @@ describe('Debug flow', () => {
     expect(runContext.getCurrentLocation()).toBeUndefined();
   });
 
-  it ('should report sequential positions', () => {
+  it('should report sequential positions', () => {
     const source = `
       if 10 > 5:
         if 5 > 2:
@@ -305,7 +305,53 @@ describe('Debug flow', () => {
       lines.push(parseInt(runContext.getCurrentLocation().split('_')[1]) + 1);
       runContext.debugIn();
     }
-    expect(lines).toEqual([1, 22, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 19, 7, 8, 9, 13, 14, 19, 7, 8, 9, 13, 14, 15, 16, 17, 19, 7, 8, 9, 10, 11, 12, 19, 7, 8, 9, 13, 14, 15, 16, 17, 18, 22]);
+    expect(lines).toEqual([
+      1,
+      22,
+      2,
+      3,
+      4,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      19,
+      7,
+      8,
+      9,
+      13,
+      14,
+      19,
+      7,
+      8,
+      9,
+      13,
+      14,
+      15,
+      16,
+      17,
+      19,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      19,
+      7,
+      8,
+      9,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      22,
+    ]);
     expect(runContext.getOutputText()).toEqual('1');
   });
 });
