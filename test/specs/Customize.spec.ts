@@ -185,4 +185,31 @@ describe('Customize runContext', () => {
     const exception = runContext.getUnhandledException();
     expect(exception && exception.uniqueError).toEqual(UniqueErrorCode.FunctionNotFound);
   });
+
+  it('should break on infinite loop', () => {
+    let runContext = compileAndStartModule(
+      `
+      while True:
+        print("test")
+    `,
+      [],
+      { maximumSingleRunSteps: 100 },
+    );
+    let lines = 0;
+    runContext.onWriteLine = () => lines++;
+    runContext.run();
+    expect(lines).toEqual(50);
+    runContext = compileAndStartModule(
+      `
+      while True:
+        print("test")
+    `,
+      [],
+      { maximumSingleRunSteps: 100 },
+    );
+    lines = 0;
+    runContext.onWriteLine = () => lines++;
+    runContext.debug();
+    expect(lines).toEqual(50);
+  });
 });

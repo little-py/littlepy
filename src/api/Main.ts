@@ -9,6 +9,7 @@ import { PyMachine } from './Machine';
 import { PyObject } from './Object';
 import { getObjectUtils } from './ObjectUtils';
 import { CompileOptions } from './CompileOptions';
+import { MachineConfig } from './MachineConfig';
 
 export class LittlePy {
   public static compileModule(text: string, name = 'main', options?: CompileOptions): { module: PyModule; rows: RowDescriptor[] } {
@@ -19,8 +20,12 @@ export class LittlePy {
     };
   }
 
-  public static createMachine(modules: { [key: string]: PyModule } = {}, breakpoints: PyBreakpoint[] = []): PyMachine {
-    return new RunContext(modules as { [key: string]: CompiledModule }, breakpoints);
+  public static createMachine(
+    modules: { [key: string]: PyModule } = {},
+    breakpoints: PyBreakpoint[] = [],
+    config: MachineConfig = undefined,
+  ): PyMachine {
+    return new RunContext(modules as { [key: string]: CompiledModule }, breakpoints, config);
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
