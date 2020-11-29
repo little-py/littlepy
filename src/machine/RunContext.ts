@@ -46,11 +46,13 @@ import { ReferenceScope } from '../api/ReferenceScope';
 import { InstructionType } from '../generator/InstructionType';
 import { LiteralType } from '../api/Literal';
 import { FullCodeInst } from '../generator/FullCodeInst';
+import { MachineConfig } from '../api/MachineConfig';
 
 setObjectUtils(objectUtils);
 
 export class RunContext extends RunContextBase {
   private readonly _compiledModules: { [key: string]: CompiledModule };
+  private readonly _config: MachineConfig = {};
   private _breakpoints: { [key: string]: boolean } = {};
   private _importedModules: { [id: string]: ModuleObject } = {};
   private _globalScope: GlobalScope;
@@ -99,9 +101,10 @@ export class RunContext extends RunContextBase {
     return this.getCurrentFunctionStack().scope;
   }
 
-  public constructor(modules: { [key: string]: CompiledModule } = {}, breakpoints: PyBreakpoint[] = []) {
+  public constructor(modules: { [key: string]: CompiledModule } = {}, breakpoints: PyBreakpoint[] = [], config: MachineConfig = undefined) {
     super();
     this._compiledModules = modules;
+    this._config = config;
     this.updateBreakpoints(breakpoints);
     this.initializeFunctions();
     this.createGlobalScope();
@@ -139,7 +142,18 @@ export class RunContext extends RunContextBase {
   }
 
   public run(): void {
+    let stepCount = 0;
+    const maximumSteps = this._config?.maximumSingleRunSteps;
+    let position = this.getCurrentLocation();
     while (this.step()) {
+      const newPosition = this.getCurrentLocation();
+      if (newPosition && newPosition !== position) {
+        position = newPosition;
+        stepCount++;
+        if (maximumSteps !== undefined && stepCount > maximumSteps) {
+          break;
+        }
+      }
       if (this._paused) {
         this._pausedCallback = undefined;
         this._pausedRun = true;
@@ -405,6 +419,8 @@ export class RunContext extends RunContextBase {
     if (this._paused) {
       return;
     }
+    let stepCount = 0;
+    const maximumSteps = this._config?.maximumSingleRunSteps;
     while (!this.isFinished()) {
       const current = this.getCurrentLocation();
       while (!this.isFinished() && !this._paused) {
@@ -420,6 +436,10 @@ export class RunContext extends RunContextBase {
         break;
       }
       if (this.isFinished()) {
+        break;
+      }
+      stepCount++;
+      if (maximumSteps !== undefined && stepCount > maximumSteps) {
         break;
       }
       const newLocation = this.getCurrentLocation();

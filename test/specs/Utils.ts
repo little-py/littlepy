@@ -3,6 +3,7 @@ import { RunContext } from '../../src/machine/RunContext';
 import { PyBreakpoint } from '../../src/api/Breakpoint';
 import { CompileOptions } from '../../src/api/CompileOptions';
 import { CompiledModule } from '../../src/api/CompiledModule';
+import { MachineConfig } from '../../src/api/MachineConfig';
 
 export function compileModule(source: string, name: string, options?: CompileOptions): CompiledModule {
   const pos = source.indexOf('\n');
@@ -20,10 +21,10 @@ export function runModules(modules: { [key: string]: CompiledModule }, main: str
   return runContext;
 }
 
-export function compileAndStartModule(source: string, breakpoints: PyBreakpoint[] = []): RunContext {
+export function compileAndStartModule(source: string, breakpoints: PyBreakpoint[] = [], config: MachineConfig = undefined): RunContext {
   const code = compileModule(source, 'main');
   breakpoints = breakpoints.map(({ row, condition }) => ({ row, condition, moduleId: 'main' }));
-  const runContext = new RunContext({ main: code }, breakpoints);
+  const runContext = new RunContext({ main: code }, breakpoints, config);
   runContext.startCallModule('main');
   return runContext;
 }
