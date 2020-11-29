@@ -257,4 +257,55 @@ describe('Debug flow', () => {
     }
     expect(runContext.getCurrentLocation()).toBeUndefined();
   });
+
+  it ('should report sequential positions', () => {
+    const source = `
+      if 10 > 5:
+        if 5 > 2:
+          print(2)
+    `;
+    const runContext = compileAndStartModule(source);
+    let lineNumber = 0;
+    while (!runContext.isFinished()) {
+      expect(runContext.getCurrentLocation()).toEqual(`main_${lineNumber}`);
+      runContext.debugIn();
+      lineNumber++;
+    }
+    expect(runContext.getCurrentLocation()).toBeUndefined();
+  });
+
+  it('should work with complex cycle', () => {
+    const source = `
+        def get_word_len(str, index):
+            x = 0
+            mode = 0
+            words = 0
+        
+            str = str + " "
+            while x < len(str):
+                c = str[x]
+                if 0 == mode:
+                    if c != " ":
+                        start = x 
+                        mode = 1
+                elif 1 == mode:
+                    if c == " ":
+                        mode = 0
+                        words = words + 1
+                        if words == index:
+                            return x - start
+                x = x + 1
+            return 0
+
+        print(get_word_len('ab c de', 2))
+    `;
+    const runContext = compileAndStartModule(source);
+    const lines: number[] = [];
+    while (!runContext.isFinished()) {
+      lines.push(parseInt(runContext.getCurrentLocation().split('_')[1]) + 1);
+      runContext.debugIn();
+    }
+    expect(lines).toEqual([1, 22, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 19, 7, 8, 9, 13, 14, 19, 7, 8, 9, 13, 14, 15, 16, 17, 19, 7, 8, 9, 10, 11, 12, 19, 7, 8, 9, 13, 14, 15, 16, 17, 18, 22]);
+    expect(runContext.getOutputText()).toEqual('1');
+  });
 });
