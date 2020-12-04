@@ -144,6 +144,8 @@ export class RunContext extends RunContextBase {
   public run(): void {
     let stepCount = 0;
     const maximumSteps = this._config?.maximumSingleRunSteps;
+    const maximumTimeout = this._config?.maximumSingleRunTimeout;
+    const startTime = new Date().valueOf();
     let position = this.getCurrentLocation();
     while (this.step()) {
       const newPosition = this.getCurrentLocation();
@@ -158,6 +160,12 @@ export class RunContext extends RunContextBase {
         this._pausedCallback = undefined;
         this._pausedRun = true;
         break;
+      }
+      if (maximumTimeout !== undefined) {
+        const currentTime = new Date().valueOf();
+        if (currentTime - startTime > maximumTimeout) {
+          break;
+        }
       }
     }
   }
@@ -421,6 +429,8 @@ export class RunContext extends RunContextBase {
     }
     let stepCount = 0;
     const maximumSteps = this._config?.maximumSingleRunSteps;
+    const maximumTimeout = this._config?.maximumSingleRunTimeout;
+    const startTime = new Date().valueOf();
     while (!this.isFinished()) {
       const current = this.getCurrentLocation();
       while (!this.isFinished() && !this._paused) {
@@ -441,6 +451,12 @@ export class RunContext extends RunContextBase {
       stepCount++;
       if (maximumSteps !== undefined && stepCount > maximumSteps) {
         break;
+      }
+      if (maximumTimeout !== undefined) {
+        const currentTime = new Date().valueOf();
+        if (currentTime - startTime > maximumTimeout) {
+          break;
+        }
       }
       const newLocation = this.getCurrentLocation();
       if (newLocation && this._breakpoints[newLocation]) {
