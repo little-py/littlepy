@@ -12,7 +12,7 @@ import { IterableObject } from './IterableObject';
 export class ListObject extends ContainerObject {
   public constructor(values: PyObject[] = []) {
     super();
-    this.items = values;
+    this.items = [...values];
   }
 
   private items: PyObject[];

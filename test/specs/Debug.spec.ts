@@ -354,4 +354,39 @@ describe('Debug flow', () => {
     ]);
     expect(runContext.getOutputText()).toEqual('1');
   });
+
+  it('should stop on correct lines', () => {
+    const source = `
+      list = [1, 2]
+      for x in list:
+        for y in list:
+          if False:
+            print(1)
+      print('done')
+`;
+    const runContext = compileAndStartModule(source);
+    const lines: number[] = [];
+    while (!runContext.isFinished()) {
+      lines.push(parseInt(runContext.getCurrentLocation().split('_')[1]) + 1);
+      runContext.debugIn();
+    }
+    expect(lines).toEqual([
+      1,
+      2,
+      3,
+      4,
+      3,
+      4,
+      3,
+      2,
+      3,
+      4,
+      3,
+      4,
+      3,
+      2,
+      6,
+    ]);
+    expect(runContext.getOutputText()).toEqual('done');
+  });
 });
