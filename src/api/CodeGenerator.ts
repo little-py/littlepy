@@ -86,5 +86,4 @@ export interface CodeGenerator {
   ): void;
   appendReadArrayIndex(fragment: CodeFragment, position: TokenPosition, from: number, index: number, to: number): void;
   appendReturnValue(fragment: CodeFragment, position: TokenPosition, from: number);
-  adjustFunctionCodePositions(func: PyFunction, endRow: number): void;
 }

@@ -9,7 +9,7 @@ export class TupleObject extends ContainerObject {
 
   public constructor(items: PyObject[]) {
     super();
-    this.items = items;
+    this.items = [...items];
   }
 
   public readonly items: PyObject[];

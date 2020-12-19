@@ -1104,30 +1104,4 @@ export class CodeGeneratorInst implements CodeGenerator {
   appendReturnValue(fragment: CodeFragmentInst, position: TokenPosition, from: number): void {
     fragment.add(InstructionType.Ret, position, from);
   }
-
-  adjustFunctionCodePositions(func: FunctionBody, endRow: number): void {
-    // This code is to make sure labels without position are positioned to the next line, this helps with detecting debug position
-    if (!func.code) {
-      return;
-    }
-    const code = (func.code as FullCodeInst).instructions;
-    for (let i = 0; i < code.length; i++) {
-      const inst = code[i];
-      if (inst.type === InstructionType.Label && inst.row === -1) {
-        let j = i + 1;
-        for (; j < code.length; j++) {
-          const ref = code[j];
-          if (ref.row !== -1) {
-            inst.row = ref.row;
-            inst.column = ref.column;
-            inst.position = ref.position;
-            break;
-          }
-        }
-        if (j >= code.length) {
-          inst.row = endRow;
-        }
-      }
-    }
-  }
 }

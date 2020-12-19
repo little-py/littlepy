@@ -212,4 +212,29 @@ describe('Customize runContext', () => {
     runContext.debug();
     expect(lines).toEqual(50);
   });
+
+  it('should break on infinite loop by timeout', () => {
+    let runContext = compileAndStartModule(
+      `
+      while True:
+        print("test")
+    `,
+      [],
+      { maximumSingleRunTimeout: 100 },
+    );
+    let startTime = new Date().valueOf();
+    runContext.run();
+    expect(new Date().valueOf() - startTime < 1000);
+    runContext = compileAndStartModule(
+      `
+      while True:
+        print("test")
+    `,
+      [],
+      { maximumSingleRunTimeout: 100 },
+    );
+    startTime = new Date().valueOf();
+    runContext.debug();
+    expect(new Date().valueOf() - startTime < 1000);
+  });
 });

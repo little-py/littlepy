@@ -2899,6 +2899,14 @@ line2"""
     `,
     output: ['a', '1', 'b', 'c'],
   },
+  {
+    input: `
+      a = [1, 2, 3]
+      print(a + a)
+      print(a + a)
+    `,
+    output: ['[1, 2, 3, 1, 2, 3]', '[1, 2, 3, 1, 2, 3]'],
+  },
 ];
 
 export default scenarios;

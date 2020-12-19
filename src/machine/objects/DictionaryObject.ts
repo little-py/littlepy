@@ -82,12 +82,12 @@ export class DictionaryObject extends ContainerObject {
 
   @pyFunction
   public keys(): SetObject {
-    return new SetObject(this._keys);
+    return new SetObject(this._keys, true);
   }
 
   @pyFunction
   public values(): SetObject {
-    return new SetObject(this._values);
+    return new SetObject(this._values, true);
   }
 
   @pyFunction

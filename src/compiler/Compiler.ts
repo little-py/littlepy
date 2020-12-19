@@ -151,16 +151,7 @@ export class Compiler {
     func.code = this._codeGenerator.getFullCode(block.blockCode);
     func.initialize(this._codeGenerator);
 
-    for (const func of this._compiledModule.functions) {
-      this.adjustFunctionCodePositions(func);
-    }
-
     return true;
-  }
-
-  private adjustFunctionCodePositions(func: FunctionBody) {
-    const endRow = this._compiledModule.tokens.length > 0 ? this._compiledModule.tokens[this._compiledModule.tokens.length - 1].row : 0;
-    this._codeGenerator.adjustFunctionCodePositions(func, endRow);
   }
 
   private scanLine(): boolean {

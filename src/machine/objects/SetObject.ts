@@ -9,8 +9,8 @@ import { PropertyType } from '../../api/Native';
 import { UniqueErrorCode } from '../../api/UniqueErrorCode';
 
 export class SetObject extends FrozenSetObject {
-  public constructor(items: PyObject[] = []) {
-    super(items);
+  public constructor(items: PyObject[] = [], useRef = false) {
+    super(useRef ? items : [...items]);
   }
 
   public addItem(value: PyObject): void {
