@@ -370,23 +370,7 @@ describe('Debug flow', () => {
       lines.push(parseInt(runContext.getCurrentLocation().split('_')[1]) + 1);
       runContext.debugIn();
     }
-    expect(lines).toEqual([
-      1,
-      2,
-      3,
-      4,
-      3,
-      4,
-      3,
-      2,
-      3,
-      4,
-      3,
-      4,
-      3,
-      2,
-      6,
-    ]);
+    expect(lines).toEqual([1, 2, 3, 4, 3, 4, 3, 2, 3, 4, 3, 4, 3, 2, 6]);
     expect(runContext.getOutputText()).toEqual('done');
   });
 });

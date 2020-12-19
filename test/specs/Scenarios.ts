@@ -2906,7 +2906,7 @@ line2"""
       print(a + a)
     `,
     output: ['[1, 2, 3, 1, 2, 3]', '[1, 2, 3, 1, 2, 3]'],
-  }
+  },
 ];
 
 export default scenarios;
