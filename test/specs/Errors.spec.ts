@@ -25,6 +25,14 @@ const errors: ErrorScenario[] = [
   },
   {
     input: `
+      a = 10
+          b = 20
+          c = 30
+    `,
+    error: PyErrorType.MismatchedIndent,
+  },
+  {
+    input: `
       print('abc\\x')
     `,
     error: PyErrorType.UnknownEscapeChar,
