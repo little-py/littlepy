@@ -122,7 +122,7 @@ export class Compiler {
         }
       } else if (this._indent > lastIndent && this._line.length > 0 && this._compilerContext.row > 0) {
         const tokens = this._compiledModule.tokens;
-        this._compilerContext.addError(PyErrorType.MismatchedIndent, this._line[0] || tokens[this._offset] || tokens[tokens.length - 1])
+        this._compilerContext.addError(PyErrorType.MismatchedIndent, this._line[0] || tokens[this._offset] || tokens[tokens.length - 1]);
       }
       if (!this._line.length) {
         continue;
