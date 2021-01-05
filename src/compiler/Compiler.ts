@@ -120,6 +120,9 @@ export class Compiler {
           const tokens = this._compiledModule.tokens;
           this._compilerContext.addError(PyErrorType.ExpectedIndent, this._line[0] || tokens[this._offset] || tokens[tokens.length - 1]);
         }
+      } else if (this._indent > lastIndent && this._line.length > 0 && this._compilerContext.row > 0) {
+        const tokens = this._compiledModule.tokens;
+        this._compilerContext.addError(PyErrorType.MismatchedIndent, this._line[0] || tokens[this._offset] || tokens[tokens.length - 1])
       }
       if (!this._line.length) {
         continue;
@@ -166,7 +169,10 @@ export class Compiler {
           lineStart++;
         }
         this._offset++;
-        continue;
+        while (this._offset < this._compiledModule.tokens.length && this._compiledModule.tokens[this._offset].type !== TokenType.NewLine) {
+          this._offset++;
+        }
+        return true;
       }
       if (token.type === TokenType.Indent) {
         if (lineStart === this._offset) {
