@@ -445,7 +445,7 @@ export class ExpressionCompiler {
     }
     this._from++;
     const ret = this._codeGenerator.createFragment();
-    this._codeGenerator.appendReadObject(ret, first.getPosition(), first.identifier, this._compilerContext);
+    this._codeGenerator.appendReadObject(ret, first.getPosition(), first.identifier, this._compilerContext, isLeftBracket(this._tokens[this._from]));
     ret.success = true;
     this.compileAnyAccessor(ret, first.identifier);
     if (!ret.success) {

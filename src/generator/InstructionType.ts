@@ -9,7 +9,7 @@ export enum InstructionType {
   CopyValue = 'CopyValue', // copies value of reg1 into reg2; both regs can be references, reads/updates reference value then
   TestReference = 'TestReference', // reads value from reg1 if it is a reference
   AugmentedCopy = 'AugmentedCopy', // calculates value of reg1 instruction3 reg2 and puts result into reg1; this is for operations like a += 10
-  ReadObject = 'ReadObject', // reads variable with identifier1 from scope into reg2
+  ReadObject = 'ReadObject', // reads variable with identifier1 from scope into reg2; if reg3=1 then it reads function name, not property (helps in error detection)
   ReadProperty = 'ReadProperty', // reads property identifier1 from value in reg2 and puts it into reg3
   ReadArrayIndex = 'ReadArrayIndex', // reads value from array in reg1 by index reg2 and puts it into reg3
   ReadArrayRange = 'ReadArrayRange', // reads value from array reg1[reg2:reg3:reg5] and puts it into reg6

@@ -664,10 +664,15 @@ export class RunContext extends RunContextBase {
   }
 
   private stepReadObject(current: Instruction, functionStack: StackEntry) {
-    const identifierId = current.arg1;
     const module = this.getCurrentModule();
-    const object = this.getObject(module.identifiers[identifierId]);
+    const id = module.identifiers[current.arg1];
+    const object = this.getObject(id);
     if (!object) {
+      if (current.arg3 !== 0) {
+        this.raiseUnknownFunctionName(id);
+      } else {
+        this.raiseUnknownIdentifier(id);
+      }
       return;
     }
     functionStack.setReg(current.arg2, object);
@@ -2233,6 +2238,10 @@ export class RunContext extends RunContextBase {
 
   public raiseUnknownIdentifier(identifier: string): void {
     this.raiseException(new ExceptionObject(ExceptionType.UnknownIdentifier, UniqueErrorCode.UnknownIdentifier, [], identifier));
+  }
+
+  public raiseUnknownFunctionName(identifier: string): void {
+    this.raiseException(new ExceptionObject(ExceptionType.UnknownIdentifier, UniqueErrorCode.FunctionNotFound, [], identifier));
   }
 
   private createGlobalScope() {
