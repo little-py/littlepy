@@ -10,11 +10,11 @@ describe('compiler and machine tests', () => {
     scenarios = SCENARIOS;
   }
 
-  for (const { input, output } of scenarios) {
+  for (const { input, output, raw } of scenarios) {
     const match = input.replace(/[\s\r\n\t]*$/, '');
     const signature = match || 'empty line';
     it(signature, () => {
-      const code = compileModule(input, 'main');
+      const code = compileModule(input, 'main', undefined, raw);
       expect(code.errors).toHaveLength(0);
       const result = runModules(
         {

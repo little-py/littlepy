@@ -89,6 +89,7 @@ export class Compiler {
 
     this._offset = 0;
     this._indent = 0;
+    let lastNonEmptyIndent = -1;
 
     while (this._offset < this._compiledModule.tokens.length) {
       if (this._pendingIndentedTokens.length) {
@@ -108,25 +109,25 @@ export class Compiler {
           return false;
         }
       }
-      const lastIndent = this._indent;
       if (!this.scanLine()) {
         // safety check -- should never happen
         /* istanbul ignore next */
         return false;
       }
-      if (this._expectIndent) {
-        this._expectIndent = false;
-        if (this._indent <= lastIndent) {
-          const tokens = this._compiledModule.tokens;
-          this._compilerContext.addError(PyErrorType.ExpectedIndent, this._line[0] || tokens[this._offset] || tokens[tokens.length - 1]);
-        }
-      } else if (this._indent > lastIndent && this._line.length > 0 && this._compilerContext.row > 0) {
-        const tokens = this._compiledModule.tokens;
-        this._compilerContext.addError(PyErrorType.MismatchedIndent, this._line[0] || tokens[this._offset] || tokens[tokens.length - 1]);
-      }
       if (!this._line.length) {
         continue;
       }
+      if (this._expectIndent) {
+        this._expectIndent = false;
+        if (this._indent <= lastNonEmptyIndent) {
+          const tokens = this._compiledModule.tokens;
+          this._compilerContext.addError(PyErrorType.ExpectedIndent, this._line[0] || tokens[this._offset] || tokens[tokens.length - 1]);
+        }
+      } else if (lastNonEmptyIndent >= 0 && this._indent > lastNonEmptyIndent && this._line.length > 0) {
+        const tokens = this._compiledModule.tokens;
+        this._compilerContext.addError(PyErrorType.MismatchedIndent, this._line[0] || tokens[this._offset] || tokens[tokens.length - 1]);
+      }
+      lastNonEmptyIndent = this._indent;
       if (this._calculateExpression) {
         this.parseLineAsExpression();
       } else {
