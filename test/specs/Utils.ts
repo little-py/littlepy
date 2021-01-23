@@ -5,10 +5,12 @@ import { CompileOptions } from '../../src/api/CompileOptions';
 import { CompiledModule } from '../../src/api/CompiledModule';
 import { MachineConfig } from '../../src/api/MachineConfig';
 
-export function compileModule(source: string, name: string, options?: CompileOptions): CompiledModule {
-  const pos = source.indexOf('\n');
-  if (pos >= 0 && !source.substr(0, pos).trim()) {
-    source = source.substr(pos + 1);
+export function compileModule(source: string, name: string, options?: CompileOptions, raw?: boolean): CompiledModule {
+  if (!raw) {
+    const pos = source.indexOf('\n');
+    if (pos >= 0 && !source.substr(0, pos).trim()) {
+      source = source.substr(pos + 1);
+    }
   }
   const { code } = Compiler.compileModule(name, name, source, options);
   return code;

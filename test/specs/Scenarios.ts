@@ -3,6 +3,7 @@ import { ExceptionType } from '../../src/api/ExceptionType';
 export interface TestScenario {
   input: string;
   output?: string[];
+  raw?: boolean;
   onlyThis?: boolean;
 }
 
@@ -2906,6 +2907,20 @@ line2"""
       print(a + a)
     `,
     output: ['[1, 2, 3, 1, 2, 3]', '[1, 2, 3, 1, 2, 3]'],
+  },
+  {
+    input: `
+print(1)`,
+    raw: true,
+    output: ['1'],
+  },
+  {
+    input: `
+      for i in range(2):
+        # print
+        print(i)
+    `,
+    output: ['0', '1'],
   },
 ];
 
