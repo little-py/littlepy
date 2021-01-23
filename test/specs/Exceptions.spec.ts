@@ -45,6 +45,13 @@ const errors: ErrorScenario[] = [
   },
   {
     input: `
+      x(100)
+    `,
+    error: UniqueErrorCode.FunctionNotFound,
+    args: ['x'],
+  },
+  {
+    input: `
       b = 10
       b.c.d(100)
     `,
@@ -894,6 +901,7 @@ describe('Exceptions', () => {
     exceptionsMap[UniqueErrorCode.UnsupportedLiteralType] = true; // it is just unsupported literal type which is rarely used
     exceptionsMap[UniqueErrorCode.ModuleNotFound] = true; // handled in customize spec
     exceptionsMap[UniqueErrorCode.FunctionNotFound] = true; // handled in customize spec
+
     const untestedErrors = [];
     for (const id of Object.keys(UniqueErrorCode)) {
       const value = UniqueErrorCode[id];
