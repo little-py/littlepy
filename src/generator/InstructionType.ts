@@ -7,6 +7,7 @@ export enum InstructionType {
   CreatePropertyRef = 'CreatePropertyRef', // creates reference to property of object reg1[reg2] and puts it in reg3
   CreateArrayRangeRef = 'CreateArrayRangeRef', // creates reference to array range in array reg1[reg2:reg3:reg5] and puts it in reg6; reg5 can be -1 then it is assumed to be 1
   CopyValue = 'CopyValue', // copies value of reg1 into reg2; both regs can be references, reads/updates reference value then
+  TestReference = 'TestReference', // reads value from reg1 if it is a reference
   AugmentedCopy = 'AugmentedCopy', // calculates value of reg1 instruction3 reg2 and puts result into reg1; this is for operations like a += 10
   ReadObject = 'ReadObject', // reads variable with identifier1 from scope into reg2
   ReadProperty = 'ReadProperty', // reads property identifier1 from value in reg2 and puts it into reg3

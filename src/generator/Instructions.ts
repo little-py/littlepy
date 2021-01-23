@@ -91,6 +91,7 @@ export class Instruction {
       case InstructionType.None:
       case InstructionType.Del:
       case InstructionType.Yield:
+      case InstructionType.TestReference:
         this.arg1 += countReg;
         break;
       case InstructionType.Raise:

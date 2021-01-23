@@ -1158,6 +1158,10 @@ export class Compiler {
       result = assignment;
     }
 
+    if (expressions.length === 1) {
+      this._codeGenerator.appendTestReference(result);
+    }
+
     this._codeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, result, 0);
 
     if (expressions.length > 1) {

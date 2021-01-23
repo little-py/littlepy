@@ -18,6 +18,11 @@ const errors: ErrorScenario[] = [
   },
   {
     input: `
+    x`,
+    error: UniqueErrorCode.UnknownIdentifier,
+  },
+  {
+    input: `
       b.c = a
     `,
     error: UniqueErrorCode.UnknownIdentifier,
