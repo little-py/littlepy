@@ -75,7 +75,13 @@ export interface CodeGenerator {
   appendCopyValue(fragment: CodeFragment): void;
   hasArrayIndex(fragment: CodeFragment): boolean;
   hasOperator(fragment: CodeFragment): boolean;
-  appendReadObject(fragment: CodeFragment, position: TokenPosition, identifier: number, compilerContext: CompilerContext, isFunctionName?: boolean): void;
+  appendReadObject(
+    fragment: CodeFragment,
+    position: TokenPosition,
+    identifier: number,
+    compilerContext: CompilerContext,
+    isFunctionName?: boolean,
+  ): void;
   appendReadProperty(
     fragment: CodeFragment,
     position: TokenPosition,

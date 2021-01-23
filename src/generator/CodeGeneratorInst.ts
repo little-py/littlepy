@@ -1092,7 +1092,13 @@ export class CodeGeneratorInst implements CodeGenerator {
     return fragment.code.findIndex((c) => c.isOperator()) >= 0;
   }
 
-  appendReadObject(fragment: CodeFragmentInst, position: TokenPosition, identifier: number, compilerContext: CompilerContext, isFunctionName?: boolean): void {
+  appendReadObject(
+    fragment: CodeFragmentInst,
+    position: TokenPosition,
+    identifier: number,
+    compilerContext: CompilerContext,
+    isFunctionName?: boolean,
+  ): void {
     fragment.add(InstructionType.ReadObject, position, identifier, 0, isFunctionName ? 1 : 0);
   }
 
