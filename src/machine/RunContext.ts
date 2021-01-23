@@ -887,6 +887,10 @@ export class RunContext extends RunContextBase {
     targetObject.setValue(newValue, this);
   }
 
+  private stepTestReference(current: Instruction, functionStack: StackEntry) {
+    functionStack.getReg(current.arg1, true, this);
+  }
+
   private stepCopyValue(current: Instruction, functionStack: StackEntry) {
     const sourceObject = functionStack.getReg(current.arg1, true, this);
     const targetObject = functionStack.getReg(current.arg2, false, this);
@@ -1257,6 +1261,9 @@ export class RunContext extends RunContextBase {
         break;
       case InstructionType.ReadProperty:
         this.stepReadProperty(current, module, functionStack);
+        break;
+      case InstructionType.TestReference:
+        this.stepTestReference(current, functionStack);
         break;
       case InstructionType.CopyValue:
         this.stepCopyValue(current, functionStack);

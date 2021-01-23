@@ -68,6 +68,9 @@ export function createDebugInformation(module: PyModule, instructions: Instructi
       case InstructionType.CreatePropertyRef:
         i.debug = `reg${i.arg3} = reference(reg${i.arg1}[reg${i.arg2}])`;
         break;
+      case InstructionType.TestReference:
+        i.debug = `test reg${i.arg1}`;
+        break;
       case InstructionType.CopyValue:
         i.debug = `*reg${i.arg2} = *reg${i.arg1}`;
         break;
@@ -1103,5 +1106,9 @@ export class CodeGeneratorInst implements CodeGenerator {
 
   appendReturnValue(fragment: CodeFragmentInst, position: TokenPosition, from: number): void {
     fragment.add(InstructionType.Ret, position, from);
+  }
+
+  appendTestReference(fragment: CodeFragmentInst): void {
+    fragment.add(InstructionType.TestReference, null, 0);
   }
 }
