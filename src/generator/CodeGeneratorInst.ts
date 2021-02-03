@@ -1,17 +1,17 @@
-import { Instruction } from './Instructions';
-import { DelimiterType, OperatorType, Token, TokenPosition, TokenType } from '../api/Token';
-import { KeywordType } from '../api/Keyword';
-import { InstructionType } from './InstructionType';
-import { PyErrorType } from '../api/ErrorType';
-import { CodeFragmentInst } from './CodeFragmentInst';
 import { CodeGenerator } from '../api/CodeGenerator';
 import { CompilerBlockContext, CompilerBlockType } from '../api/CompilerBlockContext';
 import { CompilerContext } from '../api/CompilerContext';
-import { ReferenceScope } from '../api/ReferenceScope';
-import { Literal, LiteralType } from '../api/Literal';
-import { FullCodeInst } from './FullCodeInst';
-import { PyModule } from '../api/Module';
+import { PyErrorType } from '../api/ErrorType';
 import { FunctionBody } from '../api/FunctionBody';
+import { KeywordType } from '../api/Keyword';
+import { Literal, LiteralType } from '../api/Literal';
+import { PyModule } from '../api/Module';
+import { ReferenceScope } from '../api/ReferenceScope';
+import { DelimiterType, OperatorType, Token, TokenPosition, TokenType } from '../api/Token';
+import { CodeFragmentInst } from './CodeFragmentInst';
+import { FullCodeInst } from './FullCodeInst';
+import { Instruction } from './Instructions';
+import { InstructionType } from './InstructionType';
 
 /* istanbul ignore next */
 export function createDebugInformation(module: PyModule, instructions: Instruction[]): void {
@@ -896,7 +896,7 @@ export class CodeGeneratorInst implements CodeGenerator {
     /* istanbul ignore next */
     if (opType === InstructionType.Pass) {
       ret.success = false;
-      compilerContext.addError(PyErrorType.ErrorUnexpectedScenario05, op);
+      compilerContext.addError(PyErrorType.ErrorUnexpectedScenario05, op.getPosition());
       return ret;
     }
     if (addOp) {
@@ -1116,5 +1116,12 @@ export class CodeGeneratorInst implements CodeGenerator {
 
   appendTestReference(fragment: CodeFragmentInst): void {
     fragment.add(InstructionType.TestReference, null, 0);
+  }
+
+  getReferencedIdentifier(fragment: CodeFragmentInst): number | undefined {
+    if (fragment.code.length === 1 && fragment.code[0].type === InstructionType.CreateVarRef) {
+      return fragment.code[0].arg1;
+    }
+    return undefined;
   }
 }

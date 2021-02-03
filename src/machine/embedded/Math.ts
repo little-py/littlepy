@@ -172,6 +172,16 @@ class PythonMath {
   radians(@pyParam('x', PropertyType.Number) x: number) {
     return x * 0.017453292519943295;
   }
+
+  @pyFunction
+  isnan(@pyParam('x', PropertyType.Number) x: number) {
+    return isNaN(x);
+  }
+
+  @pyFunction
+  isfinite(@pyParam('x', PropertyType.Number) x: number) {
+    return isFinite(x);
+  }
 }
 
 export const mathFunctions = new PythonMath();

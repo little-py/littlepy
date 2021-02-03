@@ -1,9 +1,9 @@
-import { Token, TokenPosition } from './Token';
+import { TokenPosition } from './Token';
 import { RowType } from './RowType';
 import { RowDescriptor } from './RowDescriptor';
 import { PyErrorType } from './ErrorType';
 import { PyError, PyErrorContext } from './Error';
-import { CompilerBlockContext } from './CompilerBlockContext';
+import { CompilerBlockContext, CompilerBlockType } from './CompilerBlockContext';
 import { Literal, LiteralType } from './Literal';
 import { PyModule } from './Module';
 import { CodeFragment } from './CodeFragment';
@@ -180,8 +180,8 @@ export class CompilerContext {
     }
   }
 
-  public addError(type: PyErrorType, token: Token, context?: PyErrorContext): void {
-    this.compiledCode.errors.push(new PyError(type, token.row, token.col, token.length, token.offset, context));
+  public addError(type: PyErrorType, position: TokenPosition, context?: PyErrorContext): void {
+    this.compiledCode.errors.push(new PyError(type, position.row, position.column, position.length, position.position, context));
   }
 
   public getLiteral(literal: Literal): number {
@@ -248,14 +248,15 @@ export class CompilerContext {
     return this.blocks[this.blocks.length - 1];
   }
 
-  public enterBlock(position: TokenPosition, newFragment: CodeFragment): CompilerBlockContext {
-    const newContext = new CompilerBlockContext(newFragment);
-    newContext.position = position;
+  public enterBlock(position: TokenPosition, newFragment: CodeFragment, type: CompilerBlockType): CompilerBlockContext {
+    let parent: CompilerBlockContext;
     if (this.blocks.length) {
-      newContext.parent = this.blocks[this.blocks.length - 1];
+      parent = this.blocks[this.blocks.length - 1];
     } else {
-      newContext.parent = undefined;
+      parent = undefined;
     }
+    const newContext = new CompilerBlockContext(newFragment, type, parent);
+    newContext.position = position;
     this.blocks.push(newContext);
     return newContext;
   }

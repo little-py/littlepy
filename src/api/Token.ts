@@ -68,6 +68,7 @@ export interface TokenPosition {
   position: number;
   row: number;
   column: number;
+  length: number;
 }
 
 export class Token {
@@ -88,6 +89,7 @@ export class Token {
       position: this.offset,
       row: this.row,
       column: this.col,
+      length: this.length,
     };
   }
 }
