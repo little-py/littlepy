@@ -6,6 +6,7 @@ export class Instruction {
   public row: number;
   public column: number;
   public position: number;
+  public length: number;
 
   public constructor(
     public readonly type: InstructionType, //
@@ -21,10 +22,12 @@ export class Instruction {
       this.position = position.position;
       this.column = position.column;
       this.row = position.row;
+      this.length = position.length;
     } else {
       this.position = -1;
       this.row = -1;
       this.column = -1;
+      this.length = -1;
     }
     this.arg1 = arg1;
     this.arg2 = arg2;
@@ -41,6 +44,7 @@ export class Instruction {
         position: this.position,
         column: this.column,
         row: this.row,
+        length: this.length,
       },
       this.arg1,
       this.arg2,

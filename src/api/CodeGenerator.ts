@@ -93,4 +93,5 @@ export interface CodeGenerator {
   appendReadArrayIndex(fragment: CodeFragment, position: TokenPosition, from: number, index: number, to: number): void;
   appendReturnValue(fragment: CodeFragment, position: TokenPosition, from: number);
   appendTestReference(fragment: CodeFragment);
+  getReferencedIdentifier(fragment: CodeFragment): number | undefined;
 }

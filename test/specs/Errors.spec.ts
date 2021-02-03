@@ -620,6 +620,37 @@ const errors: ErrorScenario[] = [
     input: `def func(a**`,
     error: PyErrorType.ExpectedEndOfFunctionDef,
   },
+  {
+    input: `
+      def func():
+        global a
+        nonlocal a
+        return 1
+    `,
+    error: PyErrorType.DuplicateChangeScope,
+  },
+  {
+    input: `
+      print(a)
+      a = 10
+    `,
+    error: PyErrorType.LocalVariableAccessBeforeCreate,
+  },
+  {
+    input: `
+      print(a)
+      global a
+    `,
+    error: PyErrorType.ChangeScopeAfterAccess,
+  },
+  {
+    input: `
+      for x in [1,2]:
+        global x
+        print(x)
+    `,
+    error: PyErrorType.ChangeScopeAfterAccess,
+  },
 ];
 
 describe('compiler and machine tests', () => {

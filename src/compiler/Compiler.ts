@@ -1,13 +1,22 @@
-import { LexicalContext } from './LexicalContext';
-import { CompilerContext } from '../api/CompilerContext';
-import { DelimiterType, OperatorType, Token, TokenPosition, TokenType } from '../api/Token';
-import { KeywordType } from '../api/Keyword';
-import { ExpressionCompiler } from './ExpressionCompiler';
+import { CodeFragment } from '../api/CodeFragment';
+import { CodeGenerator } from '../api/CodeGenerator';
 import { CompiledModule } from '../api/CompiledModule';
-import { LexicalAnalyzer } from './LexicalAnalyzer';
+import { CompileOptions } from '../api/CompileOptions';
+import { CompilerBlockContext, CompilerBlockType } from '../api/CompilerBlockContext';
+import { CompilerContext } from '../api/CompilerContext';
+import { PyErrorType } from '../api/ErrorType';
+import { ArgumentType, FunctionArgument, FunctionType } from '../api/Function';
+import { FunctionBody } from '../api/FunctionBody';
+import { KeywordType } from '../api/Keyword';
+import { LiteralType } from '../api/Literal';
+import { ReferenceScope } from '../api/ReferenceScope';
 import { RowDescriptor } from '../api/RowDescriptor';
 import { RowType } from '../api/RowType';
-import { PyErrorType } from '../api/ErrorType';
+import { DelimiterType, OperatorType, Token, TokenPosition, TokenType } from '../api/Token';
+import { CodeGeneratorInst } from '../generator/CodeGeneratorInst';
+import { ExpressionCompiler } from './ExpressionCompiler';
+import { LexicalAnalyzer } from './LexicalAnalyzer';
+import { LexicalContext } from './LexicalContext';
 import {
   isAssignmentDelimiter,
   isBlockKeyword,
@@ -22,15 +31,6 @@ import {
   isRightBracket,
   isSemicolon,
 } from './TokenUtils';
-import { CompileOptions } from '../api/CompileOptions';
-import { CodeGenerator } from '../api/CodeGenerator';
-import { CodeGeneratorInst } from '../generator/CodeGeneratorInst';
-import { CompilerBlockContext, CompilerBlockType } from '../api/CompilerBlockContext';
-import { LiteralType } from '../api/Literal';
-import { CodeFragment } from '../api/CodeFragment';
-import { ReferenceScope } from '../api/ReferenceScope';
-import { FunctionBody } from '../api/FunctionBody';
-import { ArgumentType, FunctionArgument, FunctionType } from '../api/Function';
 
 export class Compiler {
   private readonly _compiledModule: CompiledModule;
@@ -80,8 +80,11 @@ export class Compiler {
   }
 
   private compileModuleWithContext(name: string): boolean {
-    const block = this._compilerContext.enterBlock(this._compiledModule.tokens[0].getPosition(), this._codeGenerator.createFragment());
-    block.type = CompilerBlockType.Module;
+    const block = this._compilerContext.enterBlock(
+      this._compiledModule.tokens[0].getPosition(),
+      this._codeGenerator.createFragment(),
+      CompilerBlockType.Module,
+    );
     block.indent = -1;
     block.path = name;
     block.index = 0;
@@ -121,11 +124,17 @@ export class Compiler {
         this._expectIndent = false;
         if (this._indent <= lastNonEmptyIndent) {
           const tokens = this._compiledModule.tokens;
-          this._compilerContext.addError(PyErrorType.ExpectedIndent, this._line[0] || tokens[this._offset] || tokens[tokens.length - 1]);
+          this._compilerContext.addError(
+            PyErrorType.ExpectedIndent,
+            (this._line[0] || tokens[this._offset] || tokens[tokens.length - 1])?.getPosition(),
+          );
         }
       } else if (lastNonEmptyIndent >= 0 && this._indent > lastNonEmptyIndent && this._line.length > 0) {
         const tokens = this._compiledModule.tokens;
-        this._compilerContext.addError(PyErrorType.MismatchedIndent, this._line[0] || tokens[this._offset] || tokens[tokens.length - 1]);
+        this._compilerContext.addError(
+          PyErrorType.MismatchedIndent,
+          (this._line[0] || tokens[this._offset] || tokens[tokens.length - 1])?.getPosition(),
+        );
       }
       lastNonEmptyIndent = this._indent;
       if (this._calculateExpression) {
@@ -342,7 +351,7 @@ export class Compiler {
     const first = this._line[0];
     if (isFromCombinedLine || this._insideIndentedBlocks) {
       if (isBlockKeyword(first)) {
-        this._compilerContext.addError(PyErrorType.BlockInCombinedLine, first);
+        this._compilerContext.addError(PyErrorType.BlockInCombinedLine, first.getPosition());
         return false;
       }
     }
@@ -414,7 +423,7 @@ export class Compiler {
   private parseEndOfBlockDefinition(from: number): boolean {
     if (!isColon(this._line[from])) {
       const block = this._line[from] || this._line[this._line.length - 1];
-      this._compilerContext.addError(PyErrorType.BlockExpectedColon, block);
+      this._compilerContext.addError(PyErrorType.BlockExpectedColon, block?.getPosition());
       return false;
     }
     if (from + 1 < this._line.length) {
@@ -430,18 +439,27 @@ export class Compiler {
 
     const first = this._line[0];
     if (this._line.length < 4) {
-      this._compilerContext.addError(PyErrorType.IncompleteForDefinition, first);
+      this._compilerContext.addError(PyErrorType.IncompleteForDefinition, first?.getPosition());
       return false;
     }
     const argument = this._line[1];
     const keyword = this._line[2];
     if (argument.type !== TokenType.Identifier) {
-      this._compilerContext.addError(PyErrorType.ForExpectedArgument, argument);
+      this._compilerContext.addError(PyErrorType.ForExpectedArgument, argument.getPosition());
       return false;
     }
     if (keyword.type !== TokenType.Keyword || keyword.keyword !== KeywordType.In) {
-      this._compilerContext.addError(PyErrorType.ForExpectedIn, keyword);
+      this._compilerContext.addError(PyErrorType.ForExpectedIn, keyword.getPosition());
       return false;
+    }
+    const functionContext = this._compilerContext.getCurrentBlock().functionContext;
+    functionContext.addVariableAccess(argument.identifier, argument.getPosition());
+    if (!functionContext.functionVariables[argument.identifier]) {
+      functionContext.functionVariables[argument.identifier] = {
+        id: argument.identifier,
+        position: argument.getPosition(),
+        scope: ReferenceScope.Default,
+      };
     }
     const expression = ExpressionCompiler.compile({
       tokens: this._line,
@@ -455,9 +473,8 @@ export class Compiler {
       return false;
     }
 
-    const block = this._compilerContext.enterBlock(first.getPosition(), this._codeGenerator.createFragment());
+    const block = this._compilerContext.enterBlock(first.getPosition(), this._codeGenerator.createFragment(), CompilerBlockType.For);
     block.arg1 = argument.identifier;
-    block.type = CompilerBlockType.For;
     block.arg2 = expression;
     block.indent = this._indent;
 
@@ -473,7 +490,7 @@ export class Compiler {
 
     if (this._line.length < 3) {
       const last = this._line[this._line.length - 1];
-      this._compilerContext.addError(PyErrorType.IncompleteWhileDefinition, last);
+      this._compilerContext.addError(PyErrorType.IncompleteWhileDefinition, last?.getPosition());
       return false;
     }
     const expression = ExpressionCompiler.compile({
@@ -488,8 +505,7 @@ export class Compiler {
       return false;
     }
 
-    const block = this._compilerContext.enterBlock(this._line[0].getPosition(), this._codeGenerator.createFragment());
-    block.type = CompilerBlockType.While;
+    const block = this._compilerContext.enterBlock(this._line[0].getPosition(), this._codeGenerator.createFragment(), CompilerBlockType.While);
     block.arg2 = expression;
     block.indent = this._indent;
 
@@ -505,19 +521,19 @@ export class Compiler {
 
     if (this._line.length < 5) {
       const last = this._line[this._line.length - 1];
-      this._compilerContext.addError(PyErrorType.IncompleteFunctionDeclaration, last);
+      this._compilerContext.addError(PyErrorType.IncompleteFunctionDeclaration, last?.getPosition());
       return false;
     }
 
     const identifier = this._line[1];
     if (identifier.type !== TokenType.Identifier) {
-      this._compilerContext.addError(PyErrorType.ExpectedFunctionName, identifier);
+      this._compilerContext.addError(PyErrorType.ExpectedFunctionName, identifier.getPosition());
       return false;
     }
 
     const open = this._line[2];
     if (!isLeftBracket(open)) {
-      this._compilerContext.addError(PyErrorType.ExpectedFunctionArgumentList, open);
+      this._compilerContext.addError(PyErrorType.ExpectedFunctionArgumentList, open?.getPosition());
       return false;
     }
     const func = new FunctionBody();
@@ -539,7 +555,7 @@ export class Compiler {
         starCount = 1;
         from++;
         if (from >= this._line.length) {
-          this._compilerContext.addError(PyErrorType.ExpectedEndOfFunctionDef, this._line[this._line.length - 1]);
+          this._compilerContext.addError(PyErrorType.ExpectedEndOfFunctionDef, this._line[this._line.length - 1]?.getPosition());
           return false;
         }
         current = this._line[from];
@@ -547,13 +563,13 @@ export class Compiler {
         starCount = 2;
         from++;
         if (from >= this._line.length) {
-          this._compilerContext.addError(PyErrorType.ExpectedEndOfFunctionDef, this._line[this._line.length - 1]);
+          this._compilerContext.addError(PyErrorType.ExpectedEndOfFunctionDef, this._line[this._line.length - 1]?.getPosition());
           return false;
         }
         current = this._line[from];
       }
       if (current.type !== TokenType.Identifier) {
-        this._compilerContext.addError(PyErrorType.ExpectedArgumentName, current);
+        this._compilerContext.addError(PyErrorType.ExpectedArgumentName, current.getPosition());
         return false;
       }
       const arg = new FunctionArgument();
@@ -573,7 +589,7 @@ export class Compiler {
       arg.initReg = -1;
       from++;
       if (from >= this._line.length) {
-        this._compilerContext.addError(PyErrorType.ExpectedEndOfFunctionDef, this._line[this._line.length - 1]);
+        this._compilerContext.addError(PyErrorType.ExpectedEndOfFunctionDef, this._line[this._line.length - 1]?.getPosition());
         return false;
       }
       current = this._line[from];
@@ -602,7 +618,7 @@ export class Compiler {
       from = defaultValue.finish;
       if (from >= this._line.length) {
         current = this._line[this._line.length - 1];
-        this._compilerContext.addError(PyErrorType.IncompleteFunctionArgumentList, current);
+        this._compilerContext.addError(PyErrorType.IncompleteFunctionArgumentList, current?.getPosition());
         return false;
       }
       this._codeGenerator.appendTo(this._compilerContext.getCurrentBlock().blockCode, defaultValue, initializeIndex);
@@ -618,12 +634,11 @@ export class Compiler {
         break;
       }
 
-      this._compilerContext.addError(PyErrorType.ExpectedEndOfFunctionDef, current);
+      this._compilerContext.addError(PyErrorType.ExpectedEndOfFunctionDef, current?.getPosition());
       return false;
     }
 
-    const block = this._compilerContext.enterBlock(this._line[0].getPosition(), this._codeGenerator.createFragment());
-    block.type = CompilerBlockType.Function;
+    const block = this._compilerContext.enterBlock(this._line[0].getPosition(), this._codeGenerator.createFragment(), CompilerBlockType.Function);
     block.arg1 = this._compiledModule.functions.length - 1;
     block.indent = this._indent;
 
@@ -646,14 +661,14 @@ export class Compiler {
 
     if (this._line.length < 3) {
       const last = this._line[this._line.length - 1];
-      this._compilerContext.addError(PyErrorType.IncompleteClassDeclaration, last);
+      this._compilerContext.addError(PyErrorType.IncompleteClassDeclaration, last?.getPosition());
       return false;
     }
 
     const className = this._line[1];
 
     if (!isIdentifier(className)) {
-      this._compilerContext.addError(PyErrorType.ExpectedClassName, className);
+      this._compilerContext.addError(PyErrorType.ExpectedClassName, className?.getPosition());
       return false;
     }
 
@@ -665,7 +680,7 @@ export class Compiler {
       for (position = 3; position < this._line.length; ) {
         const current = this._line[position];
         if (!isIdentifier(current)) {
-          this._compilerContext.addError(PyErrorType.IncorrectInheritanceList, current);
+          this._compilerContext.addError(PyErrorType.IncorrectInheritanceList, current?.getPosition());
           return false;
         }
         let id = this._compiledModule.identifiers[current.identifier];
@@ -680,13 +695,16 @@ export class Compiler {
           break;
         }
         if (!isComma(this._line[position])) {
-          this._compilerContext.addError(PyErrorType.IncorrectInheritanceList, current);
+          this._compilerContext.addError(PyErrorType.IncorrectInheritanceList, current?.getPosition());
           return false;
         }
         position++;
       }
       if (!isRightBracket(this._line[position])) {
-        this._compilerContext.addError(PyErrorType.IncorrectInheritanceList, this._line[position] || this._line[this._line.length - 1]);
+        this._compilerContext.addError(
+          PyErrorType.IncorrectInheritanceList,
+          (this._line[position] || this._line[this._line.length - 1])?.getPosition(),
+        );
         return false;
       }
       position++;
@@ -704,8 +722,7 @@ export class Compiler {
       className: func.name,
     });
 
-    const block = this._compilerContext.enterBlock(first.getPosition(), this._codeGenerator.createFragment());
-    block.type = CompilerBlockType.Class;
+    const block = this._compilerContext.enterBlock(first.getPosition(), this._codeGenerator.createFragment(), CompilerBlockType.Class);
     block.arg1 = this._compiledModule.functions.length - 1;
     block.indent = this._indent;
     func.type = FunctionType.Class;
@@ -721,7 +738,7 @@ export class Compiler {
     if (first.keyword === KeywordType.Elif) {
       const firstBlock = this._pendingFinishedBlocks[0];
       if (!firstBlock || firstBlock.type !== CompilerBlockType.If) {
-        this._compilerContext.addError(PyErrorType.CannotFindIfOrElifForElif, first);
+        this._compilerContext.addError(PyErrorType.CannotFindIfOrElifForElif, first.getPosition());
         return false;
       }
     }
@@ -737,8 +754,11 @@ export class Compiler {
     if (!expression.success) {
       return false;
     }
-    const block = this._compilerContext.enterBlock(first.getPosition(), this._codeGenerator.createFragment());
-    block.type = isIf ? CompilerBlockType.If : CompilerBlockType.ElseIf;
+    const block = this._compilerContext.enterBlock(
+      first.getPosition(),
+      this._codeGenerator.createFragment(),
+      isIf ? CompilerBlockType.If : CompilerBlockType.ElseIf,
+    );
     block.arg2 = expression;
     block.indent = this._indent;
 
@@ -754,12 +774,11 @@ export class Compiler {
       !firstBlock ||
       (firstBlock.type !== CompilerBlockType.If && firstBlock.type !== CompilerBlockType.For && firstBlock.type !== CompilerBlockType.Try)
     ) {
-      this._compilerContext.addError(PyErrorType.CannotFindIfOrElifForElse, first);
+      this._compilerContext.addError(PyErrorType.CannotFindIfOrElifForElse, first?.getPosition());
       return false;
     }
 
-    const block = this._compilerContext.enterBlock(first.getPosition(), this._codeGenerator.createFragment());
-    block.type = CompilerBlockType.Else;
+    const block = this._compilerContext.enterBlock(first.getPosition(), this._codeGenerator.createFragment(), CompilerBlockType.Else);
     block.indent = this._indent;
 
     return this.parseEndOfBlockDefinition(1);
@@ -769,7 +788,7 @@ export class Compiler {
     this._compilerContext.setRowType(RowType.Import);
     const first = this._line[0];
     if (this._line.length < 2) {
-      this._compilerContext.addError(PyErrorType.IncompleteImportDefinition, first);
+      this._compilerContext.addError(PyErrorType.IncompleteImportDefinition, first?.getPosition());
       return false;
     }
     let rename: Token;
@@ -777,16 +796,16 @@ export class Compiler {
     if (this._line.length > 2) {
       const source = this._line[2];
       if (source.type !== TokenType.Keyword || source.keyword !== KeywordType.As || this._line.length !== 4) {
-        this._compilerContext.addError(PyErrorType.ImportDefinitionIsTooLong, source);
+        this._compilerContext.addError(PyErrorType.ImportDefinitionIsTooLong, source.getPosition());
       }
       rename = this._line[3];
     }
     if (name.type !== TokenType.Identifier) {
-      this._compilerContext.addError(PyErrorType.ImportExpectedIdentifier, first);
+      this._compilerContext.addError(PyErrorType.ImportExpectedIdentifier, first?.getPosition());
       return false;
     }
     if (rename && rename.type !== TokenType.Identifier) {
-      this._compilerContext.addError(PyErrorType.ImportExpectedAsIdentifier, first);
+      this._compilerContext.addError(PyErrorType.ImportExpectedAsIdentifier, first?.getPosition());
       return false;
     }
     const imp = rename
@@ -807,21 +826,21 @@ export class Compiler {
 
     const first = this._line[0];
     if (this._line.length < 4) {
-      this._compilerContext.addError(PyErrorType.IncompleteImportFromDefinition, first);
+      this._compilerContext.addError(PyErrorType.IncompleteImportFromDefinition, first?.getPosition());
       return false;
     }
     if (this._line.length > 4) {
-      this._compilerContext.addError(PyErrorType.ImportFromDefinitionIsTooLong, first);
+      this._compilerContext.addError(PyErrorType.ImportFromDefinitionIsTooLong, first?.getPosition());
       return false;
     }
     if (this._line[2].type !== TokenType.Keyword || this._line[2].keyword !== KeywordType.Import) {
-      this._compilerContext.addError(PyErrorType.ImportFromExpectedImport, first);
+      this._compilerContext.addError(PyErrorType.ImportFromExpectedImport, first?.getPosition());
       return false;
     }
     const module = this._line[1];
     const func = this._line[3];
     if (!isIdentifier(module) || !isIdentifier(func)) {
-      this._compilerContext.addError(PyErrorType.ImportFromExpectedIdentifier, first);
+      this._compilerContext.addError(PyErrorType.ImportFromExpectedIdentifier, first?.getPosition());
       return false;
     }
     const imp = this._codeGenerator.importFromDirective(
@@ -838,7 +857,7 @@ export class Compiler {
     this._compilerContext.setRowType(RowType.Break);
     const first = this._line[0];
     if (this._line.length !== 1) {
-      this._compilerContext.addError(PyErrorType.BreakHasNoArguments, first);
+      this._compilerContext.addError(PyErrorType.BreakHasNoArguments, first?.getPosition());
       return false;
     }
     const breakCode = this._codeGenerator.breakCode(first.getPosition());
@@ -850,7 +869,7 @@ export class Compiler {
     this._compilerContext.setRowType(RowType.Continue);
     const first = this._line[0];
     if (this._line.length !== 1) {
-      this._compilerContext.addError(PyErrorType.ContinueHasNoArguments, first);
+      this._compilerContext.addError(PyErrorType.ContinueHasNoArguments, first?.getPosition());
       return false;
     }
     const continueCode = this._codeGenerator.continueCode(first.getPosition());
@@ -862,7 +881,7 @@ export class Compiler {
     this._compilerContext.setRowType(RowType.Pass);
     const first = this._line[0];
     if (this._line.length !== 1) {
-      this._compilerContext.addError(PyErrorType.PassHasNoArguments, first);
+      this._compilerContext.addError(PyErrorType.PassHasNoArguments, first?.getPosition());
       return false;
     }
     const pass = this._codeGenerator.pass(first.getPosition());
@@ -897,10 +916,10 @@ export class Compiler {
           returnCode = this._codeGenerator.raiseEmpty(first.getPosition());
           break;
         case KeywordType.Yield:
-          this._compilerContext.addError(PyErrorType.ExpectedYieldExpression, first);
+          this._compilerContext.addError(PyErrorType.ExpectedYieldExpression, first.getPosition());
           return false;
         case KeywordType.Del:
-          this._compilerContext.addError(PyErrorType.ExpectedIdentifierForDel, first);
+          this._compilerContext.addError(PyErrorType.ExpectedIdentifierForDel, first.getPosition());
           return false;
       }
     } else {
@@ -919,7 +938,7 @@ export class Compiler {
       switch (first.keyword) {
         case KeywordType.Return:
           if (from !== this._line.length) {
-            this._compilerContext.addError(PyErrorType.ReturnExpectedEndOfLine, first);
+            this._compilerContext.addError(PyErrorType.ReturnExpectedEndOfLine, first.getPosition());
             return false;
           } else {
             returnCode = this._codeGenerator.returnValue(expression, first.getPosition());
@@ -927,7 +946,7 @@ export class Compiler {
           break;
         case KeywordType.Yield:
           if (from !== this._line.length) {
-            this._compilerContext.addError(PyErrorType.YieldExpectedEndOfLine, first);
+            this._compilerContext.addError(PyErrorType.YieldExpectedEndOfLine, first.getPosition());
             return false;
           } else {
             returnCode = this._codeGenerator.yield(expression, first.getPosition());
@@ -935,7 +954,7 @@ export class Compiler {
           break;
         case KeywordType.Del:
           if (from !== this._line.length) {
-            this._compilerContext.addError(PyErrorType.DelExpectedEndOfLine, first);
+            this._compilerContext.addError(PyErrorType.DelExpectedEndOfLine, first.getPosition());
             return false;
           } else {
             returnCode = this._codeGenerator.delete(expression, first.getPosition());
@@ -943,7 +962,7 @@ export class Compiler {
           break;
         case KeywordType.Raise:
           if (from !== this._line.length) {
-            this._compilerContext.addError(PyErrorType.RaiseExpectedEndOfLine, first);
+            this._compilerContext.addError(PyErrorType.RaiseExpectedEndOfLine, first.getPosition());
             return false;
           } else {
             returnCode = this._codeGenerator.raise(expression, first.getPosition());
@@ -966,8 +985,7 @@ export class Compiler {
   private parseTryDefinition(): boolean {
     this._compilerContext.setRowType(RowType.TryBlock);
 
-    const block = this._compilerContext.enterBlock(this._line[0].getPosition(), this._codeGenerator.createFragment());
-    block.type = CompilerBlockType.Try;
+    const block = this._compilerContext.enterBlock(this._line[0].getPosition(), this._codeGenerator.createFragment(), CompilerBlockType.Try);
     block.indent = this._indent;
 
     return this.parseEndOfBlockDefinition(1);
@@ -989,11 +1007,10 @@ export class Compiler {
     }
     const from = expression.finish;
     if (!isKeywordAs(this._line[from]) || !isIdentifier(this._line[from + 1])) {
-      this._compilerContext.addError(PyErrorType.WithExpectedAs, this._line[from] || this._line[this._line.length - 1]);
+      this._compilerContext.addError(PyErrorType.WithExpectedAs, (this._line[from] || this._line[this._line.length - 1])?.getPosition());
       return false;
     }
-    const block = this._compilerContext.enterBlock(this._line[0].getPosition(), this._codeGenerator.createFragment());
-    block.type = CompilerBlockType.With;
+    const block = this._compilerContext.enterBlock(this._line[0].getPosition(), this._codeGenerator.createFragment(), CompilerBlockType.With);
     block.indent = this._indent;
     block.arg1 = this._line[from + 1].identifier;
     block.arg2 = expression;
@@ -1011,7 +1028,7 @@ export class Compiler {
     const first = this._line[0];
     const firstBlock = this._pendingFinishedBlocks[0];
     if (!firstBlock || firstBlock.type !== CompilerBlockType.Try) {
-      this._compilerContext.addError(PyErrorType.ExceptExpectedTry, first);
+      this._compilerContext.addError(PyErrorType.ExceptExpectedTry, first?.getPosition());
       return false;
     }
 
@@ -1035,7 +1052,7 @@ export class Compiler {
         next += 2;
       }
       if (!isIdentifier(this._line[next])) {
-        this._compilerContext.addError(PyErrorType.ExceptExpectedIdentifier, this._line[next] || this._line[this._line.length - 1]);
+        this._compilerContext.addError(PyErrorType.ExceptExpectedIdentifier, (this._line[next] || this._line[this._line.length - 1])?.getPosition());
         return false;
       }
       id += this._compiledModule.identifiers[this._line[next].identifier];
@@ -1054,13 +1071,16 @@ export class Compiler {
         next++;
         continue;
       }
-      this._compilerContext.addError(PyErrorType.ExceptExpectedRightBracket, this._line[next]);
+      this._compilerContext.addError(PyErrorType.ExceptExpectedRightBracket, this._line[next]?.getPosition());
       return false;
     }
 
     if (hasBracket) {
       if (!isRightBracket(this._line[next])) {
-        this._compilerContext.addError(PyErrorType.ExceptExpectedRightBracket, this._line[next] || this._line[this._line.length - 1]);
+        this._compilerContext.addError(
+          PyErrorType.ExceptExpectedRightBracket,
+          (this._line[next] || this._line[this._line.length - 1])?.getPosition(),
+        );
         return false;
       }
       next++;
@@ -1072,15 +1092,14 @@ export class Compiler {
       next++;
       if (!isIdentifier(this._line[next])) {
         const current = next < this._line.length ? this._line[next] : this._line[this._line.length - 1];
-        this._compilerContext.addError(PyErrorType.ExceptExpectedIdentifierAfterAs, current);
+        this._compilerContext.addError(PyErrorType.ExceptExpectedIdentifierAfterAs, current?.getPosition());
         return false;
       }
       exceptionIdentifier = this._line[next].identifier;
       next++;
     }
 
-    const block = this._compilerContext.enterBlock(first.getPosition(), this._codeGenerator.createFragment());
-    block.type = CompilerBlockType.Except;
+    const block = this._compilerContext.enterBlock(first.getPosition(), this._codeGenerator.createFragment(), CompilerBlockType.Except);
     block.indent = this._indent;
     block.arg1 = exceptionIdentifier;
     block.arg4 = identifiers;
@@ -1094,11 +1113,10 @@ export class Compiler {
     const first = this._line[0];
     const firstBlock = this._pendingFinishedBlocks[0];
     if (!firstBlock || firstBlock.type !== CompilerBlockType.Try) {
-      this._compilerContext.addError(PyErrorType.FinallyCannotFindTry, first);
+      this._compilerContext.addError(PyErrorType.FinallyCannotFindTry, first?.getPosition());
       return false;
     }
-    const block = this._compilerContext.enterBlock(first.getPosition(), this._codeGenerator.createFragment());
-    block.type = CompilerBlockType.Finally;
+    const block = this._compilerContext.enterBlock(first.getPosition(), this._codeGenerator.createFragment(), CompilerBlockType.Finally);
     block.indent = this._indent;
 
     return this.parseEndOfBlockDefinition(1);
@@ -1134,13 +1152,13 @@ export class Compiler {
           isAugmented = true;
           augmentedOperator = token;
         } else {
-          this._compilerContext.addError(PyErrorType.MixingAugmentedOperators, token);
+          this._compilerContext.addError(PyErrorType.MixingAugmentedOperators, token.getPosition());
           return false;
         }
       }
       start++;
       if (start >= this._line.length) {
-        this._compilerContext.addError(PyErrorType.ExpectedExpressionValue, this._line[this._line.length - 1]);
+        this._compilerContext.addError(PyErrorType.ExpectedExpressionValue, this._line[this._line.length - 1]?.getPosition());
         return false;
       }
     }
@@ -1149,6 +1167,7 @@ export class Compiler {
 
     for (let i = expressions.length - 2; i >= 0; i--) {
       const assignment = expressions[i];
+      const id = this._codeGenerator.getReferencedIdentifier(assignment);
       this._codeGenerator.appendTo(assignment, result, 1);
       if (isAugmented) {
         this._codeGenerator.appendAugmentedCopy(assignment, augmentedOperator);
@@ -1156,6 +1175,25 @@ export class Compiler {
         this._codeGenerator.appendCopyValue(assignment);
       }
       result = assignment;
+
+      if (id !== undefined) {
+        const functionBlock = this._compilerContext.getCurrentBlock().functionContext;
+        if (!functionBlock.functionVariables[id]) {
+          const access = (functionBlock.accessedVariables[id] || [])
+            .filter((p) => p.position !== result.position.position)
+            .sort((a, b) => a.position - b.position);
+          if (access.length > 0) {
+            this._compilerContext.addError(PyErrorType.LocalVariableAccessBeforeCreate, access[0], {
+              variable: this._compilerContext.getIdentifierName(id),
+            });
+          }
+          functionBlock.functionVariables[id] = {
+            id,
+            position: assignment.position,
+            scope: ReferenceScope.Default,
+          };
+        }
+      }
     }
 
     if (expressions.length === 1) {
@@ -1210,7 +1248,7 @@ export class Compiler {
     if (!expression.success) {
       return;
     } else if (expression.finish !== this._line.length) {
-      this._compilerContext.addError(PyErrorType.ExpectedEndOfExpression, this._line[expression.finish]);
+      this._compilerContext.addError(PyErrorType.ExpectedEndOfExpression, this._line[expression.finish]?.getPosition());
     }
     const print = this._codeGenerator.createFragment();
     const first = this._line[0];
@@ -1222,7 +1260,7 @@ export class Compiler {
   private parseScopeDefinition(): boolean {
     const isGlobal = this._line[0].keyword === KeywordType.Global;
     this._compilerContext.setRowType(isGlobal ? RowType.ScopeGlobal : RowType.ScopeNonlocal);
-    const block = this._compilerContext.getCurrentBlock();
+    const block = this._compilerContext.getCurrentBlock().functionContext;
     let pos = 1;
     let last = this._line[0];
     for (;;) {
@@ -1232,15 +1270,23 @@ export class Compiler {
       }
       const next = this._line[pos + 1];
       if (!isIdentifier(current) || (next && !isComma(next))) {
-        this._compilerContext.addError(PyErrorType.ExpectedOnlyIdentifier, last);
+        this._compilerContext.addError(PyErrorType.ExpectedOnlyIdentifier, last?.getPosition());
         return false;
       }
       const id = current.identifier;
-      if (isGlobal) {
-        block.scopeChange[id] = ReferenceScope.Global;
-      } else {
-        block.scopeChange[id] = ReferenceScope.NonLocal;
+      if (block.accessedVariables[id]) {
+        this._compilerContext.addError(PyErrorType.ChangeScopeAfterAccess, last?.getPosition());
+        return false;
       }
+      if (block.functionVariables[id]) {
+        this._compilerContext.addError(PyErrorType.DuplicateChangeScope, last?.getPosition());
+        return false;
+      }
+      block.functionVariables[id] = {
+        id,
+        scope: isGlobal ? ReferenceScope.Global : ReferenceScope.NonLocal,
+        position: current.getPosition(),
+      };
       pos++;
       if (!isComma(next)) {
         break;

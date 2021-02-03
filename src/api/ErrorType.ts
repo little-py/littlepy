@@ -69,6 +69,9 @@ export enum PyErrorType {
   WithExpectedAs = 'withExpectedAs',
   ExpectedOnlyIdentifier = 'expectedOnlyIdentifier',
   ExpectedIndent = 'expectedIndent',
+  LocalVariableAccessBeforeCreate = 'localVariableAccessBeforeCreate',
+  ChangeScopeAfterAccess = 'changeScopeAfterAccess',
+  DuplicateChangeScope = 'duplicateChangeScope',
 
   ExpectedEndOfExpression = 'expectedEndOfExpression',
   ErrorUnexpectedScenario01 = 'errorUnexpectedScenario01',
