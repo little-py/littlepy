@@ -1,7 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Compiler } from '../compiler/Compiler';
+import { FullCodeInst } from '../generator/FullCodeInst';
+import { Instruction } from '../generator/Instructions';
 import { CompiledModule } from './CompiledModule';
 import { RunContext } from '../machine/RunContext';
+import { PyFunction } from './Function';
 import { RowDescriptor } from './RowDescriptor';
 import { PyModule } from './Module';
 import { PyBreakpoint } from './Breakpoint';
@@ -36,6 +39,10 @@ export class LittlePy {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static toJsObject(object: PyObject): any {
     return getObjectUtils().fromPyObject(object);
+  }
+
+  public static getFunctionInstructions(func: PyFunction): Instruction[] {
+    return (func.code as FullCodeInst).instructions;
   }
 }
 
