@@ -1,45 +1,57 @@
 const fs = require('fs');
 const path = require('path');
 
-const DIR = './build/types/api';
-const DEPENDENCIES = ['Main', 'Decorators', 'CallContext'];
+const DIR = './build/types';
+const DEPENDENCIES = ['api/Main', 'api/Decorators', 'api/CallContext'];
 const MODULE = 'littlepy';
 const OUTPUT_FILE = './lib/littlepy.d.ts';
 
 const files = {};
 
-for (const name of fs.readdirSync(DIR)) {
-  let match = name.match(/^(.+)\.d\.ts$/);
-  if (!match) {
-    continue;
-  }
-  const id = match[1];
-  const filePath = path.join(DIR, name);
-  const file = {};
-  files[id] = file;
-  file.path = filePath;
-  file.depends = [];
-  file.body = [];
-  file.id = id;
-  const body = fs.readFileSync(filePath, { encoding: 'utf8' });
-  const lines = body.split('\n');
-  for (const line of lines) {
-    match = line.match(/^import .+ from '\.\/([^']+)';?$/);
-    if (match) {
-      file.depends.push(match[1]);
+function scanDir(dirPath) {
+  const fullDirPath = dirPath ? path.join(DIR, dirPath) : DIR;
+  for (const name of fs.readdirSync(fullDirPath)) {
+    const filePath = path.join(fullDirPath, name);
+    const stat = fs.statSync(filePath);
+    if (stat.isDirectory()) {
+      const subPath = dirPath ? path.join(dirPath, name) : name;
+      scanDir(subPath);
       continue;
     }
-    if (/^export (\*|{})/.test(line)) {
+    let match = name.match(/^(.+)\.d\.ts$/);
+    if (!match) {
       continue;
     }
-    match = line.match(/^export (?:declare )?(.+)$/);
-    if (match) {
-      file.body.push(match[1]);
-    } else {
-      file.body.push(line);
+    const id = dirPath ? path.join(dirPath, match[1]) : match[1];
+    const file = {};
+    files[id] = file;
+    file.path = filePath;
+    file.depends = [];
+    file.body = [];
+    file.id = id;
+    const body = fs.readFileSync(filePath, { encoding: 'utf8' });
+    const lines = body.split('\n');
+    for (const line of lines) {
+      match = line.match(/^import .+ from '([^']+)';?$/);
+      if (match) {
+        const dependency = dirPath ? path.join(dirPath, match[1]) : match[1];
+        file.depends.push(dependency);
+        continue;
+      }
+      if (/^export (\*|{})/.test(line)) {
+        continue;
+      }
+      match = line.match(/^export (?:declare )?(.+)$/);
+      if (match) {
+        file.body.push(match[1]);
+      } else {
+        file.body.push(line);
+      }
     }
   }
 }
+
+scanDir('');
 
 const resolvedIds = {};
 const resolvedFiles = [];
