@@ -2,6 +2,7 @@
 import { Compiler } from '../compiler/Compiler';
 import { FullCodeInst } from '../generator/FullCodeInst';
 import { Instruction } from '../generator/Instructions';
+import { InstructionType } from '../generator/InstructionType';
 import { CompiledModule } from './CompiledModule';
 import { RunContext } from '../machine/RunContext';
 import { PyFunction } from './Function';
@@ -43,6 +44,10 @@ export class LittlePy {
 
   public static getFunctionInstructions(func: PyFunction): Instruction[] {
     return (func.code as FullCodeInst).instructions;
+  }
+
+  public static getInstructionType() {
+    return InstructionType;
   }
 }
 
