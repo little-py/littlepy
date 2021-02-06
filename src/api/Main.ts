@@ -46,7 +46,7 @@ export class LittlePy {
     return (func.code as FullCodeInst).instructions;
   }
 
-  public static getInstructionType() {
+  public static getInstructionType(): typeof InstructionType {
     return InstructionType;
   }
 }
