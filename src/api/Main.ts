@@ -3,17 +3,18 @@ import { Compiler } from '../compiler/Compiler';
 import { FullCodeInst } from '../generator/FullCodeInst';
 import { Instruction } from '../generator/Instructions';
 import { InstructionType } from '../generator/InstructionType';
-import { CompiledModule } from './CompiledModule';
 import { RunContext } from '../machine/RunContext';
-import { PyFunction } from './Function';
-import { RowDescriptor } from './RowDescriptor';
-import { PyModule } from './Module';
 import { PyBreakpoint } from './Breakpoint';
+import { CompiledModule } from './CompiledModule';
+import { CompileOptions } from './CompileOptions';
+import { PyFunction } from './Function';
 import { PyMachine } from './Machine';
+import { MachineConfig } from './MachineConfig';
+import { PyModule } from './Module';
 import { PyObject } from './Object';
 import { getObjectUtils } from './ObjectUtils';
-import { CompileOptions } from './CompileOptions';
-import { MachineConfig } from './MachineConfig';
+import { RowDescriptor } from './RowDescriptor';
+import { OperatorType } from './Token';
 
 export class LittlePy {
   public static compileModule(text: string, name = 'main', options?: CompileOptions): { module: PyModule; rows: RowDescriptor[] } {
@@ -48,6 +49,10 @@ export class LittlePy {
 
   public static getInstructionType(): typeof InstructionType {
     return InstructionType;
+  }
+
+  public static getOperatorType(): typeof OperatorType {
+    return OperatorType;
   }
 }
 
