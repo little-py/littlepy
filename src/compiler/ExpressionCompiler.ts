@@ -163,6 +163,9 @@ export class ExpressionCompiler {
         const unaryOperators: Token[] = [];
         while (isUnaryOperator(token)) {
           unaryOperators.push(token);
+          this._compilerContext.updateRowDescriptor({
+            usedOperators: [token.operator],
+          });
           this._from++;
           if (this._from >= this._end) {
             this._compilerContext.addError(PyErrorType.ExpectedUnaryOperatorOrArgument, token?.getPosition());
@@ -323,6 +326,9 @@ export class ExpressionCompiler {
         values[maxOperator + 1],
         this._compilerContext,
       );
+      this._compilerContext.updateRowDescriptor({
+        usedOperators: [operators[maxOperator].operator],
+      })
       if (!newValue.success) {
         return newValue;
       }
@@ -439,7 +445,7 @@ export class ExpressionCompiler {
         const functionBlock = this._compilerContext.getCurrentBlock().functionContext;
         functionBlock.addVariableAccess(first.identifier, first.getPosition());
         this._compilerContext.updateRowDescriptor({
-          introducedVariable: this._compiledCode.identifiers[first.identifier],
+          referencedVariables: [this._compiledCode.identifiers[first.identifier]],
         });
         this._from++;
         return reference;

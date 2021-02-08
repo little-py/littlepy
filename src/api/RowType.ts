@@ -9,7 +9,6 @@ export enum RowType {
   Raise = 'Raise',
   FunctionDefinition = 'FunctionDefinition',
   Comment = 'Comment',
-  Unknown = 'Unknown',
   IfBlock = 'IfBlock',
   ElseBlock = 'ElseBlock',
   ElifBlock = 'ElifBlock',

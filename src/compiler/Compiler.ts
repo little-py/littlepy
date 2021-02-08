@@ -76,7 +76,7 @@ export class Compiler {
     if (!options || !options.preserveTokens) {
       delete compiledCode.tokens;
     }
-    return { code: compiledCode, rows: compiler._compilerContext.rowDescriptors };
+    return { code: compiledCode, rows: compiler._compilerContext.getSortedRowDescriptors() };
   }
 
   private compileModuleWithContext(name: string): boolean {
@@ -1016,7 +1016,7 @@ export class Compiler {
     block.arg2 = expression;
 
     this._compilerContext.updateRowDescriptor({
-      introducedVariable: this._compiledModule.identifiers[block.arg1],
+      referencedVariables: [this._compiledModule.identifiers[block.arg1]],
     });
 
     return this.parseEndOfBlockDefinition(from + 2);
@@ -1177,6 +1177,10 @@ export class Compiler {
       result = assignment;
 
       if (id !== undefined) {
+        const idText = this._compilerContext.getIdentifierName(id);
+        this._compilerContext.updateRowDescriptor({
+          modifiedVariables: [idText],
+        });
         const functionBlock = this._compilerContext.getCurrentBlock().functionContext;
         if (!functionBlock.functionVariables[id]) {
           const access = (functionBlock.accessedVariables[id] || [])
@@ -1214,7 +1218,7 @@ export class Compiler {
 
     if (this._codeGenerator.hasArrayIndex(result)) {
       this._compilerContext.updateRowDescriptor({
-        hasOperators: true,
+        usedOperators: [OperatorType.Equal],
       });
     }
 
