@@ -1,17 +1,17 @@
 import { RowType } from './RowType';
+import { OperatorType } from './Token';
 
 export class RowDescriptor {
-  type: RowType;
-  subTypes?: RowType[];
-  usesVariables?: boolean;
+  types: RowType[];
   isInline?: boolean;
   isArrayAssignment?: boolean;
-  hasOperators?: boolean;
+  usedOperators?: OperatorType[];
   hasTupleUnpack?: boolean;
   hasRangeAccessor?: boolean;
   hasIfExpression?: boolean;
   hasComprehension?: boolean;
-  introducedVariable?: string;
+  referencedVariables?: string[];
+  modifiedVariables?: string[];
   hasLambda?: boolean;
   functionName?: string[];
   className?: string;

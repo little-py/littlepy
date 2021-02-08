@@ -10,7 +10,6 @@ import { CodeFragment } from './CodeFragment';
 
 function getRowTypePriority(rowType: RowType): number {
   switch (rowType) {
-    case RowType.Unknown:
     case RowType.Pass:
       return 0;
     case RowType.Comment:
@@ -44,59 +43,6 @@ function getRowTypePriority(rowType: RowType): number {
     case RowType.ImportAs:
     case RowType.ImportFrom:
       return 10;
-  }
-}
-
-// it is for external usage
-/* istanbul ignore next */
-export function getRowTypeDescription(rowType: RowType): string {
-  switch (rowType) {
-    case RowType.AssignmentOperator:
-      return 'rowtype.assignment-operator';
-    case RowType.FunctionCall:
-      return 'rowtype.function-call';
-    case RowType.ForCycle:
-      return 'rowtype.for-cycle';
-    case RowType.WhileCycle:
-      return 'rowtype.while-cycle';
-    case RowType.TryBlock:
-      return 'rowtype.try-block';
-    case RowType.ExceptBlock:
-      return 'rowtype.except-block';
-    case RowType.FinallyBlock:
-      return 'rowtype.finally-block';
-    case RowType.Raise:
-      return 'rowtype.raise';
-    case RowType.FunctionDefinition:
-      return 'rowtype.function-definition';
-    case RowType.Comment:
-      return 'rowtype.comment';
-    case RowType.IfBlock:
-      return 'rowtype.if-block';
-    case RowType.ElseBlock:
-      return 'rowtype.else-block';
-    case RowType.ElifBlock:
-      return 'rowtype.elif-block';
-    case RowType.Import:
-      return 'rowtype.import';
-    case RowType.Pass:
-      return 'rowtype.pass';
-    case RowType.Return:
-      return 'rowtype.return';
-    case RowType.Expression:
-      return 'rowtype.expression';
-    case RowType.Continue:
-      return 'rowtype.continue';
-    case RowType.Break:
-      return 'rowtype.break';
-    case RowType.Yield:
-      return 'rowtype.yield';
-    case RowType.ImportAs:
-      return 'rowtype.import.as';
-    case RowType.ImportFrom:
-      return 'rowtype.import.from';
-    case RowType.Unknown:
-      return '-';
   }
 }
 
@@ -143,28 +89,27 @@ export class CompilerContext {
   private createRowDescriptor() {
     if (!this.rowDescriptors[this.row]) {
       this.rowDescriptors[this.row] = {
-        type: RowType.Unknown,
+        types: [],
       };
     }
+  }
+
+  public getSortedRowDescriptors(): RowDescriptor[] {
+    for (const row of this.rowDescriptors) {
+      if (row && row.types) {
+        row.types = row.types.sort((a, b) => getRowTypePriority(a) - getRowTypePriority(b));
+      }
+    }
+    return this.rowDescriptors;
   }
 
   public setRowType(type: RowType): void {
     this.createRowDescriptor();
     const descriptor = this.rowDescriptors[this.row];
-    if (descriptor.type === type) {
+    if (descriptor.types.indexOf(type) >= 0) {
       return;
     }
-    if (descriptor.type === RowType.Unknown) {
-      descriptor.type = type;
-    } else {
-      descriptor.subTypes = descriptor.subTypes || [];
-      if (getRowTypePriority(descriptor.type) < getRowTypePriority(type)) {
-        descriptor.subTypes.push(descriptor.type);
-        descriptor.type = type;
-      } else {
-        descriptor.subTypes.push(type);
-      }
-    }
+    descriptor.types.push(type);
   }
 
   public updateRowDescriptor(type: Partial<Omit<RowDescriptor, 'type'>>): void {
