@@ -6,7 +6,12 @@ import { CompileOptions } from '../../src/api/CompileOptions';
 import { CompiledModule } from '../../src/api/CompiledModule';
 import { MachineConfig } from '../../src/api/MachineConfig';
 
-export function compileModuleAndRows(source: string, name: string, options?: CompileOptions, raw?: boolean): {
+export function compileModuleAndRows(
+  source: string,
+  name: string,
+  options?: CompileOptions,
+  raw?: boolean,
+): {
   code: CompiledModule;
   rows: RowDescriptor[];
 } {

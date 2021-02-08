@@ -328,7 +328,7 @@ export class ExpressionCompiler {
       );
       this._compilerContext.updateRowDescriptor({
         usedOperators: [operators[maxOperator].operator],
-      })
+      });
       if (!newValue.success) {
         return newValue;
       }

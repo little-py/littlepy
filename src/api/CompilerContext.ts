@@ -94,7 +94,7 @@ export class CompilerContext {
     }
   }
 
-  public getSortedRowDescriptors() {
+  public getSortedRowDescriptors(): RowDescriptor[] {
     for (const row of this.rowDescriptors) {
       if (row && row.types) {
         row.types = row.types.sort((a, b) => getRowTypePriority(a) - getRowTypePriority(b));
