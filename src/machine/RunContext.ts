@@ -1990,7 +1990,7 @@ export class RunContext extends RunContextBase {
         if (obj instanceof NumberObject) {
           return new NumberObject(-obj.value);
         } else {
-          throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedNumberObject, [], obj.toString());
+          throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedNumberObject, [], obj?.toString());
         }
       case InstructionType.BinInv:
         if (obj instanceof NumberObject) {
@@ -1998,7 +1998,7 @@ export class RunContext extends RunContextBase {
           val = ~val;
           return new NumberObject(val);
         } else {
-          throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedNumberObject, [], obj.toString());
+          throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedNumberObject, [], obj?.toString());
         }
       default:
         throw new ExceptionObject(ExceptionType.RuntimeError, UniqueErrorCode.UnknownUnaryOperation);
@@ -2207,7 +2207,7 @@ export class RunContext extends RunContextBase {
         }
         break;
     }
-    throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.MathOperationOperandsDontMatch, [], leftObj.toString(), rightObj.toString());
+    throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.MathOperationOperandsDontMatch, [], leftObj?.toString(), rightObj?.toString());
   }
 
   private setContinueContext(context: ContinueContext) {

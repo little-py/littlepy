@@ -843,6 +843,27 @@ const errors: ErrorScenario[] = [
     `,
     error: UniqueErrorCode.ExpectedContainer,
   },
+  {
+    input: `
+      a = 10
+      b = a[1]
+    `,
+    error: UniqueErrorCode.ExpectedIterableObject,
+  },
+  {
+    input: `
+      a = [10]
+      b = a[True]
+    `,
+    error: UniqueErrorCode.IndexerIsOutOfRange,
+  },
+  {
+    input: `
+      a = [10]
+      b = a[[]]
+    `,
+    error: UniqueErrorCode.ExpectedNumericOrStringIndexer,
+  },
 ];
 
 describe('Exceptions', () => {
