@@ -51,8 +51,17 @@ export class ReferenceObject extends PyObject {
   private validate(runContext: RunContext) {
     switch (this.referenceType) {
       case ReferenceType.Index:
-        if (this.parent instanceof IterableObject) {
-          return true;
+        if (!(this.parent instanceof IterableObject)) {
+          runContext.raiseException(new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedIterableObject, [], this.parent.toString()));
+          /* istanbul ignore next */
+          return;
+        }
+        if (!(this.indexer instanceof NumberObject) && !(this.indexer instanceof StringObject)) {
+          runContext.raiseException(
+            new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedNumericOrStringIndexer, [], this.indexer.toString()),
+          );
+          /* istanbul ignore next */
+          return;
         }
         break;
       case ReferenceType.Property:
@@ -229,6 +238,9 @@ export class ReferenceObject extends PyObject {
         return ret;
       }
       case ReferenceType.Index: {
+        if (!(this.parent instanceof IterableObject)) {
+          throw new ExceptionObject(ExceptionType.TypeError, UniqueErrorCode.ExpectedIterableObject, [], this.parent.toString());
+        }
         if (this.parent instanceof ListObject && this.indexer instanceof NumberObject) {
           const list = this.parent as ListObject;
           const indexer = this.indexer as NumberObject;
@@ -237,20 +249,18 @@ export class ReferenceObject extends PyObject {
             throw new ExceptionObject(ExceptionType.IndexError, UniqueErrorCode.IndexerIsOutOfRange, [], this.indexer.value.toString());
           }
           return ret;
-        } else {
-          if (this.parent instanceof IterableObject && this.indexer instanceof StringObject) {
-            const ret = this.parent.getItem(this.indexer.value);
-            if (!ret) {
-              throw new ExceptionObject(ExceptionType.UnknownIdentifier, UniqueErrorCode.UnknownIdentifier, [], this.indexer.value);
-            }
-            return ret;
-          } else if (this.parent instanceof IterableObject && this.indexer instanceof NumberObject) {
-            const ret = this.parent.getItem(this.indexer.value);
-            if (!ret) {
-              throw new ExceptionObject(ExceptionType.IndexError, UniqueErrorCode.IndexerIsOutOfRange, [], this.indexer.value.toString());
-            }
-            return ret;
+        } else if (this.indexer instanceof StringObject) {
+          const ret = this.parent.getItem(this.indexer.value);
+          if (!ret) {
+            throw new ExceptionObject(ExceptionType.UnknownIdentifier, UniqueErrorCode.UnknownIdentifier, [], this.indexer.value);
           }
+          return ret;
+        } else if (this.indexer instanceof NumberObject) {
+          const ret = this.parent.getItem(this.indexer.value);
+          if (!ret) {
+            throw new ExceptionObject(ExceptionType.IndexError, UniqueErrorCode.IndexerIsOutOfRange, [], this.indexer.value.toString());
+          }
+          return ret;
         }
         break;
       }
