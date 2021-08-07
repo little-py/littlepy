@@ -666,7 +666,7 @@ export class RunContext extends RunContextBase {
   private stepReadObject(current: Instruction, functionStack: StackEntry) {
     const module = this.getCurrentModule();
     const id = module.identifiers[current.arg1];
-    const object = this.getObject(id);
+    const object = this.getObject(id, undefined, true);
     if (!object) {
       if (current.arg3 !== 0) {
         this.raiseUnknownFunctionName(id);
@@ -2219,6 +2219,9 @@ export class RunContext extends RunContextBase {
   }
 
   public onUnhandledException(exception: ExceptionObject): void {
+    if (this._unhandledException) {
+      return;
+    }
     this._unhandledException = exception;
     let stack = this._currentStack;
     if (!stack) {
