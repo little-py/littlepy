@@ -1,4 +1,4 @@
-image: node:12.6.0
+image: node:14.17.0
 stages:
   - test
   - deploy
